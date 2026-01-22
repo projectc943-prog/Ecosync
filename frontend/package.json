@@ -1,7 +1,22 @@
 {
   "name": "frontend",
   "private": true,
-  "version": "0.0.0",
+  "description": "🚀 AI-Powered Environmental IoT Command Center. Real-time sensor fusion with Kalman Filtering.",
+  "homepage": "https://environmental-8b801.web.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/projectc943-prog/capstone-iot.git"
+  },
+  "keywords": [
+    "iot",
+    "esp32",
+    "kalman-filter",
+    "ai",
+    "environmental-monitoring",
+    "react",
+    "fastapi"
+  ],
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite --open",
