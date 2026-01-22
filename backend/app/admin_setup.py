@@ -6,12 +6,15 @@ def create_admin_user():
     db = database.SessionLocal()
     try:
         email = "gitams4@gmail.com"
-        password = "admin123@#$"  # Updated secure password
+        password = "Admin123@#$"  # Matches documentation (Capital A)
         
         # Check if exists
         existing = db.query(models.User).filter(models.User.email == email).first()
         if existing:
-            print(f"Admin user {email} already exists.")
+            # Update password if exists (ensures it matches docs even if DB persisted)
+            existing.hashed_password = security.get_password_hash(password)
+            db.commit()
+            print(f"✅ Admin user {email} updated with correct password.")
         else:
             print(f"Creating new Admin user: {email}")
             hashed_pw = security.get_password_hash(password)
@@ -22,7 +25,7 @@ def create_admin_user():
             )
             db.add(new_user)
             db.commit()
-            print(f"✅ Admin user created: {email} / {password}")
+            print(f"✅ Admin user created: {email}")
             
     except Exception as e:
         print(f"Error seeding admin: {e}")
