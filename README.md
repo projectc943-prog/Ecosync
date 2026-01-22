@@ -2,6 +2,24 @@
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/projectc943-prog/capstone-iot)
 
+**Live Dashboard:** [https://environmental-8b801.web.app](https://environmental-8b801.web.app)  
+**API Endpoint:** [https://capstone-backend-djdd.onrender.com](https://capstone-backend-djdd.onrender.com)
+
+## 🚀 Overview
+A futuristic, AI-powered environmental monitoring system that fuses local sensor data (ESP32) with global satellite data (NASA/OpenWeather). Featuring 1D Kalman Filtering, duplicate-sensor fusion, and a Glassmorphism II interface.
+
+## 📚 Documentation
+For detailed Architecture, API Reference, and Setup Instructions, please see:
+👉 **[DOCUMENTATION.md](./DOCUMENTATION.md)**
+
+## ⚡ Quick Start (Demo Mode)
+1. Open the **[Live Dashboard](https://environmental-8b801.web.app)**.
+2. Login: `gitams4@gmail.com` / `Admin123@#$`
+3. Run the valid data simulator:
+   ```bash
+   python3 iot_simulator.py
+   ```
+
 > **Production-Ready IoT Monitoring System with Predictive AI & Voice Control**
 
 ![Status](https://img.shields.io/badge/Status-Operational-emerald) ![Frontend](https://img.shields.io/badge/Frontend-Firebase-orange) ![Backend](https://img.shields.io/badge/Backend-Render-blue)
