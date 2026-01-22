@@ -31,8 +31,8 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 # Define allowed origins based on environment
 if ENVIRONMENT == "production":
     allowed_origins = [
-        "https://your-project-id.web.app",           # Firebase Hosting
-        "https://your-project-id.firebaseapp.com",   # Firebase Hosting alternate
+        "https://environmental-8b801.web.app",           # Firebase Hosting
+        "https://environmental-8b801.firebaseapp.com",   # Firebase Hosting alternate
         # Add your custom domain here if you have one
         # "https://yourdomain.com",
     ]

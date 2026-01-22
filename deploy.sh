@@ -12,7 +12,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # Configuration (UPDATE THESE VALUES)
-PROJECT_ID="your-firebase-project-id"
+PROJECT_ID="environmental-8b801"
 REGION="asia-south1"
 SERVICE_NAME="capstone-backend"
 FIREBASE_HOSTING_TARGET="production"
