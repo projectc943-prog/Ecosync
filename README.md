@@ -1,5 +1,7 @@
 # 🛸 AI-Powered Environmental Command Center
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/projectc943-prog/capstone-iot)
+
 > **Production-Ready IoT Monitoring System with Predictive AI & Voice Control**
 
 ![Status](https://img.shields.io/badge/Status-Operational-emerald) ![AI](https://img.shields.io/badge/AI_Engine-Active-purple) ![Security](https://img.shields.io/badge/Security-Level_5-blue)
