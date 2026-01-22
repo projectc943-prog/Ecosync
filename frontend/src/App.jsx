@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 const DashboardShell = lazy(() => import('./pages/DashboardShell'));
 const LiveMap = lazy(() => import('./pages/LiveMap'));
 
+const LandingPage = lazy(() => import('./pages/LandingPage')); // [NEW]
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Analytics = lazy(() => import('./pages/Analytics'));
@@ -28,7 +29,7 @@ const ProtectedRoute = ({ children }) => {
   const { currentUser } = useAuth();
 
   if (!currentUser) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
   return children;
 };
@@ -63,8 +64,14 @@ function AppContent() {
 
   return (
     <Routes>
-      {/* Public Route: Login */}
+      {/* Public Routes */}
       <Route path="/" element={
+        <Suspense fallback={<PageLoader />}>
+          <LandingPage />
+        </Suspense>
+      } />
+
+      <Route path="/login" element={
         <Suspense fallback={<PageLoader />}>
           <LoginPage />
         </Suspense>

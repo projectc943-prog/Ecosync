@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Lock, User, MapPin, Mail, ArrowRight, ShieldCheck, Navigation, Eye, EyeOff, Radio, Cpu, Activity } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import API_BASE_URL from '../config';
@@ -13,12 +13,14 @@ const LoginPage = () => {
 
     // --- STATE MACHINE ---
     // 'login' | 'signup_creds' | 'signup_otp' | 'signup_profile' | 'location_setup'
-    const [authStage, setAuthStage] = useState('login');
+    const [searchParams] = useSearchParams();
+    const initialMode = searchParams.get('mode') === 'signup' ? 'signup_creds' : 'login';
+    const [authStage, setAuthStage] = useState(initialMode);
 
     // --- FORM DATA ---
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [plan, setPlan] = useState('lite');
+    const [plan, setPlan] = useState('pro');
     const [otp, setOtp] = useState('');
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
@@ -313,14 +315,6 @@ const LoginPage = () => {
 
     const renderSignupCreds = () => (
         <form onSubmit={handleSignupStep1} className="space-y-5 animate-in slide-in-from-right-10 fade-in duration-500">
-            <div className="flex gap-4 mb-2">
-                <div onClick={() => setPlan('lite')} className={`flex-1 p-3 rounded-xl border cursor-pointer transition-all ${plan === 'lite' ? 'bg-emerald-500/10 border-emerald-500' : 'bg-white/5 border-white/10 opacity-50'}`}>
-                    <div className="text-[10px] font-black text-center text-emerald-400">LITE</div>
-                </div>
-                <div onClick={() => setPlan('pro')} className={`flex-1 p-3 rounded-xl border cursor-pointer transition-all ${plan === 'pro' ? 'bg-cyan-500/10 border-cyan-500' : 'bg-white/5 border-white/10 opacity-50'}`}>
-                    <div className="text-[10px] font-black text-center text-cyan-400">PRO</div>
-                </div>
-            </div>
 
             <div className="group">
                 <div className="relative">
