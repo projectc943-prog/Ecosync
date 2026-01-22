@@ -79,20 +79,24 @@ body::after {
   background: var(--color-term-accent);
 }
 
-/* Glass Utilities - Enhanced for Image Background */
+/* Glass Utilities - Performance Optimized */
 .glass-depth {
-  background: rgba(5, 5, 10, 0.75); /* Darker for contrast */
-  backdrop-filter: blur(20px) saturate(180%);
+  background: rgba(5, 5, 10, 0.85); /* Darker for better contrast without heavy blur */
+  backdrop-filter: blur(12px) saturate(180%); /* Reduced blur from 20px */
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  will-change: backdrop-filter;
 }
 
 .glass-panel {
-  background: rgba(10, 15, 30, 0.65); /* More transparent but dark */
-  backdrop-filter: blur(16px);       /* Higher blur */
+  background: rgba(10, 15, 30, 0.7);
+  backdrop-filter: blur(8px); /* Reduced from 16px */
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(0, 243, 255, 0.15);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
   position: relative;
+  will-change: transform;
 }
 
 /* Corner Accents for Panels */
@@ -102,7 +106,7 @@ body::after {
     width: 8px;
     height: 8px;
     border: 1px solid var(--color-term-accent);
-    transition: all 0.3s ease;
+    transition: all 0.2s ease; /* Faster transition */
     opacity: 0.7;
 }
 .glass-panel::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
@@ -110,20 +114,21 @@ body::after {
 
 .glass-panel:hover {
   border-color: var(--color-term-accent);
-  box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
-  transform: translateY(-2px);
-  background: rgba(10, 15, 30, 0.75);
+  /* Removed heavy shadow on hover for performance */
+  box-shadow: 0 0 10px rgba(0, 243, 255, 0.2); 
+  transform: translateY(-1px);
+  background: rgba(10, 15, 30, 0.8);
 }
 
 /* Text Glow */
 .text-glow {
-  text-shadow: 0 0 15px rgba(0, 243, 255, 0.6);
+  text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); /* Reduced glow radius */
 }
 
-/* Animations */
+/* Animations - Optimized */
 @keyframes pulse-slow {
-  0%, 100% { opacity: 1; filter: brightness(1); }
-  50% { opacity: 0.7; filter: brightness(1.2); }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
 }
 
 @keyframes scanline {
@@ -133,17 +138,17 @@ body::after {
 
 /* Leaflet Dark Mode Override */
 .leaflet-container {
-  background: rgba(0,0,0,0.8) !important;
+  background: rgba(0,0,0,0.9) !important;
   font-family: 'Outfit', sans-serif !important;
 }
 .leaflet-bar a {
-  background-color: rgba(30, 41, 59, 0.9) !important;
+  background-color: rgba(30, 41, 59, 1) !important; /* Solid color implies better performace than transparency */
   color: #00f3ff !important;
   border-bottom: 1px solid #334155 !important;
 }
 .leaflet-control-layers {
-    background: rgba(15, 23, 42, 0.9) !important;
+    background: rgba(15, 23, 42, 0.95) !important;
     border: 1px solid #334155 !important;
     color: white !important;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(4px);
 }
