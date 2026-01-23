@@ -140,6 +140,18 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
     # High Temp Alert
     if measurement.temperature and measurement.temperature > 40:
         logger.warning(f"High Temp Alert: {measurement.temperature}°C on {device.name}")
+        
+        # --- EDUCATIONAL NOTE: REAL-WORLD IMPLEMENTATION ---
+        # In a real SaaS product, you would integrate an SMS/Email provider here.
+        # Example (Twilio):
+        #   client.messages.create(
+        #       body=f"CRITICAL: Temp is {measurement.temperature}C!",
+        #       from_='+15017122661', to='+15558675310'
+        #   )
+        # Example (SendGrid):
+        #   message = Mail(from_email='alert@ecosync.com', ... )
+        # ---------------------------------------------------
+        
         db.add(models.Alert(
             metric="temperature",
             value=measurement.temperature,
