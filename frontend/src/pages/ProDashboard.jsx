@@ -36,7 +36,7 @@ const ProDashboard = ({ sensorData, alerts, connectionStatus }) => {
     useEffect(() => {
         const fetchPredictions = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/predict?steps=10`);
+                const res = await fetch(`${API_BASE_URL}/api/pro/predict?steps=10`);
                 if (res.ok) {
                     const predData = await res.json();
                     if (Array.isArray(sensorData) && sensorData.length > 0) {
@@ -59,7 +59,7 @@ const ProDashboard = ({ sensorData, alerts, connectionStatus }) => {
     useEffect(() => {
         const fetchProData = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/api/pro-data?lat=17.3850&lon=78.4867`);
+                const res = await fetch(`${API_BASE_URL}/api/pro/current?lat=17.3850&lon=78.4867`);
                 if (res.ok) {
                     const data = await res.json();
                     setProData(data);

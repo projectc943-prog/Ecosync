@@ -63,8 +63,32 @@ def build_normalized_response(lat, lon, city, weather_data, aq_data, sources):
 
 # --- DEPENDENCIES ---
 from .auth import get_current_user
+from ..ml_engine import AdaptiveKalmanFilter
 
 # --- ENDPOINTS ---
+
+@router.get("/predict")
+async def predict_future(steps: int = 10, db: Session = Depends(get_db)):
+    """
+    Returns Kalman Filter predictions for the next N seconds.
+    """
+    # 1. Fetch recent data to train the filter
+    recent_data = db.query(models.SensorData).order_by(models.SensorData.timestamp.desc()).limit(20).all()
+    if not recent_data:
+        return {"temperature": [25.0] * steps} # Fallback
+    
+    # Reverse to chronological order
+    data_points = sorted(recent_data, key=lambda x: x.timestamp)
+    
+    # 2. Train Filter
+    kf = AdaptiveKalmanFilter(initial_value=data_points[0].temperature or 25.0)
+    for pt in data_points:
+        if pt.temperature is not None:
+             kf.update(pt.temperature)
+             
+    # 3. Predict
+    predictions = kf.predict_future(steps=steps)
+    return {"temperature": predictions}
 
 @router.get("/current")
 async def get_pro_current(

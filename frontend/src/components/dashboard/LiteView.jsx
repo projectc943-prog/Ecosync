@@ -167,6 +167,70 @@ const LiteView = () => {
                     </div>
                 </div>
             </div>
+            {/* Connection Config (New) */}
+            <div className="glass-panel p-6 mt-6">
+                <div className="flex items-center gap-2 mb-4">
+                    <Wifi size={18} className="text-cyan-400" />
+                    <h3 className="text-sm font-bold text-white uppercase tracking-widest">Device Connection Setup</h3>
+                </div>
+                <ConnectionConfig />
+            </div>
+        </div>
+    );
+};
+
+const ConnectionConfig = () => {
+    const [ip, setIp] = React.useState('');
+    const [ssid, setSsid] = React.useState('');
+    const [status, setStatus] = React.useState('IDLE'); // IDLE, SAVING, SAVED, ERROR
+
+    const handleSave = async () => {
+        setStatus('SAVING');
+        try {
+            // Mock API call - In real scenario this would POST to /api/config/target
+            console.log("Configuring ESP32 target:", ip, ssid);
+            await new Promise(r => setTimeout(r, 1000));
+            setStatus('SAVED');
+            setTimeout(() => setStatus('IDLE'), 3000);
+        } catch (e) {
+            setStatus('ERROR');
+        }
+    };
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div>
+                <label className="text-xs text-slate-400 font-mono mb-1 block">ESP32 IP ADDRESS</label>
+                <input
+                    type="text"
+                    value={ip}
+                    onChange={e => setIp(e.target.value)}
+                    placeholder="192.168.1.100"
+                    className="w-full bg-slate-800/50 border border-slate-700/50 rounded px-3 py-2 text-sm text-cyan-200 focus:outline-none focus:border-cyan-500/50 font-mono"
+                />
+            </div>
+            <div>
+                <label className="text-xs text-slate-400 font-mono mb-1 block">WIFI SSID</label>
+                <input
+                    type="text"
+                    value={ssid}
+                    onChange={e => setSsid(e.target.value)}
+                    placeholder="Home_Network_2G"
+                    className="w-full bg-slate-800/50 border border-slate-700/50 rounded px-3 py-2 text-sm text-cyan-200 focus:outline-none focus:border-cyan-500/50 font-mono"
+                />
+            </div>
+            <button
+                onClick={handleSave}
+                disabled={status === 'SAVING' || !ip}
+                className={`h-[38px] px-6 rounded font-bold text-xs tracking-widest transition-all ${status === 'SAVED' ? 'bg-emerald-500 text-black' :
+                        status === 'ERROR' ? 'bg-red-500 text-white' :
+                            'bg-cyan-500 hover:bg-cyan-400 text-black'
+                    }`}
+            >
+                {status === 'SAVING' ? 'CONNECTING...' :
+                    status === 'SAVED' ? 'CONNECTED!' :
+                        status === 'ERROR' ? 'FAILED' : 'CONNECT DEVICE'}
+            </button>
         </div>
     );
 };
