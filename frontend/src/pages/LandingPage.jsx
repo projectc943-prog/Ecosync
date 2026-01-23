@@ -192,9 +192,9 @@ const LandingPage = () => {
                         <div className="flex justify-between items-start mb-8">
                             <div>
                                 <h3 className="text-2xl font-black text-cyan-400">LITE CORE</h3>
-                                <p className="text-sm text-slate-500 mt-1">For Local Monitoring</p>
+                                <p className="text-sm text-slate-500 mt-1">For Public Monitoring</p>
                             </div>
-                            <div className="bg-cyan-500/10 px-3 py-1 rounded text-cyan-400 font-bold text-xs">FREE</div>
+                            <div className="bg-cyan-500/10 px-3 py-1 rounded text-cyan-400 font-bold text-xs">OPEN ACCESS</div>
                         </div>
                         <ul className="space-y-4 mb-8">
                             <li className="flex items-center gap-3 text-slate-300 text-sm">
@@ -223,11 +223,11 @@ const LandingPage = () => {
                         <div className="flex justify-between items-start mb-8">
                             <div>
                                 <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">PRO NEXUS</h3>
-                                <p className="text-sm text-slate-400 mt-1">For Enterprise Intelligence</p>
+                                <p className="text-sm text-slate-400 mt-1">For Research Intelligence</p>
                             </div>
                             <div className="text-right">
-                                <div className="text-emerald-400 font-black text-xl">$10</div>
-                                <div className="text-[10px] text-slate-500 uppercase">Per Node / Month</div>
+                                <div className="text-emerald-400 font-black text-xl">FREE</div>
+                                <div className="text-[10px] text-slate-500 uppercase">Non-Profit Tier</div>
                             </div>
                         </div>
                         <ul className="space-y-4 mb-8">
@@ -248,7 +248,7 @@ const LandingPage = () => {
                             </li>
                         </ul>
                         <button onClick={() => navigate('/login')} className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-emerald-500/20">
-                            DEPLOY PRO
+                            ACCESS RESEARCH TOOLS
                         </button>
                     </div>
 
@@ -257,7 +257,7 @@ const LandingPage = () => {
 
             {/* --- FOOTER --- */}
             <footer className="py-8 text-center text-slate-600 text-xs tracking-widest uppercase border-t border-white/5">
-                <p>&copy; 2026 S4 • Advanced Environmental Solutions</p>
+                <p>&copy; 2026 EcoSync S4 • Non-Profit Open Source Organization</p>
             </footer>
 
         </div>

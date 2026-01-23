@@ -50,7 +50,7 @@ const Settings = () => {
                         {localStorage.getItem('plan') === 'pro' ? 'PRO LICENSE' : 'LITE LICENSE'}
                     </div>
                     {localStorage.getItem('plan') !== 'pro' && (
-                        <div className="text-[10px] text-cyan-600 cursor-pointer hover:text-cyan-400 mt-1">UPGRADE TO PRO</div>
+                        <div className="text-[10px] text-cyan-600 cursor-pointer hover:text-cyan-400 mt-1">ENABLE RESEARCH MODE</div>
                     )}
                 </div>
             </header>
