@@ -72,55 +72,103 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     if user is None:
         raise credentials_exception
     return user
-@router.post("/register", response_model=schemas.UserResponse)
-def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    # Check if email exists
-    existing_user = db.query(models.User).filter(models.User.email == user.email).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Identity Hash already registered on network.")
+class SignupInitRequest(schemas.BaseModel):
+    email: schemas.EmailStr
+
+@router.post("/auth/signup-init")
+def signup_init(request: SignupInitRequest, db: Session = Depends(get_db)):
+    # 1. Check existing
+    user = db.query(models.User).filter(models.User.email == request.email).first()
+    if user and user.is_verified:
+        raise HTTPException(status_code=400, detail="Identity Hash already registered. Please Login.")
     
-    hashed_password = security.get_password_hash(user.password)
-    
-    # Generate 6-digit OTP
+    # 2. Logic for new or unverified
     otp_code = ''.join(random.choices(string.digits, k=6))
     
-    # Send Email
+    if user and not user.is_verified:
+        # Update existing unverified
+        user.otp_secret = otp_code
+        db.commit()
+    else:
+        # Create new placeholder
+        hashed_password = security.get_password_hash("PENDING-SETUP")
+        new_user = models.User(
+            email=request.email,
+            hashed_password=hashed_password,
+            is_verified=False,
+            otp_secret=otp_code,
+            plan="lite" # Default
+        )
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+    
+    # 3. Send Email
     subject = "S4 SECURITY CHECK: Identity Verification"
     body = f"""
     [SECURE TRANSMISSION]
     
     Operative,
     
-    Your requested access code for the Environmental Command Center is:
+    Your activation code for the Environmental Monitoring Network is:
     
     {otp_code}
     
-    Enter this code immediately to calibrate your identity badge.
-    
-    Session ID: {security.get_password_hash(otp_code)[:8]}
+    Enter this code to proceed to credential setup.
     """
-    email_sent = send_email_notification(user.email, subject, body)
-    
-    if not email_sent:
-        print(f"⚠️ Failed to dispatch email to {user.email}. Check server logs.")
-        # We proceed anyway so they can try to re-send or manual override if we implement it later.
-        # Ideally we might throw an error, but for now let's allow "creation" but they might be stuck if they can't get OTP.
-        # Actually, let's print it too for fallback debugging in this demo presentation.
-        print(f"DEBUG FALLBACK OTP: {otp_code}")
+    try:
+        send_email_notification(request.email, subject, body)
+    except Exception as e:
+        print(f"Email Failed: {e}")
+        # For debugging/demo if email fails
+        print(f"DEBUG OTP: {otp_code}")
+        
+    return {"status": "success", "message": "Verification Signal Sent"}
 
-    new_user = models.User(
-        email=user.email,
-        hashed_password=hashed_password,
-        plan=user.plan,
-        first_name=user.first_name,
-        last_name=user.last_name,
-        is_verified=False,
-        otp_secret=otp_code
-    )
-    db.add(new_user)
+
+class SignupCompleteRequest(schemas.BaseModel):
+    email: schemas.EmailStr
+    otp: str
+    password: str
+    first_name: str
+    last_name: str
+
+@router.post("/auth/signup-complete", response_model=schemas.Token)
+def signup_complete(request: SignupCompleteRequest, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == request.email).first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User Identity Not Found")
+        
+    if user.is_verified:
+         raise HTTPException(status_code=400, detail="User already verified. Please Login.")
+
+    if user.otp_secret != request.otp:
+        raise HTTPException(status_code=400, detail="Invalid Verification Code")
+
+    # Finalize Account
+    user.hashed_password = security.get_password_hash(request.password)
+    user.first_name = request.first_name
+    user.last_name = request.last_name
+    user.is_verified = True
+    user.otp_secret = None # Cleanup
+    
     db.commit()
-    db.refresh(new_user)
-    return new_user
+    
+    # Generate Token immediately
+    access_token_expires = timedelta(minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = security.create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+    
+    return {
+        "access_token": access_token, 
+        "token_type": "bearer",
+        "redirect": "/dashboard",
+        "plan": user.plan,
+        "is_verified": user.is_verified,
+        "user_name": f"{user.first_name} {user.last_name}"
+    }
 
 class VerifyRequest(schemas.BaseModel):
     email: str
@@ -139,16 +187,43 @@ def verify_email(req: VerifyRequest, db: Session = Depends(get_db)):
     user.otp_secret = None # Clear OTP after use
     db.commit()
     
-    return {"status": "success", "message": "Identity Verified"}
+    # Issue Temporary Access Token for Setup
+    access_token_expires = timedelta(minutes=15) # Short lived for setup
+    access_token = security.create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+    
+    return {
+        "status": "success", 
+        "message": "Identity Verified",
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
 
-class UserUpdate(schemas.BaseModel):
+class CredentialsSetup(schemas.BaseModel):
+    password: str
     first_name: str
     last_name: str
 
+@router.post("/me/setup-credentials")
+def setup_credentials(creds: CredentialsSetup, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Update Password
+    current_user.hashed_password = security.get_password_hash(creds.password)
+    # Update Profile
+    current_user.first_name = creds.first_name
+    current_user.last_name = creds.last_name
+    
+    db.commit()
+    db.refresh(current_user)
+    
+    return {"status": "success", "message": "Credentials Secured. System Access Granted."}
+
 @router.put("/me/profile")
-def update_profile(profile: UserUpdate, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+def update_profile(profile: schemas.UserProfileUpdate, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
     current_user.first_name = profile.first_name
     current_user.last_name = profile.last_name
+    current_user.mobile = profile.mobile
+    current_user.location_name = profile.location_name
     db.commit()
     db.refresh(current_user)
     return {"status": "success", "message": "Profile Updated"}

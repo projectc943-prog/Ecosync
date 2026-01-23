@@ -58,11 +58,19 @@ class UserCreate(UserBase):
     last_name: Optional[str] = "Null"
     plan: Optional[str] = "lite"
 
+class UserProfileUpdate(BaseModel):
+    first_name: str
+    last_name: str
+    mobile: Optional[str] = None
+    location_name: Optional[str] = None
+
 class UserResponse(UserBase):
     id: int
     is_active: bool
     first_name: Optional[str]
     last_name: Optional[str]
+    mobile: Optional[str]
+    location_name: Optional[str] = None
     plan: str
     is_verified: bool
 

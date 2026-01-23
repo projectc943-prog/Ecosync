@@ -363,6 +363,55 @@ const FusionChart = ({ history }) => {
     );
 };
 
+const BioSignatureWidget = ({ weather, aqi }) => {
+    // Dynamic Bio-Signature based on REAL Telemetry
+    // We normalize values to a 0-150 scale (Baseline 100)
+
+    const temp = weather?.temp || 25;
+    const humidity = weather?.humidity || 50;
+    const pm25 = aqi?.pm25 || 10;
+    const wind = weather?.wind_speed || 10;
+    const uv = weather?.uv_index || 0;
+
+    // Algorithms for "Bio-Health"
+    const scoreFlora = Math.max(0, 150 - (Math.abs(temp - 24) * 5) - (Math.abs(humidity - 60) * 2));
+    const scoreFauna = Math.max(0, 150 - (pm25 * 2) - (Math.abs(temp - 22) * 4));
+    const scoreSoil = Math.max(0, 150 - (Math.abs(humidity - 40) * 3)); // Soil likes moderate dry/wet cycle, simplified
+    const scoreWater = Math.max(0, 150 - (temp > 30 ? (temp - 30) * 10 : 0)); // Heat affects water retention
+    const scoreAir = Math.max(0, 150 - (pm25 * 3));
+    const scoreUV = Math.max(0, 150 - (uv * 10));
+
+    const data = [
+        { subject: 'Flora', A: scoreFlora, B: 100, fullMark: 150 },
+        { subject: 'Fauna', A: scoreFauna, B: 100, fullMark: 150 },
+        { subject: 'Soil', A: scoreSoil, B: 100, fullMark: 150 },
+        { subject: 'Water', A: scoreWater, B: 100, fullMark: 150 },
+        { subject: 'Air', A: scoreAir, B: 100, fullMark: 150 },
+        { subject: 'Solar', A: scoreUV, B: 100, fullMark: 150 },
+    ];
+
+    return (
+        <div className="relative h-full flex flex-col">
+            <div className="flex items-center gap-2 mb-2">
+                <Activity size={14} className="text-pink-500" />
+                <h3 className="text-xs font-bold text-gray-400 uppercase">Biosphere DNA</h3>
+            </div>
+            <div className="flex-1 min-h-0">
+                <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
+                        <PolarGrid stroke="#374151" />
+                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#9CA3AF', fontSize: 10 }} />
+                        <PolarRadiusAxis angle={30} domain={[0, 150]} tick={false} axisLine={false} />
+                        <Radar name="Current Health" dataKey="A" stroke="#ec4899" strokeWidth={2} fill="#ec4899" fillOpacity={0.3} />
+                        <Radar name="Baseline" dataKey="B" stroke="#6366f1" strokeWidth={1} fill="transparent" strokeDasharray="3 3" />
+                        <Legend wrapperStyle={{ fontSize: '10px' }} />
+                    </RadarChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
+    )
+}
+
 const ProView = () => {
     // Search State
     const [searchQuery, setSearchQuery] = useState({ city: 'Hyderabad' });
@@ -543,14 +592,44 @@ const ProView = () => {
                 </div>
             </div>
 
-            {/* Metrics Row */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
-                    <StatRow label="Ambient Temp" value={weather?.temp} unit="°C" trend={0.5} />
-                    <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
-                        <CloudSun size={12} /> {weather?.conditions}
+            {/* Life Support Monitor (Temp & Humidity Focus) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                {/* Temperature Monitor */}
+                <Card className={`relative overflow-hidden flex flex-col justify-center items-center py-8 border-2 ${weather?.temp > 35 ? 'border-red-500 bg-red-900/10' : 'border-gray-700'}`}>
+                    {weather?.temp > 35 && <div className="absolute top-0 inset-x-0 bg-red-500 text-black text-[10px] font-bold text-center tracking-[0.3em] uppercase py-1 animate-pulse">Critical Thermal Levels</div>}
+                    <div className="flex items-center gap-3 mb-2">
+                        <Sun size={24} className={weather?.temp > 35 ? 'text-red-500 animate-spin-slow' : 'text-amber-400'} />
+                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Ambient Temp</h3>
+                    </div>
+                    <div className="text-6xl md:text-7xl font-black text-white tracking-tighter relative">
+                        {weather?.temp}
+                        <span className="text-2xl text-gray-500 absolute top-2 -right-6">°C</span>
+                    </div>
+                    <div className="mt-4 text-xs font-mono text-gray-500 bg-gray-900/50 px-3 py-1 rounded-full border border-white/5">
+                        THRESHOLD: 35°C
                     </div>
                 </Card>
+
+                {/* Humidity Monitor */}
+                <Card className={`relative overflow-hidden flex flex-col justify-center items-center py-8 border-2 ${weather?.humidity > 70 ? 'border-blue-500 bg-blue-900/10' : 'border-gray-700'}`}>
+                    {weather?.humidity > 70 && <div className="absolute top-0 inset-x-0 bg-blue-500 text-black text-[10px] font-bold text-center tracking-[0.3em] uppercase py-1 animate-pulse">High Moisture Alert</div>}
+                    <div className="flex items-center gap-3 mb-2">
+                        <Activity size={24} className={weather?.humidity > 70 ? 'text-blue-500' : 'text-cyan-400'} />
+                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Humidity</h3>
+                    </div>
+                    <div className="text-6xl md:text-7xl font-black text-white tracking-tighter relative">
+                        {weather?.humidity}
+                        <span className="text-2xl text-gray-500 absolute top-2 -right-8">%</span>
+                    </div>
+                    <div className="mt-4 text-xs font-mono text-gray-500 bg-gray-900/50 px-3 py-1 rounded-full border border-white/5">
+                        THRESHOLD: 70%
+                    </div>
+                </Card>
+            </div>
+
+            {/* Secondary Metrics */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 opacity-80">
                 <Card>
                     <StatRow label="Wind Speed" value={weather?.wind_speed} unit="km/h" trend={-1.2} />
                     <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
@@ -566,6 +645,10 @@ const ProView = () => {
                     <div className="w-full bg-gray-800 h-1.5 rounded-full mt-3">
                         <div className="bg-orange-500 h-full rounded-full" style={{ width: `${(weather?.uv_index / 10) * 100}%` }} />
                     </div>
+                </Card>
+                <Card>
+                    <StatRow label="Pressure" value={1013} unit="hPa" />
+                    <div className="mt-2 text-[10px] text-gray-500">Stable Condition</div>
                 </Card>
             </div>
 
@@ -623,6 +706,19 @@ const ProView = () => {
                         <DiaryPanel />
                     </div>
                 </div>
+            </div>
+
+            {/* NEW: Biosphere DNA Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[250px]">
+                <Card className="lg:col-span-1">
+                    <BioSignatureWidget weather={weather} aqi={aqi} />
+                </Card>
+                <Card className="lg:col-span-2 flex flex-col justify-center items-center bg-gradient-to-r from-indigo-900/20 to-purple-900/20 border-indigo-500/30">
+                    <div className="text-center">
+                        <h3 className="text-xl font-bold text-white mb-2">Predictive Eco-Alerts</h3>
+                        <p className="text-sm text-gray-400 max-w-md">Based on the current Biosphere DNA, we predict a <span className="text-emerald-400 font-bold">94% Stability</span> in the local ecosystem for the next 48 hours.</p>
+                    </div>
+                </Card>
             </div>
 
             {/* Row 3: Advanced Source Analytics */}

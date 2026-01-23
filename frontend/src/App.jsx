@@ -6,7 +6,7 @@ import AIAssistant from './components/AIAssistant';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // Lazy Load Pages
-const DashboardShell = lazy(() => import('./pages/DashboardShell'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
 const LiveMap = lazy(() => import('./pages/LiveMap'));
 
 const LandingPage = lazy(() => import('./pages/LandingPage')); // [NEW]
@@ -80,9 +80,11 @@ function AppContent() {
       {/* Protected Routes */}
       <Route path="/dashboard" element={
         <ProtectedRoute>
-          <MainLayout>
-            <DashboardShell />
-          </MainLayout>
+          <div className="flex h-screen w-full bg-[#030712] text-slate-200 overflow-hidden font-outfit relative">
+            <div className="mouse-glow" />
+            <AIAssistant />
+            <Dashboard />
+          </div>
         </ProtectedRoute>
       } />
 

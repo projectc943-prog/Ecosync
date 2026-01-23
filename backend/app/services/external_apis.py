@@ -17,8 +17,8 @@ async def fetch_open_weather(lat: float, lon: float):
     Falls back to mock data if no key is provided or request fails.
     """
     if not OPENWEATHER_API_KEY:
-        print("Warning: No OPENWEATHER_API_KEY found. using Mock Data.")
-        return get_mock_weather(lat, lon)
+        print("Warning: No OPENWEATHER_API_KEY found. Returning None.")
+        return None
 
     url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHER_API_KEY}&units=metric"
     async with httpx.AsyncClient() as client:
@@ -28,7 +28,7 @@ async def fetch_open_weather(lat: float, lon: float):
             return parse_owm_response(resp.json())
         except Exception as e:
             print(f"OWM Fetch Error: {e}")
-            return get_mock_weather(lat, lon)
+            return None
 
 async def fetch_air_quality(lat: float, lon: float):
     """
@@ -36,8 +36,8 @@ async def fetch_air_quality(lat: float, lon: float):
     Uses the provided API Key.
     """
     if not OPENAQ_API_KEY:
-         print("Warning: No OPENAQ_API_KEY found. using Mock Data.")
-         return get_mock_air_quality(lat, lon)
+         print("Warning: No OPENAQ_API_KEY found. Returning None.")
+         return None
     
     # Official OpenAQ v2 API
     url = f"https://api.openaq.org/v2/latest?coordinates={lat},{lon}&radius=5000"
@@ -51,10 +51,10 @@ async def fetch_air_quality(lat: float, lon: float):
             if data["results"]:
                 return parse_openaq_response(data["results"][0])
             else:
-                 return get_mock_air_quality(lat, lon) # No station nearby
+                 return None # No station nearby
         except Exception as e:
             print(f"OpenAQ Fetch Error: {e}")
-            return get_mock_air_quality(lat, lon)
+            return None
 
 async def fetch_nasa_data(lat: float, lon: float):
     """
@@ -103,40 +103,8 @@ def parse_openaq_response(result):
         "source": "OpenAQ Station"
     }
 
-# --- MOCK GENERATORS ---
-
-def get_mock_weather(lat, lon):
-    """
-    Generates realistic weather data based on randomness + time.
-    """
-    base_temp = 25 + (random.random() * 5) # 25-30C
-    return {
-        "temp": round(base_temp, 1),
-        "humidity": int(50 + (random.random() * 30)),
-        "pressure": int(1010 + (random.random() * 10)),
-        "condition": random.choice(["Clear", "Clouds", "Haze"]),
-        "wind_speed": round(3 + (random.random() * 5), 1),
-        "source": "Simulated (Pro Mode)"
-    }
-
-def get_mock_air_quality(lat, lon):
-    """
-    Generates realistic AQI data.
-    """
-    pm25 = int(10 + (random.random() * 40)) # 10-50 (Good to Moderate)
-    
-    # Simple AQI calc (rough estimation)
-    aqi = pm25 * 2 
-    
-    return {
-        "pm25": pm25,
-        "pm10": pm25 * 1.5,
-        "no2": round(10 + random.random() * 10, 1),
-        "so2": round(5 + random.random() * 5, 1),
-        "aqi": aqi,
-        "category": "Good" if aqi < 50 else "Moderate",
-        "source": "Simulated (Pro Mode)"
-    }
+# --- MOCK GENERATORS REMOVED ---
+# User requested NO fake data. Only Live or None.
 
 async def get_pro_dashboard_data(lat: float, lon: float):
     """

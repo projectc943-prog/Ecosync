@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { TrendingUp, TrendingDown, AlertTriangle, ShieldCheck, Activity } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area, LineChart, Line, Legend } from 'recharts';
+import { TrendingUp, TrendingDown, AlertTriangle, ShieldCheck, Activity, Zap, Leaf } from 'lucide-react';
 import API_BASE_URL from '../config';
 
-const Analytics = () => {
+const Analytics = ({ sensorData = [], predictions = [], isProMode = false }) => {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -40,7 +40,7 @@ const Analytics = () => {
 
     if (loading) return (
         <div className="flex h-full w-full items-center justify-center">
-            <div className="w-12 h-12 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
+            <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
         </div>
     );
 
@@ -53,11 +53,63 @@ const Analytics = () => {
                         Advanced Node Ranking // Global Telemetry System
                     </p>
                 </div>
-                <div className="flex items-center gap-3 bg-white/5 border border-white/10 p-3 rounded-2xl backdrop-blur-xl">
+                <div className="flex items-center gap-3 bg-emerald-950/30 border border-emerald-500/20 p-3 rounded-2xl backdrop-blur-xl">
                     <ShieldCheck className="text-emerald-400 w-5 h-5" />
-                    <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Secure Deep-Link Active</span>
+                    <span className="text-[10px] font-bold text-emerald-100/60 tracking-widest uppercase">Bio-Secure Link Active</span>
                 </div>
             </div>
+
+            {/* --- PRO MODE: ADVANCED GRAPHS --- */}
+            {isProMode && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in slide-in-from-bottom-5 duration-700 delay-100">
+                    {/* Prediction Graph */}
+                    <div className="glass-panel p-6 border border-emerald-500/20 rounded-[2rem] bg-emerald-950/20 relative overflow-hidden">
+                        <div className="flex items-center gap-3 mb-6">
+                            <Leaf size={20} className="text-emerald-400" />
+                            <h3 className="text-lg font-bold text-emerald-100">Predictive Modeling</h3>
+                        </div>
+                        <div className="h-64 w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={[...(sensorData || []), ...(predictions || [])]}>
+                                    <defs>
+                                        <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                                            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#064e3b" />
+                                    <XAxis dataKey="timestamp" stroke="#34d399" tick={false} />
+                                    <YAxis stroke="#34d399" fontSize={10} />
+                                    <Tooltip contentStyle={{ backgroundColor: '#022c22', borderColor: '#059669', color: '#fff' }} />
+                                    <Area type="monotone" dataKey="temperature" stroke="#10b981" fill="url(#colorTemp)" />
+                                    <Area type="monotone" dataKey="predictedTemp" stroke="#f472b6" strokeDasharray="5 5" fill="none" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {/* Kalman Filter Graph */}
+                    <div className="glass-panel p-6 border border-purple-500/20 rounded-[2rem] bg-purple-950/20 relative overflow-hidden">
+                        <div className="flex items-center gap-3 mb-6">
+                            <Zap size={20} className="text-purple-400" />
+                            <h3 className="text-lg font-bold text-purple-100">Kalman Noise Reduction</h3>
+                        </div>
+                        <div className="h-64 w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={sensorData || []}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#3b0764" />
+                                    <XAxis dataKey="timestamp" stroke="#a855f7" tick={false} />
+                                    <YAxis stroke="#a855f7" fontSize={10} domain={['auto', 'auto']} />
+                                    <Tooltip contentStyle={{ backgroundColor: '#1e0a45', borderColor: '#7e22ce', color: '#fff' }} />
+                                    <Legend />
+                                    <Line type="monotone" dataKey="temperature" name="Raw" stroke="#64748b" strokeWidth={1} dot={false} strokeOpacity={0.5} />
+                                    <Line type="basis" dataKey="temperature" name="Filtered" stroke="#d8b4fe" strokeWidth={2} dot={false} />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* High Temperature Rankings */}
@@ -199,7 +251,7 @@ const Analytics = () => {
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

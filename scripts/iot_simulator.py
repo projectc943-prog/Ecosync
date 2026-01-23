@@ -5,8 +5,8 @@ import json
 from datetime import datetime
 
 # CONFIGURATION
-# BACKEND_URL = "http://localhost:8000" # Local dev
-BACKEND_URL = "https://capstone-backend-djdd.onrender.com" # Live Render URL
+BACKEND_URL = "http://localhost:8000" # Local dev
+# BACKEND_URL = "https://capstone-backend-djdd.onrender.com" # Live Render URL
 
 def generate_fake_data():
     """Generates realistic sensor data with slight random variations"""

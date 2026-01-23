@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Lock, User, MapPin, Mail, ArrowRight, ShieldCheck, Navigation, Eye, EyeOff, Radio, Cpu, Activity } from 'lucide-react';
+import { Lock, User, MapPin, Mail, ArrowRight, ShieldCheck, Navigation, Eye, EyeOff, Radio, Leaf, TreeDeciduous, Wind } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import API_BASE_URL from '../config';
 
@@ -12,18 +12,19 @@ const LoginPage = () => {
     const API_URL = API_BASE_URL;
 
     // --- STATE MACHINE ---
-    // 'login' | 'signup_creds' | 'signup_otp' | 'signup_profile' | 'location_setup'
+    // 'login' | 'signup_email' | 'signup_otp' | 'signup_password' | 'location_setup'
     const [searchParams] = useSearchParams();
-    const initialMode = searchParams.get('mode') === 'signup' ? 'signup_creds' : 'login';
+    const initialMode = searchParams.get('mode') === 'signup' ? 'signup_email' : 'login';
     const [authStage, setAuthStage] = useState(initialMode);
 
     // --- FORM DATA ---
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [plan, setPlan] = useState('pro');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [lastName, setLastName] = useState('');
     const [otp, setOtp] = useState('');
     const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
+    const [tempToken, setTempToken] = useState(null);
 
     // --- DRONE STATE ---
     const [droneState, setDroneState] = useState('idle'); // idle, watching, privacy, scanning, success, error
@@ -95,28 +96,22 @@ const LoginPage = () => {
         }
     };
 
-    const handleSignupStep1 = async (e) => {
+    const handleSignupStep1_Email = async (e) => {
         e.preventDefault();
         setLoading(true);
         setDroneState('scanning');
 
         try {
-            // Register User (Step 1)
-            const res = await fetch(`${API_URL}/register`, {
+            // Init Signup (Step 1)
+            const res = await fetch(`${API_URL}/auth/signup-init`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    email,
-                    password,
-                    plan,
-                    first_name: "TBD", // Temporary
-                    last_name: "TBD"
-                }),
+                body: JSON.stringify({ email }),
             });
 
             if (!res.ok) {
                 const error = await res.json();
-                throw new Error(error.detail || 'Registration Failed');
+                throw new Error(error.detail || 'Access Denied');
             }
 
             // Success -> Move to OTP
@@ -132,30 +127,15 @@ const LoginPage = () => {
 
     const handleSignupStep2_OTP = async (e) => {
         e.preventDefault();
-        setLoading(true);
-        setDroneState('scanning');
-
-        try {
-            const res = await fetch(`${API_URL}/verify-email`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, otp }),
-            });
-
-            if (!res.ok) throw new Error("Invalid Authorization Code");
-
-            // Success -> Move to Profile
-            setDroneState('success');
-            setTimeout(() => {
-                setDroneState('idle');
-                setAuthStage('signup_profile');
-            }, 800);
-        } catch (err) {
-            setErrorMessage(err.message);
-            setDroneState('error');
-        } finally {
-            setLoading(false);
-        }
+        // Just move to password step if OTP is entered (we verify at end or here? 
+        // Plan says: OTP -> Password. 
+        // If we verify OTP now, we need an endpoint. 
+        // User asked for: Email, then OTP, then Password.
+        // Let's assume we collect OTP here and submit it all at the end, OR 
+        // we can verify OTP validity now. 
+        // For security, checking OTP now is better, but our backend `signup_complete` takes OTP+Password.
+        // So let's just move UI to next step and let final submit handle it.
+        setAuthStage('signup_password');
     };
 
     // We already have the user created, we might want to update the name?
@@ -166,52 +146,49 @@ const LoginPage = () => {
     // I will just simulatedly "finalize" since I don't want to add another endpoint right now 
     // or I can re-register? No. 
     // Let's just login now.
-    const handleSignupStep3_Profile = async (e) => {
+    const handleSignupStep3_Final = async (e) => {
         e.preventDefault();
+        if (password !== confirmPassword) {
+            setErrorMessage("Passwords do not match");
+            return;
+        }
+
         setLoading(true);
+        setDroneState('scanning');
+
         try {
-            // 1. Authenticate to get Token
-            const formData = new URLSearchParams();
-            formData.append('username', email);
-            formData.append('password', password);
-
-            const loginRes = await fetch(`${API_URL}/token`, {
+            const res = await fetch(`${API_URL}/auth/signup-complete`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: formData,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email,
+                    otp,
+                    password,
+                    first_name: firstName,
+                    last_name: lastName
+                }),
             });
 
-            if (!loginRes.ok) throw new Error("Authentication Failed");
-            const loginData = await loginRes.json();
-            const token = loginData.access_token;
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.detail || "Verification Failed");
+            }
 
-            // 2. Update Profile with Token
-            await fetch(`${API_URL}/me/profile`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ first_name: firstName, last_name: lastName }),
-            });
-
-            // 3. Finalize Session
-            const finalData = {
-                ...loginData,
-                plan: plan,
-                user_name: `${firstName} ${lastName}`
-            };
-            localStorage.setItem('plan', finalData.plan);
-            loginCustom(finalData);
+            const data = await res.json();
+            // const data = await res.json(); // Already declared above
+            // localStorage.setItem('plan', data.plan || 'lite');
+            // loginCustom(data); // Removed Auto-Login
 
             setDroneState('success');
-            setTimeout(() => setAuthStage('location_setup'), 1000);
+            setTimeout(() => {
+                alert("Account Created! Please Login.");
+                setAuthStage('login');
+            }, 1500);
 
         } catch (err) {
-            console.error("Profile Setup Error:", err);
-            setErrorMessage("Could not finalize profile. Proceeding...");
-            // Fallback
-            handleLogin(e);
+            console.error(err);
+            setErrorMessage(err.message);
+            setDroneState('error');
         } finally {
             setLoading(false);
         }
@@ -220,45 +197,23 @@ const LoginPage = () => {
 
     // --- SUB-COMPONENTS ---
 
-    const SecurityDrone = () => (
-        <div ref={droneRef} className={`relative w-32 h-32 mx-auto mb-6 transition-all duration-500`}>
-            {/* Holographic Glow */}
-            <div className={`absolute inset-0 bg-cyan-500/20 rounded-full blur-[30px] transition-all duration-300 ${droneState === 'privacy' ? 'opacity-0 scale-50' : 'opacity-100 scale-110'}`}></div>
+    const EcoBadge = () => (
+        <div className={`relative w-32 h-32 mx-auto mb-6 transition-all duration-500`}>
+            {/* Soft Glow */}
+            <div className={`absolute inset-0 bg-emerald-500/20 rounded-full blur-[40px] transition-all duration-300`}></div>
 
-            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_15px_rgba(6,182,212,0.5)]">
-                {/* Chassis */}
-                <circle cx="50" cy="50" r="45" fill="#020617" stroke="#1e293b" strokeWidth="2" />
-                <circle cx="50" cy="50" r="38" fill="none" stroke="#06b6d4" strokeWidth="1" strokeDasharray="5,5" className={droneState === 'scanning' ? 'animate-[spin_2s_linear_infinite]' : 'opacity-30'} />
-
-                {/* Eye Assembly */}
-                <g style={{
-                    transform: droneState === 'privacy' ? 'translate(0, 0)' : `translate(${mousePos.x}px, ${mousePos.y}px)`,
-                    transition: 'transform 0.1s ease-out'
-                }}>
-                    <circle cx="50" cy="50" r="20" fill="#0f172a" stroke="#334155" />
-                    <circle cx="50" cy="50" r={droneState === 'privacy' ? 0 : 12}
-                        fill={droneState === 'error' ? '#ef4444' : (droneState === 'success' ? '#10b981' : '#06b6d4')}
-                        className="transition-all duration-300"
-                    />
-                    <circle cx="53" cy="47" r="3" fill="white" opacity={0.8} />
-                </g>
-                {/* Eyelids */}
-                <path d="M 20 50 Q 50 20 80 50" fill="#020617" stroke="#06b6d4" strokeWidth="1" className={`transition-all duration-300 ${droneState === 'privacy' ? 'translate-y-0 opacity-100' : '-translate-y-12 opacity-0'}`} />
-                <path d="M 20 50 Q 50 80 80 50" fill="#020617" stroke="#06b6d4" strokeWidth="1" className={`transition-all duration-300 ${droneState === 'privacy' ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`} />
-            </svg>
+            <div className="relative w-full h-full flex items-center justify-center animate-[float_6s_ease-in-out_infinite]">
+                {/* Stylized Leaf/Tree Icon */}
+                <div className="relative">
+                    <Leaf size={64} className="text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.6)]" strokeWidth={1.5} />
+                    <Wind size={24} className="text-sky-300 absolute -top-2 -right-4 animate-[pulse_3s_ease-in-out_infinite]" />
+                </div>
+            </div>
 
             <div className="absolute -bottom-6 left-0 right-0 text-center">
-                <span className={`text-[9px] font-bold tracking-[0.2em] px-2 py-0.5 rounded bg-black/50 backdrop-blur-sm border ${droneState === 'error' ? 'text-red-400 border-red-500/30' :
-                    (droneState === 'success' ? 'text-green-400 border-green-500/30' :
-                        (droneState === 'scanning' ? 'text-yellow-400 border-yellow-500/30 animate-pulse' :
-                            'text-cyan-400 border-cyan-500/30'))
-                    }`}>
-                    {droneState === 'idle' && 'SYSTEM READY'}
-                    {droneState === 'watching' && 'TARGET LOCKED'}
-                    {droneState === 'privacy' && 'SECURE INPUT'}
-                    {droneState === 'scanning' && 'VERIFYING...'}
-                    {droneState === 'success' && 'GRANTED'}
-                    {droneState === 'error' && 'DENIED'}
+                <span className={`text-[10px] font-bold tracking-[0.2em] px-3 py-1 rounded-full bg-emerald-950/40 backdrop-blur-md border border-emerald-500/30 text-emerald-300 uppercase shadow-lg`}>
+                    {authStage === 'login' && 'System Online'}
+                    {authStage.includes('signup') && 'Join Network'}
                 </span>
             </div>
         </div>
@@ -306,16 +261,15 @@ const LoginPage = () => {
             </button>
 
             <div className="text-center pt-4 border-t border-white/5">
-                <button type="button" onClick={() => setAuthStage('signup_creds')} className="text-xs text-slate-500 hover:text-cyan-400 transition-colors uppercase tracking-widest">
-                    Request New Clearance
+                <button type="button" onClick={() => setAuthStage('signup_email')} className="text-xs text-slate-500 hover:text-cyan-400 transition-colors uppercase tracking-widest">
+                    Sign Up
                 </button>
             </div>
         </form>
     );
 
-    const renderSignupCreds = () => (
-        <form onSubmit={handleSignupStep1} className="space-y-5 animate-in slide-in-from-right-10 fade-in duration-500">
-
+    const renderSignupEmail = () => (
+        <form onSubmit={handleSignupStep1_Email} className="space-y-5 animate-in slide-in-from-right-10 fade-in duration-500">
             <div className="group">
                 <div className="relative">
                     <Mail className="absolute left-4 top-3.5 h-5 w-5 text-slate-600" />
@@ -329,24 +283,9 @@ const LoginPage = () => {
                     />
                 </div>
             </div>
-            <div className="group">
-                <div className="relative">
-                    <Lock className="absolute left-4 top-3.5 h-5 w-5 text-slate-600" />
-                    <input
-                        type="password"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:border-cyan-500 outline-none transition-all placeholder-slate-700 font-light"
-                        placeholder="Set Passcode"
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        onFocus={() => setDroneState('privacy')}
-                        onBlur={() => setDroneState('idle')}
-                        required
-                    />
-                </div>
-            </div>
 
             <button disabled={loading} className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2">
-                {loading ? 'TRANSMITTING...' : 'ESTABLISH LINK'}
+                {loading ? 'TRANSMITTING...' : 'SEND VERIFICATION'}
             </button>
 
             <button type="button" onClick={() => setAuthStage('login')} className="w-full text-[10px] text-slate-500 hover:text-white uppercase tracking-widest mt-2">
@@ -373,35 +312,55 @@ const LoginPage = () => {
             />
 
             <button disabled={loading} className="w-full bg-yellow-500/20 border border-yellow-500/50 hover:bg-yellow-500/30 text-yellow-400 font-bold py-4 rounded-xl transition-all">
-                {loading ? 'CALIBRATING...' : 'VERIFY SIGNAL'}
+                CONFIRM SIGNAL
             </button>
         </form>
     );
 
-    const renderSignupProfile = () => (
-        <form onSubmit={handleSignupStep3_Profile} className="space-y-5 animate-in slide-in-from-right-10 fade-in duration-500">
-            <div className="text-center mb-6">
-                <Activity className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
-                <h3 className="text-white font-bold">BADGE CALIBRATION</h3>
-            </div>
-
+    const renderSignupPassword = () => (
+        <form onSubmit={handleSignupStep3_Final} className="space-y-4 animate-in slide-in-from-right-10 fade-in duration-500">
             <div className="grid grid-cols-2 gap-4">
                 <input
                     className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-emerald-500 outline-none"
                     placeholder="First Name"
                     value={firstName}
                     onChange={e => setFirstName(e.target.value)}
+                    required
                 />
                 <input
                     className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-emerald-500 outline-none"
                     placeholder="Last Name"
                     value={lastName}
                     onChange={e => setLastName(e.target.value)}
+                    required
+                />
+            </div>
+
+            <div className="relative">
+                <Lock className="absolute left-4 top-3.5 h-5 w-5 text-slate-600" />
+                <input
+                    type="password"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:border-emerald-500 outline-none transition-all placeholder-slate-700 font-light"
+                    placeholder="Create Password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    required
+                />
+            </div>
+            <div className="relative">
+                <Lock className="absolute left-4 top-3.5 h-5 w-5 text-slate-600" />
+                <input
+                    type="password"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:border-emerald-500 outline-none transition-all placeholder-slate-700 font-light"
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    required
                 />
             </div>
 
             <button disabled={loading} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2">
-                CONFIRM IDENTITY
+                ESTABLISH IDENTITY
             </button>
         </form>
     );
@@ -490,24 +449,43 @@ const LoginPage = () => {
     return (
         <div className="min-h-screen w-full flex items-center justify-center bg-[#020617] font-outfit relative overflow-hidden selection:bg-cyan-500/30">
             {/* Background Effects */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-black to-black"></div>
-            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
+            {/* Background Effects - Live Nature Theme */}
+            <div className="fixed inset-0 bg-gradient-to-br from-green-900 via-emerald-950 to-slate-900 overflow-hidden">
+                {/* Simulated Live 'Wind/Grass' effect via heavy blur and CSS animation */}
+                <div className="absolute inset-0 opacity-40 mix-blend-overlay bg-[url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=2832&auto=format&fit=crop')] bg-cover bg-center animate-[pulse_10s_ease-in-out_infinite]"></div>
+                <div className="absolute inset-0 bg-black/20"></div>
+
+                {/* Floating Particles */}
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-[120px] animate-[pulse_8s_infinite]"></div>
+                <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-lime-400/10 rounded-full blur-[100px] animate-[pulse_6s_infinite_reverse]"></div>
+
+                {/* Grass Overlays (Bottom corners) */}
+                <svg className="absolute bottom-0 left-0 w-64 text-emerald-800/80 -z-0 opacity-80" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <path d="M0 100 C 20 50 40 80 60 100 Z" fill="currentColor" />
+                    <path d="M10 100 C 30 60 40 90 20 100 Z" fill="currentColor" opacity="0.7" />
+                </svg>
+                <svg className="absolute bottom-0 right-0 w-96 text-emerald-900/80 -z-0 opacity-80 transform scale-x-[-1]" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <path d="M0 100 C 30 40 50 80 80 100 Z" fill="currentColor" />
+                </svg>
+            </div>
 
             <div className="relative z-10 w-full max-w-md p-6">
-                <div className="glass-depth p-8 border border-white/10 rounded-[2.5rem] bg-black/60 backdrop-blur-xl shadow-[0_50px_100px_-20px_rgba(0,0,0,0.7)] relative overflow-hidden">
+                {/* Unique Card Design: Glassmorphism with Nature tint */}
+                <div className="glass-depth p-8 border border-emerald-500/20 rounded-[2.5rem] bg-slate-900/60 backdrop-blur-xl shadow-[0_20px_60px_-15px_rgba(16,185,129,0.3)] relative overflow-hidden transition-all duration-500">
 
                     {/* Header */}
-                    <SecurityDrone />
+                    <EcoBadge />
 
                     <div className="text-center mb-8 relative z-10">
-                        <h1 className="text-3xl font-black text-white tracking-tighter mb-1">
-                            {authStage === 'login' && 'S4 TERMINAL'}
-                            {authStage === 'signup_creds' && 'NEW PROTOCOL'}
-                            {authStage === 'signup_otp' && 'VERIFICATION'}
-                            {authStage === 'signup_profile' && 'IDENTITY'}
+                        <h1 className="text-3xl font-black text-white tracking-tight mb-1 drop-shadow-md">
+                            {authStage === 'login' && 'STATION LOGIN'}
+                            {authStage === 'signup_email' && 'NEW SENSOR NODE'}
+                            {authStage === 'signup_otp' && 'VERIFY SIGNAL'}
+                            {authStage === 'signup_password' && 'SECURE UPLINK'}
                         </h1>
-                        <p className="text-cyan-500/60 text-[10px] font-bold tracking-[0.4em] uppercase">
-                            {authStage === 'login' ? 'SECURE ACCESS POINT' : 'ESTABLISHING CONNECTION'}
+                        <p className="text-emerald-400/80 text-[11px] font-bold tracking-[0.3em] uppercase">
+                            {authStage === 'login' && 'ACCESS ENVIRONMENTAL DATA'}
+                            {authStage.includes('signup') && 'CALIBRATING CONNECTION...'}
                         </p>
                     </div>
 
@@ -521,14 +499,14 @@ const LoginPage = () => {
 
                     {/* Content Switcher */}
                     {authStage === 'login' && renderLoginForm()}
-                    {authStage === 'signup_creds' && renderSignupCreds()}
+                    {authStage === 'signup_email' && renderSignupEmail()}
                     {authStage === 'signup_otp' && renderSignupOTP()}
-                    {authStage === 'signup_profile' && renderSignupProfile()}
+                    {authStage === 'signup_password' && renderSignupPassword()}
 
                 </div>
 
-                <div className="text-center mt-6 opacity-30 text-[9px] text-slate-400 tracking-widest uppercase">
-                    Secure Connection • v4.2.0 • Pro-Grade Encryption
+                <div className="text-center mt-6 opacity-50 text-[10px] text-emerald-100/60 tracking-widest uppercase font-medium">
+                    Eco-System Monitor • v4.3.0 • Secure Satellite Link
                 </div>
             </div>
         </div>

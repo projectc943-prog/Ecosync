@@ -34,6 +34,13 @@ class User(Base):
     first_name = Column(String, nullable=True)
     last_name = Column(String, nullable=True)
     plan = Column(String, default="lite") # lite, pro
+    plan = Column(String, default="lite") # lite, pro
+    mobile = Column(String, nullable=True)
+    
+    # Persistent Dashboard Location
+    location_lat = Column(Float, nullable=True)
+    location_lon = Column(Float, nullable=True)
+    location_name = Column(String, nullable=True)
     
     # Verification
     is_verified = Column(Boolean, default=False)
