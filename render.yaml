@@ -14,14 +14,14 @@ services:
         value: 10000
     root: backend
 
-  # Frontend Service (React/Vite)
-  - type: static
+  # Frontend Service (React/Vite served via Node)
+  - type: web
     name: iot-dashboard
-    env: static
+    env: node
     region: singapore
     plan: free
     buildCommand: npm install && npm run build
-    publish: dist
+    startCommand: npx serve -s dist -l $PORT
     root: frontend
     envVars:
       - key: VITE_API_BASE_URL
