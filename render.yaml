@@ -1,3 +1,4 @@
+services:
   # Backend Service (Python/FastAPI)
   - type: web
     name: iot-backend
