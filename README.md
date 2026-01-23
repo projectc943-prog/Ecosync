@@ -1,16 +1,20 @@
-# 🌍 Environmental Monitoring and Alerting
+# 🌍 EcoSync S4: Environmental Intelligence
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/projectc943-prog/capstone-iot)
 
 **Live Dashboard:** [https://environmental-8b801.web.app](https://environmental-8b801.web.app)  
-**API Endpoint:** [https://capstone-backend-djdd.onrender.com](https://capstone-backend-djdd.onrender.com)
+**API Endpoint:** [https://projectc943-project943.hf.space](https://projectc943-project943.hf.space)
 
 ## 🚀 Overview
-A futuristic, AI-powered environmental monitoring system that fuses local sensor data (ESP32) with global satellite data (NASA/OpenWeather). Featuring 1D Kalman Filtering, duplicate-sensor fusion, and a Glassmorphism II interface.
+**EcoSync S4** is an advanced AI-powered environmental monitoring system. It fuses local sensor data (ESP32) with global satellite intelligence (OpenWeather) using an **Adaptive Kalman Filter** to provide hyper-accurate, noise-free air quality data.
 
-## 📚 Documentation
-For detailed Architecture, API Reference, and Setup Instructions, please see:
-👉 **[DOCUMENTATION.md](docs/DOCUMENTATION.md)**
+## 📚 Documentation Center
+Everything you need to know is in the `docs/` folder:
+
+1.  👉 **[Installation Guide](docs/installation_guide.md)**: How to set up and run the code.
+2.  👉 **[User Manual](docs/user_manual.md)**: Step-by-step usage guide (Profile, Dashboard).
+3.  👉 **[Technical Report](docs/technical_report.md)**: Deep dive into Architecture, Sensor Fusion Logic, and Hardware specs.
+4.  👉 **[Feature List](docs/feature_list.md)**: Summary of all capabilities.
 
 ## ⚡ Quick Start
 
