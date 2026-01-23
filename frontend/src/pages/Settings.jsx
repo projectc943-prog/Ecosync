@@ -1,27 +1,14 @@
-import React, { useState } from 'react';
-import { Save, Bell, Shield, Cpu, Sliders, Volume2, Moon, Activity } from 'lucide-react';
+import API_BASE_URL from '../config';
 
 const Settings = () => {
     const [loading, setLoading] = useState(false);
-    const [config, setConfig] = useState({
-        TEMP_MAX: 30.0,
-        VIBRATION_MAX: 5.0,
-        PRESSURE_MIN: 950.0,
-        emailAlerts: true,
-        smsAlerts: false,
-        voiceFeedback: true,
-        highPerformance: true
-    });
-
-    const handleChange = (key, val) => {
-        setConfig(prev => ({ ...prev, [key]: val }));
-    };
+    // ... state ...
 
     const handleSave = async () => {
         setLoading(true);
         try {
             // Update Backend Thresholds
-            const res = await fetch('http://localhost:8000/calibrate', {
+            const res = await fetch(`${API_BASE_URL}/calibrate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
