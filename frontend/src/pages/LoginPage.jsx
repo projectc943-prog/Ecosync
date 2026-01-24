@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Lock, User, Mail, ArrowRight, ShieldCheck, Cpu, Activity, Zap, Sprout, Scan, Leaf, Smartphone, MessageSquare } from 'lucide-react';
+import { Lock, User, Mail, ArrowRight, ShieldCheck, Cpu, Activity, Zap, Sprout, Scan, Leaf } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const LoginPage = () => {
@@ -11,13 +11,11 @@ const LoginPage = () => {
 
     // --- STATE MACHINE ---
     const [searchParams] = useSearchParams();
-    const [authMethod, setAuthMethod] = useState('email'); // 'email' | 'mobile'
-    const [authStage, setAuthStage] = useState('login'); // login, otp, signup_email, signup_password
+    const initialMode = searchParams.get('mode') === 'signup' ? 'signup_email' : 'login';
+    const [authStage, setAuthStage] = useState(initialMode); // login, signup_email, signup_password
 
     // --- FORM DATA ---
     const [email, setEmail] = useState('');
-    const [mobile, setMobile] = useState('');
-    const [otp, setOtp] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [lastName, setLastName] = useState('');
@@ -28,7 +26,6 @@ const LoginPage = () => {
 
     // --- HANDLERS ---
 
-    // 1. EMAIL LOGIN
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -49,64 +46,6 @@ const LoginPage = () => {
             setErrorMessage(err.message || "Failed to authenticate");
             setScannerState('error');
             setTimeout(() => setScannerState('idle'), 2000);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // 2. MOBILE OTP REQUEST
-    const handleRequestOtp = (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setScannerState('scanning');
-
-        // SIMULATE BACKEND OTP
-        setTimeout(() => {
-            setLoading(false);
-            setScannerState('success');
-            setAuthStage('otp');
-            // Mock Alert - In real app, this comes via SMS
-            alert(`[DEV MODE] Your OTP is: 123456`);
-        }, 1500);
-    };
-
-    // 3. VERIFY OTP & LOGIN
-    const handleVerifyOtp = async (e) => {
-        e.preventDefault();
-        if (otp !== '123456') {
-            setErrorMessage("Invalid OTP Code");
-            return;
-        }
-
-        setLoading(true);
-        setScannerState('scanning');
-
-        try {
-            // MOCK: Log in via a generated email for the phone number
-            // This ensures we use valid Supabase Auth without paying for SMS provider
-            const mockEmail = `${mobile}@mobile.ecosync.local`;
-            const mockPass = `ecosync-mobile-pass`; // In real app, use Passwordless Magic Link
-
-            // Try login, if fail (new user), signup
-            let { error } = await login(mockEmail, mockPass);
-
-            if (error) {
-                // Must be new user, create account
-                const { error: signErr } = await signup(mockEmail, mockPass, {
-                    mobile: mobile,
-                    plan: 'lite',
-                    first_name: 'Mobile',
-                    last_name: 'User'
-                });
-                if (signErr) throw signErr;
-            }
-
-            setScannerState('success');
-            setTimeout(() => navigate('/dashboard'), 1000);
-
-        } catch (err) {
-            setErrorMessage(err.message);
-            setScannerState('error');
         } finally {
             setLoading(false);
         }
@@ -175,31 +114,14 @@ const LoginPage = () => {
 
             <div className="absolute -bottom-6 left-0 right-0 text-center">
                 <span className={`text-[10px] font-bold tracking-[0.2em] px-3 py-1 rounded-full bg-emerald-950/40 backdrop-blur-md border border-emerald-500/30 text-emerald-300 uppercase shadow-lg`}>
-                    {authMethod === 'email' ? 'Bio-Auth Ready' : 'Sat-Link Active'}
+                    {authStage === 'login' && 'Bio-Auth Ready'}
+                    {authStage.includes('signup') && 'New Organism'}
                 </span>
             </div>
         </div>
     );
 
     // --- RENDERERS ---
-
-    // Tab Switcher
-    const renderTabs = () => (
-        <div className="flex bg-[#022c22] p-1 rounded-xl mb-6 border border-white/5">
-            <button
-                onClick={() => { setAuthMethod('email'); setAuthStage('login'); }}
-                className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${authMethod === 'email' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
-            >
-                Email ID
-            </button>
-            <button
-                onClick={() => { setAuthMethod('mobile'); setAuthStage('login'); }}
-                className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${authMethod === 'mobile' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
-            >
-                Mobile OTP
-            </button>
-        </div>
-    );
 
     const renderLoginForm = () => (
         <form onSubmit={handleLogin} className="space-y-5 animate-in slide-in-from-right-10 fade-in duration-500">
@@ -213,6 +135,8 @@ const LoginPage = () => {
                         placeholder="researcher@ecosync.io"
                         value={email}
                         onChange={e => setEmail(e.target.value)}
+                        onFocus={() => setScannerState('scanning')}
+                        onBlur={() => setScannerState('idle')}
                         required
                     />
                 </div>
@@ -233,7 +157,7 @@ const LoginPage = () => {
             </div>
 
             <button disabled={loading} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-emerald-500/20 flex items-center justify-center gap-2 group border border-emerald-400/20 btn-bio">
-                <span className="group-hover:tracking-widest transition-all duration-300">{loading ? 'VERIFYING BIOMETRICS...' : 'ACCESS SYSTEM'}</span>
+                <span className="group-hover:tracking-widest transition-all duration-300">{loading ? 'VERIFYING...' : 'ACCESS SYSTEM'}</span>
                 {!loading && <Scan size={18} className="group-hover:scale-110 transition-transform" />}
             </button>
 
@@ -242,64 +166,6 @@ const LoginPage = () => {
                     <Sprout size={12} /> Request Node Access
                 </button>
             </div>
-        </form>
-    );
-
-    const renderMobileForm = () => (
-        <form onSubmit={handleRequestOtp} className="space-y-5 animate-in slide-in-from-right-10 fade-in duration-500">
-            <div className="group">
-                <label className="text-[10px] font-bold text-emerald-500/60 uppercase tracking-widest mb-1 block font-mono">Mobile Number (IN)</label>
-                <div className="relative">
-                    <Smartphone className="absolute left-4 top-3.5 h-5 w-5 text-emerald-500/30 transition-colors group-focus-within:text-emerald-400" />
-                    <input
-                        type="tel"
-                        className="w-full bg-[#022c22]/50 border border-emerald-500/20 rounded-xl py-3 pl-12 pr-4 text-white focus:border-emerald-400 focus:shadow-[0_0_15px_rgba(16,185,129,0.1)] outline-none transition-all placeholder-slate-600 font-mono text-sm"
-                        placeholder="+91 99999 99999"
-                        value={mobile}
-                        onChange={e => setMobile(e.target.value)}
-                        required
-                    />
-                </div>
-            </div>
-
-            <button disabled={loading} className="w-full bg-gradient-to-r from-emerald-600 to-lime-600 hover:from-emerald-500 hover:to-lime-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 group border border-emerald-400/20 btn-bio">
-                <span className="group-hover:tracking-widest transition-all duration-300">{loading ? 'UPLINKING...' : 'SEND OTP'}</span>
-                {!loading && <Zap size={18} className="group-hover:scale-110 transition-transform" />}
-            </button>
-
-            <div className="text-xs text-center text-slate-500 font-mono mt-2">
-                * SMS Gateway Simulation Active
-            </div>
-        </form>
-    );
-
-    const renderOtpVerification = () => (
-        <form onSubmit={handleVerifyOtp} className="space-y-5 animate-in slide-in-from-right-10 fade-in duration-500">
-            <div className="text-center mb-4">
-                <p className="text-white text-sm">OTP Sent to <span className="text-emerald-400 font-mono">{mobile}</span></p>
-                <button type="button" onClick={() => setAuthStage('login')} className="text-[10px] text-slate-500 hover:text-emerald-400 uppercase font-bold mt-1">Change Number</button>
-            </div>
-
-            <div className="group">
-                <label className="text-[10px] font-bold text-emerald-500/60 uppercase tracking-widest mb-1 block font-mono">One-Time Password</label>
-                <div className="relative">
-                    <MessageSquare className="absolute left-4 top-3.5 h-5 w-5 text-emerald-500/30 transition-colors group-focus-within:text-emerald-400" />
-                    <input
-                        type="text"
-                        className="w-full bg-[#022c22]/50 border border-emerald-500/20 rounded-xl py-3 pl-12 pr-4 text-white focus:border-emerald-400 focus:shadow-[0_0_15px_rgba(16,185,129,0.1)] outline-none transition-all placeholder-slate-600 font-mono text-sm tracking-[0.5em] text-center font-bold"
-                        placeholder="000000"
-                        maxLength={6}
-                        value={otp}
-                        onChange={e => setOtp(e.target.value)}
-                        required
-                    />
-                </div>
-            </div>
-
-            <button disabled={loading} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 group border border-emerald-400/20 btn-bio">
-                <span className="group-hover:tracking-widest transition-all duration-300">{loading ? 'VERIFYING...' : 'CONFIRM UPLINK'}</span>
-                {!loading && <ShieldCheck size={18} className="group-hover:scale-110 transition-transform" />}
-            </button>
         </form>
     );
 
@@ -398,12 +264,14 @@ const LoginPage = () => {
                     <div className="text-center mb-6 relative z-10">
                         <h1 className="text-3xl font-black text-white tracking-tight mb-1 drop-shadow-md font-mono">
                             {authStage === 'login' && 'STATION LOGIN'}
-                            {authStage === 'otp' && 'SECURE UPLINK'}
-                            {authStage.includes('signup') && 'NEW SENSOR NODE'}
+                            {authStage === 'signup_email' && 'NEW SENSOR NODE'}
+                            {authStage === 'signup_password' && 'SECURE UPLINK'}
                         </h1>
+                        <p className="text-emerald-400/80 text-[11px] font-bold tracking-[0.3em] uppercase font-mono">
+                            {authStage === 'login' && 'ACCESS ENVIRONMENTAL DATA'}
+                            {authStage.includes('signup') && 'ESTABLISHING CONNECTION...'}
+                        </p>
                     </div>
-
-                    {renderTabs()}
 
                     {errorMessage && (
                         <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
@@ -412,9 +280,7 @@ const LoginPage = () => {
                         </div>
                     )}
 
-                    {authMethod === 'email' && authStage === 'login' && renderLoginForm()}
-                    {authMethod === 'mobile' && authStage === 'login' && renderMobileForm()}
-                    {authStage === 'otp' && renderOtpVerification()}
+                    {authStage === 'login' && renderLoginForm()}
                     {authStage === 'signup_email' && renderSignupEmail()}
                     {authStage === 'signup_password' && renderSignupPassword()}
 

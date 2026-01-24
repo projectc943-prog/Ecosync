@@ -17,11 +17,7 @@ const Dashboard = () => {
     }, [userProfile]);
 
     const handleToggle = () => {
-        if (userProfile?.plan !== 'pro' && !isProMode) {
-            // If switching to PRO but not paid, show alert (or allow demo)
-            alert("Enabling Pro Mode Demo. Upgrade for persistent data.");
-        }
-        setIsProMode(!isProMode);
+        setIsProMode(prev => !prev);
     };
 
     return isProMode

@@ -17,10 +17,10 @@ const LightDashboard = ({ onToggle }) => {
 
     // Memoized Data
     const latestData = useMemo(() => (sensorData && sensorData.length > 0) ? sensorData[sensorData.length - 1] : {}, [sensorData]);
-    const temp = useMemo(() => latestData.temperature?.toFixed(1) || '--', [latestData]);
-    const hum = useMemo(() => latestData.humidity?.toFixed(1) || '--', [latestData]);
-    const press = useMemo(() => latestData.pressure?.toFixed(0) || '--', [latestData]);
-    const gas = useMemo(() => latestData.pm25?.toFixed(0) || '--', [latestData]);
+    const temp = useMemo(() => latestData.temperature?.toFixed(1) || '0', [latestData]);
+    const hum = useMemo(() => latestData.humidity?.toFixed(1) || '0', [latestData]);
+    const press = useMemo(() => latestData.pressure?.toFixed(0) || '0', [latestData]);
+    const gas = useMemo(() => latestData.pm25?.toFixed(0) || '0', [latestData]);
 
     // Stat Card
     const StatCard = ({ title, value, unit, icon: Icon, color }) => (
@@ -116,7 +116,7 @@ const LightDashboard = ({ onToggle }) => {
                 </div>
                 <button onClick={onToggle} className="mt-auto mb-8 p-3 text-emerald-400 border border-emerald-500/30 rounded-xl w-[calc(100%-32px)] flex items-center gap-4 justify-center lg:justify-start px-4 hover:bg-emerald-500/10">
                     <ExternalLink size={24} className="min-w-[24px]" />
-                    <span className="lg:opacity-0 lg:group-hover:opacity-100 font-bold whitespace-nowrap transition-opacity">GO PRO</span>
+                    <span className="lg:opacity-0 lg:group-hover:opacity-100 font-bold whitespace-nowrap transition-opacity">SWITCH MODE</span>
                 </button>
             </aside>
 
