@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, Cell } from 'recharts';
-import { Map, Wind, CloudSun, Shield, Fingerprint, Layers, Share2, Search, ArrowRight, Home, Sun, AlertTriangle, BookOpen, Clock, Activity, Move, Save } from 'lucide-react';
+import { Map, Wind, CloudSun, Shield, Fingerprint, Layers, Share2, Search, ArrowRight, Home, Sun, AlertTriangle, BookOpen, Clock, Activity, Move, Save, Settings } from 'lucide-react';
 import { useApiTelemetry } from '../../hooks/useApiTelemetry';
 import { Card, Badge, Skeleton, StatRow, THEME } from './shared/Common';
 import API_BASE_URL from '../../config';
 
 // --- NEW FEATURES ---
 import WeatherNews from './WeatherNews';
+import SettingsDialog from './shared/SettingsDialog';
 
 const CauseExplorer = ({ weather, aqi }) => {
     // Rule-based analysis
@@ -642,6 +643,11 @@ const ProView = () => {
                     </div>
                 </div>
 
+    // --- SETTINGS STATE ---
+                const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+                // ... (inside return) ...
+
                 <div className="flex gap-2">
                     {['1H', '24H', '7D'].map(r => (
                         <button
@@ -652,8 +658,13 @@ const ProView = () => {
                             {r}
                         </button>
                     ))}
+                    <button onClick={() => setIsSettingsOpen(true)} className="p-1 px-2 rounded border border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+                        <Settings size={18} />
+                    </button>
                 </div>
             </div>
+
+            <SettingsDialog isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
             {/* Life Support Monitor (Temp & Humidity Focus) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
