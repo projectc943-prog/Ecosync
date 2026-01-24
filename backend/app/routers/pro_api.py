@@ -287,23 +287,81 @@ async def get_pro_history(lat: float, lon: float, hours: int = 24, db: Session =
 @router.get("/top-locations")
 async def get_top_locations():
     """
-    Returns a mock list of Global Locations sorted by temperature.
-    Real implementation would fetch from a global weather provider.
+    Returns a Real-Time list of Global Locations sorted by temperature.
+    Fetches live data from OpenMeteo for ~20 global hotspots.
     """
-    # Mock Data for Demo
-    top_hot = [
-        {"rank": 1, "city": "Death Valley, USA", "temp": 48.2, "condition": "Extreme Heat"},
-        {"rank": 2, "city": "Kuwait City, KW", "temp": 44.5, "condition": "Sunny"},
-        {"rank": 3, "city": "Basra, Iraq", "temp": 43.8, "condition": "Clear"},
-        {"rank": 4, "city": "Doha, Qatar", "temp": 41.2, "condition": "Humid"},
-        {"rank": 5, "city": "Phoenix, USA", "temp": 40.5, "condition": "Sunny"},
-        {"rank": 6, "city": "Riyadh, SA", "temp": 39.8, "condition": "Dry"},
-        {"rank": 7, "city": "Dubai, UAE", "temp": 38.4, "condition": "Haze"},
-        {"rank": 8, "city": "Cairo, Egypt", "temp": 37.1, "condition": "Clear"},
-        {"rank": 9, "city": "Las Vegas, USA", "temp": 36.5, "condition": "Sunny"},
-        {"rank": 10, "city": "New Delhi, IN", "temp": 35.8, "condition": "Haze"},
+    import httpx
+    
+    # List of known hot/interesting places to check dynamically
+    GLOBAL_HOTSPOTS = [
+        {"city": "Death Valley, USA", "lat": 36.5323, "lon": -116.9325},
+        {"city": "Kuwait City, KW", "lat": 29.3759, "lon": 47.9774},
+        {"city": "Basra, Iraq", "lat": 30.5081, "lon": 47.7835},
+        {"city": "Doha, Qatar", "lat": 25.2854, "lon": 51.5310},
+        {"city": "Phoenix, USA", "lat": 33.4484, "lon": -112.0740},
+        {"city": "Riyadh, SA", "lat": 24.7136, "lon": 46.6753},
+        {"city": "Dubai, UAE", "lat": 25.2048, "lon": 55.2708},
+        {"city": "Cairo, Egypt", "lat": 30.0444, "lon": 31.2357},
+        {"city": "Las Vegas, USA", "lat": 36.1699, "lon": -115.1398},
+        {"city": "New Delhi, IN", "lat": 28.6139, "lon": 77.2090},
+        {"city": "Bangkok, TH", "lat": 13.7563, "lon": 100.5018},
+        {"city": "Singapore, SG", "lat": 1.3521, "lon": 103.8198},
+        {"city": "Darwin, AU", "lat": -12.4634, "lon": 130.8456},
+        {"city": "Khartoum, SD", "lat": 15.5007, "lon": 32.5599},
+        {"city": "Timbuktu, ML", "lat": 16.7666, "lon": -3.0026},
+        {"city": "Mecca, SA", "lat": 21.3891, "lon": 39.8579},
+        {"city": "Alice Springs, AU", "lat": -23.6980, "lon": 133.8807},
+        {"city": "Seville, ES", "lat": 37.3891, "lon": -5.9845},
+        {"city": "Athens, GR", "lat": 37.9838, "lon": 23.7275},
+        {"city": "Mexico City, MX", "lat": 19.4326, "lon": -99.1332}
     ]
-    return {"locations": top_hot}
+
+    async def fetch_city(client, city_obj):
+        try:
+            url = f"https://api.open-meteo.com/v1/forecast?latitude={city_obj['lat']}&longitude={city_obj['lon']}&current=temperature_2m,weather_code&timezone=auto"
+            resp = await client.get(url, timeout=5.0)
+            if resp.status_code == 200:
+                data = resp.json()
+                temp = data.get('current', {}).get('temperature_2m', 0)
+                code = data.get('current', {}).get('weather_code', 0)
+                
+                # Map WMO code to string condition
+                condition = "Clear"
+                if code > 2: condition = "Cloudy"
+                if code > 50: condition = "Rainy" 
+                if code > 95: condition = "Storm"
+                if temp > 35: condition = "Extreme Heat"
+                elif temp > 30: condition = "Sunny"
+                
+                return {
+                    "city": city_obj["city"],
+                    "temp": temp,
+                    "condition": condition
+                }
+        except:
+            return None
+        return None
+
+    # Fetch all in parallel
+    async with httpx.AsyncClient() as client:
+        tasks = [fetch_city(client, c) for c in GLOBAL_HOTSPOTS]
+        results = await asyncio.gather(*tasks)
+
+    # Filter failures and Sort by Temp DESC
+    valid_results = [r for r in results if r is not None]
+    sorted_results = sorted(valid_results, key=lambda x: x['temp'], reverse=True)
+    
+    # Format for Frontend (Top 10)
+    top_10 = []
+    for i, res in enumerate(sorted_results[:10]):
+         top_10.append({
+             "rank": i + 1,
+             "city": res['city'],
+             "temp": res['temp'],
+             "condition": res['condition']
+         })
+         
+    return {"locations": top_10}
 from .. import schemas
 
 @router.post("/diary", response_model=schemas.DiaryEntryResponse)
