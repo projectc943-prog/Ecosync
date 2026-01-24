@@ -7,6 +7,7 @@ import API_BASE_URL from '../../config';
 
 // --- NEW FEATURES ---
 import WeatherNews from './WeatherNews';
+import TopLocations from './TopLocations';
 import SettingsDialog from './shared/SettingsDialog';
 
 const CauseExplorer = ({ weather, aqi }) => {
@@ -317,7 +318,7 @@ const FingerprintChart = ({ data }) => (
                 <PolarGrid stroke="#334155" />
                 <PolarAngleAxis dataKey="source" tick={{ fill: '#848E9C', fontSize: 10 }} />
                 <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                <Radar name="Source" dataKey="probability" stroke="#8b5cf6" strokeWidth={2} fill="#8b5cf6" fillOpacity={0.3} />
+                <Radar name="Source" dataKey="probability" stroke="#06b6d4" strokeWidth={2} fill="#06b6d4" fillOpacity={0.3} />
             </RadarChart>
         </ResponsiveContainer>
     </div>
@@ -414,65 +415,7 @@ const BioSignatureWidget = ({ weather, aqi }) => {
     );
 };
 
-const TopLocations = () => {
-    const [locations, setLocations] = useState([]);
-    const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchTopLocations = async () => {
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/pro/top-locations`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setLocations(data.locations || []);
-                }
-            } catch (e) { console.error(e); }
-            setLoading(false);
-        };
-        fetchTopLocations();
-    }, []);
-
-    return (
-        <div className="h-full flex flex-col">
-            <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                    <Map size={14} className="text-orange-400" />
-                    <h3 className="text-xs font-bold text-gray-400 uppercase">Global Heat Index (Top 10)</h3>
-                </div>
-                <div className="text-[10px] text-gray-500">Live Satellite Data</div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-800">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="text-[10px] text-gray-500 border-b border-gray-800">
-                            <th className="pb-1 font-medium">RANK</th>
-                            <th className="pb-1 font-medium">LOCATION</th>
-                            <th className="pb-1 font-medium text-right">TEMP</th>
-                            <th className="pb-1 font-medium text-right">COND</th>
-                        </tr>
-                    </thead>
-                    <tbody className="text-xs">
-                        {loading ? (
-                            [1, 2, 3].map(i => (
-                                <tr key={i} className="animate-pulse">
-                                    <td colSpan="4" className="py-2"><div className="h-4 bg-gray-800 rounded"></div></td>
-                                </tr>
-                            ))
-                        ) : locations.map((loc) => (
-                            <tr key={loc.rank} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
-                                <td className="py-2 font-mono text-gray-500">#{loc.rank}</td>
-                                <td className="py-2 font-bold text-gray-200">{loc.city}</td>
-                                <td className="py-2 text-right font-mono text-orange-400">{loc.temp}°C</td>
-                                <td className="py-2 text-right text-gray-400 text-[10px] uppercase">{loc.condition}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
-};
 
 // ... existing code ...
 
