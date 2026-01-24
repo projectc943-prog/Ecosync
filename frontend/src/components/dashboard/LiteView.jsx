@@ -1,5 +1,5 @@
 import React from 'react';
-import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
 import { Thermometer, Droplets, Wind, Activity, Zap, Wifi, AlertTriangle, Battery } from 'lucide-react';
 import { useEsp32Stream } from '../../hooks/useEsp32Stream';
 
@@ -164,6 +164,51 @@ const LiteView = () => {
                                 <div className={`h-full ${data.trustScore > 90 ? 'bg-emerald-500' : 'bg-yellow-500'}`} style={{ width: `${data.trustScore}%` }} />
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                {/* Historical Graph (New Feature) */}
+                <div className="lg:col-span-3">
+                    <div className="glass-panel p-6 h-[300px]">
+                        <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">
+                            Recent History (Last Minute)
+                        </h3>
+                        {history && history.length > 0 ? (
+                            <div className="w-full h-full pb-6">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={history}>
+                                        <defs>
+                                            <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.8} />
+                                                <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                                            </linearGradient>
+                                            <linearGradient id="colorHum" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <XAxis
+                                            dataKey="ts"
+                                            tickFormatter={(ts) => new Date(ts).toLocaleTimeString()}
+                                            type="number"
+                                            domain={['dataMin', 'dataMax']}
+                                            hide
+                                        />
+                                        <YAxis orientation="right" tick={{ fill: '#64748b', fontSize: 10 }} domain={['auto', 'auto']} />
+                                        <Tooltip
+                                            contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px' }}
+                                            labelStyle={{ color: '#94a3b8', fontSize: '10px' }}
+                                        />
+                                        <Area type="monotone" dataKey="temperature" stroke="#06b6d4" fillOpacity={1} fill="url(#colorTemp)" />
+                                        <Area type="monotone" dataKey="humidity" stroke="#3b82f6" fillOpacity={1} fill="url(#colorHum)" />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+                        ) : (
+                            <div className="flex h-full items-center justify-center text-slate-600 text-xs font-mono">
+                                COLLECTING DATA POINTS...
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

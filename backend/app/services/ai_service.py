@@ -28,9 +28,10 @@ async def analyze_sensor_data(temp, humidity, aqi, gas_status):
     - Air Quality Index (AQI): {aqi}
     - Hazardous Gas: {gas_status}
 
-    Provide 2-3 short, imperative safety precautions for personnel in this environment.
-    Format as a Python list of strings. Do not include markdown code blocks.
-    Example: ["Wear N95 mask immediately.", "Limit exposure to 15 mins."]
+    Provide 2-3 short, specific "Actionable Alerts" for a user in this environment.
+    Focus on practical items like: Sunscreen, Umbrella, Face Mask, Water Bottle, Ventilation.
+    Format as a raw JSON list of strings.
+    Example: ["High UV detected: Apply broad-spectrum sunscreen.", "Rain likely: Carry an umbrella.", "Poor Air Quality: Wear N95 mask outdoors."]
     """
 
     try:

@@ -284,7 +284,26 @@ async def get_pro_history(lat: float, lon: float, hours: int = 24, db: Session =
         ]
     }
 
-# --- DIARY ENDPOINTS ---
+@router.get("/top-locations")
+async def get_top_locations():
+    """
+    Returns a mock list of Global Locations sorted by temperature.
+    Real implementation would fetch from a global weather provider.
+    """
+    # Mock Data for Demo
+    top_hot = [
+        {"rank": 1, "city": "Death Valley, USA", "temp": 48.2, "condition": "Extreme Heat"},
+        {"rank": 2, "city": "Kuwait City, KW", "temp": 44.5, "condition": "Sunny"},
+        {"rank": 3, "city": "Basra, Iraq", "temp": 43.8, "condition": "Clear"},
+        {"rank": 4, "city": "Doha, Qatar", "temp": 41.2, "condition": "Humid"},
+        {"rank": 5, "city": "Phoenix, USA", "temp": 40.5, "condition": "Sunny"},
+        {"rank": 6, "city": "Riyadh, SA", "temp": 39.8, "condition": "Dry"},
+        {"rank": 7, "city": "Dubai, UAE", "temp": 38.4, "condition": "Haze"},
+        {"rank": 8, "city": "Cairo, Egypt", "temp": 37.1, "condition": "Clear"},
+        {"rank": 9, "city": "Las Vegas, USA", "temp": 36.5, "condition": "Sunny"},
+        {"rank": 10, "city": "New Delhi, IN", "temp": 35.8, "condition": "Haze"},
+    ]
+    return {"locations": top_hot}
 from .. import schemas
 
 @router.post("/diary", response_model=schemas.DiaryEntryResponse)
