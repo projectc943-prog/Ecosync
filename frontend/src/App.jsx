@@ -15,6 +15,7 @@ const LoginPage = lazy(() => import('./pages/LoginPage'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Analytics = lazy(() => import('./pages/Analytics'));
 const Profile = lazy(() => import('./pages/Profile')); // [NEW]
+const GlobalView = lazy(() => import('./pages/GlobalView')); // [NEW]
 
 import API_BASE_URL from "./config";
 const API_BASE = API_BASE_URL;
@@ -124,6 +125,16 @@ function AppContent() {
           </MainLayout>
         </ProtectedRoute>
       } />
+
+      {/* Global View Route */}
+      <Route path="/global" element={
+        <ProtectedRoute>
+          <MainLayout>
+            <GlobalView />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+
       {/* Catch-all redirect */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

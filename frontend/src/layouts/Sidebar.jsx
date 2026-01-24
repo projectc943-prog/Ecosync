@@ -12,8 +12,9 @@ const Sidebar = () => {
 
     const navItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-        ...(isPro ? [{ icon: Map, label: 'Live Map', path: '/map' }] : []),
-        { icon: User, label: 'My Profile', path: '/profile' }, // [NEW]
+        { icon: Activity, label: 'Analysis', path: '/analysis' },
+        { icon: Map, label: 'Global Map', path: '/global' }, // [NEW]
+        { icon: BarChart3, label: 'Analytics', path: '/analytics' }, // [NEW]
     ];
 
     if (isPro) {
