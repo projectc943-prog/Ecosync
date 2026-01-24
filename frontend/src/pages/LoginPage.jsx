@@ -84,7 +84,11 @@ const LoginPage = () => {
 
         } catch (err) {
             console.error(err);
-            setErrorMessage(err.message);
+            if (err.message && (err.message.includes("already registered") || err.message.includes("User already exists"))) {
+                setErrorMessage("WARNING: Node Identity Already Active (Email Taken)");
+            } else {
+                setErrorMessage(err.message || "Registration Failed");
+            }
             setScannerState('error');
         } finally {
             setLoading(false);
