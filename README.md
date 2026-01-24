@@ -15,10 +15,11 @@ This repository contains the complete source code for:
 
 ## 🌟 Key Features ("Top Notch")
 
-### 1. Dual-Tier SaaS Architecture
-Demonstrates a real-world business model within a technical project.
-*   **LITE Tier (Free)**: Access to public environmental data and basic dashboard.
-*   **PRO Tier (Research)**: Unlocks **AI Assistant**, **Historical Analytics**, **Predictive Mapping**, and **Sensor Fusion**.
+### 1. Dual-Mode Capability (Lite vs Pro)
+The system features two distinct operational modes to demonstrate capability scaling and access control.
+*   **Lite Mode**: streamlined access to real-time environmental data.
+*   **Pro Mode**: Unlocks advanced features like **AI Assistant**, **Historical Analytics**, and **Sensor Fusion**.
+
 
 ### 2. Advanced Sensor Fusion (Kalman Filter)
 Low-cost sensors (DHT11/MQ-135) are often noisy. We implemented a **Kalman Filter** algorithm on the backend to:
@@ -98,7 +99,7 @@ npm run dev
 ---
 
 ## ⚠️ Disclaimer
-This software is provided for educational and demonstration purposes only. The authors (Dhanush & Team) make no warranties, expressed or implied, regarding the accuracy, reliability, or completeness of the data collected or the safety advice generated. 
+This software is provided for educational and demonstration purposes only. The authors make no warranties, expressed or implied, regarding the accuracy, reliability, or completeness of the data collected or the safety advice generated. 
 
 *   **Not a Medical Device**: The health recommendations are AI-generated and sensor-based; they are not a substitute for professional medical advice.
 *   **Hardware Safety**: Please handle all electronic components with care. The authors are not responsible for any hardware damage or personal injury resulting from the replication of this project.
@@ -108,4 +109,4 @@ This software is provided for educational and demonstration purposes only. The a
 
 ## 📄 License
 This project is open-source and available under the **MIT License**.
-All assets and code created by **Dhanush & Team**.
+All assets and code created by **The Authors**.
