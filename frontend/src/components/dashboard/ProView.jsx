@@ -6,6 +6,7 @@ import { Card, Badge, Skeleton, StatRow, THEME } from './shared/Common';
 import API_BASE_URL from '../../config';
 
 // --- NEW FEATURES ---
+import WeatherNews from './WeatherNews';
 
 const CauseExplorer = ({ weather, aqi }) => {
     // Rule-based analysis
@@ -768,6 +769,11 @@ const ProView = () => {
                         <DiaryPanel />
                     </div>
                 </div>
+            </div>
+
+            {/* NEW: Weather News Ticker */}
+            <div className="h-[200px]">
+                <WeatherNews />
             </div>
 
             {/* NEW: Biosphere DNA Row & Top Locations */}
