@@ -21,11 +21,10 @@ The system features two distinct operational modes to demonstrate capability sca
 *   **Pro Mode**: Unlocks advanced features like **AI Assistant**, **Historical Analytics**, and **Sensor Fusion**.
 
 
-### 2. Advanced Sensor Fusion (Kalman Filter)
-Low-cost sensors (DHT11/MQ-135) are often noisy. We implemented a **Kalman Filter** algorithm on the backend to:
-*   Fuse local sensor data with external API data (OpenMeteo).
-*   Mathematically smoothen erratic readings.
-*   Fill in data gaps seamlessly if a sensor disconnects.
+### 2. Advanced Sensor Fusion (Pro Feature)
+While the system collects **real-time data** from physical sensors (DHT11 & MQ-135), the Pro mode enhances this by:
+*   **Validation**: Comparing local readings against public weather APIs (OpenMeteo) to identify sensor drift.
+*   **Fusion**: Using a **Kalman Filter** to weigh local vs. public data, ensuring the dashboard shows the most probable environmental state even if one source is noisy.
 
 ### 3. AI Safety Officer (Google Gemini)
 *   The system doesn't just show "CO2: 400ppm".
