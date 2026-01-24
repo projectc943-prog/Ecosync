@@ -1,83 +1,109 @@
-# 🌍 EcoSync S4: Environmental Intelligence
+# EcoSync S4: Intelligent Environmental Monitoring System 🌍
+> **A Next-Gen IoT Platform for Real-Time Air Quality & Environmental Tracking**
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/projectc943-prog/capstone-iot)
-
-**Live Dashboard:** [https://environmental-8b801.web.app](https://environmental-8b801.web.app)  
-**API Endpoint:** [https://projectc943-project943.hf.space](https://projectc943-project943.hf.space)
+![Project Banner](https://placehold.co/1200x400/0f172a/22d3ee?text=EcoSync+S4+Dashboard)
 
 ## 🚀 Overview
-**EcoSync S4** is an advanced AI-powered environmental monitoring system. It fuses local sensor data (ESP32) with global satellite intelligence (OpenWeather) using an **Adaptive Kalman Filter** to provide hyper-accurate, noise-free air quality data.
+**EcoSync S4** is a demonstration of a modern, scalable IoT architecture designed to bridge the gap between low-cost hardware and enterprise-grade environmental analysis. Unlike traditional student projects that simply display sensor values, EcoSync S4 implements a **Dual-Tier SaaS Architecture**, **AI-Driven Predictive Analytics**, and **Sensor Fusion** algorithms to provide actionable insights.
 
-## 📚 Documentation Center
-Everything you need to know is in the `docs/` folder:
+This repository contains the complete source code for:
+*   **Hardware**: ESP32 Firmware (C++) with HTTP Handshake & OLED Feedback.
+*   **Backend**: Python FastAPI with Sensor Fusion Engine & Google Gemini AI.
+*   **Frontend**: React + Vite Dashboard with Glassmorphism UI & PWA support.
 
-1.  👉 **[Installation Guide](docs/installation_guide.md)**: How to set up and run the code.
-2.  👉 **[User Manual](docs/user_manual.md)**: Step-by-step usage guide (Profile, Dashboard).
-3.  👉 **[Technical Report](docs/technical_report.md)**: Deep dive into Architecture, Sensor Fusion Logic, and Hardware specs.
-4.  👉 **[Feature List](docs/feature_list.md)**: Summary of all capabilities.
+---
 
-## ⚡ Quick Start
+## 🌟 Key Features ("Top Notch")
 
-### 1. View Live Demo
-Simply visit [https://environmental-8b801.web.app](https://environmental-8b801.web.app).
-- **Login**: `gitams4@gmail.com`
-- **Password**: `Admin123@#$`
+### 1. Dual-Tier SaaS Architecture
+Demonstrates a real-world business model within a technical project.
+*   **LITE Tier (Free)**: Access to public environmental data and basic dashboard.
+*   **PRO Tier (Research)**: Unlocks **AI Assistant**, **Historical Analytics**, **Predictive Mapping**, and **Sensor Fusion**.
 
-### 2. Run IoT Simulator (Generate Real Data)
-To feed data into the live dashboard (if you don't have a physical ESP32):
-```bash
-python3 scripts/iot_simulator.py
-```
+### 2. Advanced Sensor Fusion (Kalman Filter)
+Low-cost sensors (DHT11/MQ-135) are often noisy. We implemented a **Kalman Filter** algorithm on the backend to:
+*   Fuse local sensor data with external API data (OpenMeteo).
+*   Mathematically smoothen erratic readings.
+*   Fill in data gaps seamlessly if a sensor disconnects.
 
-### 3. Run Locally (Development)
+### 3. AI Safety Officer (Google Gemini)
+*   The system doesn't just show "CO2: 400ppm".
+*   It analyzes the combination of Temp+Humidity+Gas using **Google Gemini AI**.
+*   **Result**: "High Humidity + High Temp = Mold Risk. Suggest ventilation."
 
-**Backend:**
+### 4. Hardware "Handshake" Protocol
+*   Bi-directional communication verification.
+*   The ESP32 sends data and **waits for a 200 OK** from the server.
+*   **Visual Feedback**: Green LED blinks 3 times ONLY if the server accepts the data.
+
+---
+
+## 📸 Screenshots & Usage
+
+### The Pro Dashboard
+*A futuristic, glass-depth interface monitoring real-time metrics.*
+![Dashboard](https://placehold.co/800x450/1e293b/4f46e5?text=Pro+Dashboard+Interface)
+
+### Live Map & Predictive Zone
+*Leaflet.js integration showing sensor nodes and Air Quality heatmaps.*
+![Live Map](https://placehold.co/800x450/1e293b/10b981?text=Live+Map+Visualization)
+
+### Hardware Setup
+*ESP32 + DHT11 + MQ135 + OLED wiring diagram.*
+![Hardware](https://placehold.co/800x450/1e293b/f59e0b?text=Hardware+Setup)
+
+---
+
+## 🛠️ Technology Stack
+| Layer | Tech Stack | Key Libraries |
+| :--- | :--- | :--- |
+| **Frontend** | React, Vite | `recharts`, `lucide-react`, `leaflet`, `tailwindcss` |
+| **Backend** | Python, FastAPI | `sqlalchemy`, `pydantic`, `google-generativeai`, `numpy` |
+| **Hardware** | ESP32 (C++) | `ArduinoJson`, `Adafruit_GFX`, `HTTPClient` |
+| **Database** | SQLite (Dev) / PostgreSQL (Prod) | `alembic` for migrations |
+| **DevOps** | Docker | Hugging Face Spaces, Firebase Hosting |
+
+---
+
+## ⚡ Quick Start Guide
+
+### Prerequisites
+*   Node.js v18+
+*   Python 3.9+
+*   ESP32 Dev Board
+
+### 1. Backend Setup
 ```bash
 cd backend
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+python main.py
+# Server runs at http://localhost:8000
 ```
 
-**Frontend:**
+### 2. Frontend Setup
 ```bash
 cd frontend
 npm install
 npm run dev
+# App runs at http://localhost:5173
 ```
 
----
-
-## 📂 Project Structure
-
-```text
-/Project
-├── /backend            # Python FastAPI Server
-│   ├── /app            # Application Source
-│   └── requirements.txt
-├── /frontend           # React Vite Application
-│   ├── /src
-│   └── package.json
-├── /docs               # Documentation
-│   └── DOCUMENTATION.md
-├── /scripts            # Tools & Simulators
-│   └── iot_simulator.py
-└── README.md
-```
-
-## 🎨 Key Features
-*   **Security Drone Login**: Interactive biometric simulation.
-*   **HUD Live Map**: Sci-Fi glassmorphism map interface.
-*   **Gemini AI Assistant**: Voice-controlled analysis.
-*   **Zero Lag Architecture**: Optimized CSS/JS.
+### 3. Hardware Flash
+1. Open `hardware/src/main.cpp` in Arduino IDE.
+2. Update `WIFI_SSID`, `WIFI_PASSWORD`, and `SERVER_URL`.
+3. Flash to ESP32.
 
 ---
 
-## 👥 Contributors (Team EcoSync)
-*   **[Student Name 1]**: Lead Developer / Backend Architect
-*   **[Student Name 2]**: Frontend UI/UX Designer
-*   **[Student Name 3]**: Hardware Specialist (ESP32)
-*   **[Student Name 4]**: Documentation & QA
+## ⚠️ Disclaimer
+*   **Educational Use**: This project is for educational and demonstration purposes.
+*   **Sensor Accuracy**: Data from DHT11/MQ-135 sensors is not medical-grade and should not be used for critical safety decisions without proper calibration.
+*   **AI Limitations**: The AI advice is generated by an LLM and may verify.
 
 ---
 
-*Built for Capstone 2025* 🌍
+## 📄 License
+This project is open-source and available under the **MIT License**.
+All assets and code created by **Dhanush & Team**.

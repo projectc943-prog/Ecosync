@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import LiteView from '../components/dashboard/LiteView';
 import ProView from '../components/dashboard/ProView';
-import SidebarModeSwitch from '../components/dashboard/SidebarModeSwitch';
+// import SidebarModeSwitch from '../components/dashboard/SidebarModeSwitch';
 import { THEME } from '../components/dashboard/shared/Common';
 
 const DashboardShell = () => {
@@ -50,7 +50,7 @@ const DashboardShell = () => {
 
                 {/* Mode Switcher */}
                 <div className="sticky top-4 z-50">
-                    <SidebarModeSwitch mode={mode} setMode={handleSwitchMode} />
+                    {/* <SidebarModeSwitch mode={mode} setMode={handleSwitchMode} /> */}
                 </div>
 
                 {/* Content Area with Error Boundary Placeholder */}

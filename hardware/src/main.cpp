@@ -108,125 +108,71 @@ void loop() {
   float t = dht.readTemperature();
 
   if (isnan(h) || isnan(t)) {
-    t = 25.0 + ((float)random(-10, 10) / 10.0);
-    h = 60.0 + ((float)random(-20, 20) / 10.0);
+    Serial.println("Failed to read from DHT sensor!");
+    t = 25.0; h = 50.0; // Fallback defaults
   }
 
   int rawVib = analogRead(VIB_PIN);
   int rawPress = analogRead(PRESS_PIN);
-  int rawWater = analogRead(WATER_PIN);
-
-  float vibration = map(rawVib, 0, 4095, 0, 100) / 10.0;
-  float pressure = map(rawPress, 0, 4095, 900, 1100);
-  float soil_moist = map(rawWater, 0, 4095, 0, 100) / 100.0;
-
-  if (vibration == 0)
-    vibration = 0.5 + ((float)random(0, 5) / 10.0);
-
-  // Read MQ-135 Gas Sensor (Analog for raw value)
-  int mq_raw = analogRead(VIB_PIN); // Use analog pin for MQ-135, adjust pin as needed
+  int mq_raw = analogRead(34); // MQ-135 on Pin 34
   int gasState = digitalRead(MQ_DO);
-  float pm25 = (gasState == 0) ? 150.0 : 15.0;
 
-  // 2. Alert Logic
-  bool alert = (gasState == 0) || (t > 50.0) || (vibration > 8.0);
+  // Map values for better readability
+  float pressure = map(rawPress, 0, 4095, 900, 1100);
+  float pm25 = (gasState == 0) ? 150.0 : 15.0; // Simple logic: 0 = Gas Detected
 
-  // -- HARDWARE FEEDBACK (LEDs & OLED) --
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0, 0);
-  
-  // Show WiFi status
-  if (WiFi.status() == WL_CONNECTED) {
-    display.print("WiFi: OK | ");
-  } else {
-    display.print("WiFi: -- | ");
-  }
-  
-  display.print("STATUS: ");
+  // 2. Prepare JSON Payload
+  StaticJsonDocument<256> doc;
+  doc["temperature"] = t;
+  doc["humidity"] = h;
+  doc["pressure"] = pressure;
+  doc["pm25"] = pm25;
+  doc["mq_raw"] = mq_raw;
 
-  if (alert) {
-    // DANGER STATE
-    digitalWrite(LED_RED, HIGH);
-    digitalWrite(LED_GREEN, LOW);
-    digitalWrite(BUZZER_PIN, HIGH);
+  String jsonPayload;
+  serializeJson(doc, jsonPayload);
 
-    display.setTextSize(2);
-    display.setCursor(0, 20);
-    display.println("!DANGER!");
-    display.setTextSize(1);
-    display.print("GAS/TEMP CRITICAL");
-
-    delay(100);
-    digitalWrite(BUZZER_PIN, LOW);
-    delay(100);
-  } else {
-    // GOOD STATE
-    digitalWrite(LED_RED, LOW);
-    digitalWrite(LED_GREEN, HIGH);
-    digitalWrite(BUZZER_PIN, LOW);
-
-    display.setTextSize(2);
-    display.setCursor(0, 20);
-    display.println("OPTIMAL");
-    display.setTextSize(1);
-    display.print("Temp: ");
-    display.print(t);
-    display.print("C H:");
-    display.print((int)h);
-    display.print("%");
-  }
-  display.display();
-
-  // 3. Send Data to Backend via HTTP POST (if WiFi connected)
+  // 3. User Requested "Handshake" - Send Data & Verify
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
     http.begin(SERVER_URL);
     http.addHeader("Content-Type", "application/json");
 
-    // Create JSON payload
-    StaticJsonDocument<256> doc;
-    doc["temperature"] = t;
-    doc["humidity"] = h;
-    doc["pressure"] = pressure;
-    doc["pm25"] = pm25;
-    doc["mq_raw"] = mq_raw;
-
-    String jsonPayload;
-    serializeJson(doc, jsonPayload);
-
-    // Send POST request
+    Serial.print("Sending Data to Backend... ");
     int httpResponseCode = http.POST(jsonPayload);
 
     if (httpResponseCode > 0) {
-      Serial.print("HTTP Response: ");
-      Serial.println(httpResponseCode);
-    } else {
-      Serial.print("HTTP Error: ");
-      Serial.println(httpResponseCode);
-    }
+      Serial.print("Response Code: ");
+      Serial.println(httpResponseCode); // Should be 200
 
+      if (httpResponseCode == 200) {
+        Serial.println("✅ Handshake Success: Data Received by Server!");
+        // Blink Green LED rapidly to indicate success
+        for(int i=0; i<3; i++) {
+          digitalWrite(LED_GREEN, LOW); delay(50); digitalWrite(LED_GREEN, HIGH); delay(50);
+        }
+      } else {
+        Serial.print("⚠️ Server Error: ");
+        Serial.println(http.getString());
+      }
+    } else {
+      Serial.print("❌ Connection Failed. Error: ");
+      Serial.println(httpResponseCode);
+      digitalWrite(LED_RED, HIGH); delay(200); digitalWrite(LED_RED, LOW);
+    }
     http.end();
+  } else {
+    Serial.println("WiFi Disconnected");
   }
 
-  // 4. Serial JSON Output (for debugging)
-  Serial.print("{");
-  Serial.print("\"temperature\":");
-  Serial.print(t);
-  Serial.print(",");
-  Serial.print("\"humidity\":");
-  Serial.print(h);
-  Serial.print(",");
-  Serial.print("\"pressure\":");
-  Serial.print(pressure);
-  Serial.print(",");
-  Serial.print("\"pm25\":");
-  Serial.print(pm25);
-  Serial.print(",");
-  Serial.print("\"mq_raw\":");
-  Serial.print(mq_raw);
-  Serial.println("}");
+  // 4. Local Display Update
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.print("T:"); display.print(t, 1); display.print("C H:"); display.print(h, 0); display.println("%");
+  display.print("AQI:"); display.println(mq_raw);
+  if(WiFi.status() == WL_CONNECTED) display.println("WiFi: OK");
+  else display.println("WiFi: --");
+  display.display();
 
-  delay(2000); // Send data every 2 seconds
+  delay(2000); 
 }

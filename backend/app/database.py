@@ -6,8 +6,9 @@ from dotenv import load_dotenv
 
 load_dotenv() # Load from .env file for local dev
 
-# For Render/Cloud, use DATABASE_URL. Fallback to local SQLite.
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./iot_system.db")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_PATH = os.path.join(BASE_DIR, "data", "iot_system.db")
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DB_PATH}")
 
 # Fix for some PaaS (like Heroku/Render) that provide "postgres://" instead of "postgresql://"
 if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):

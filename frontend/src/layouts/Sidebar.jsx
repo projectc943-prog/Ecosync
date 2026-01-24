@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate, useSearchParams } from 'react-router-dom';
-import { LayoutDashboard, Map, Server, Zap, LogOut, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, Map, Server, Zap, LogOut, TrendingUp, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar = () => {
@@ -13,6 +13,7 @@ const Sidebar = () => {
     const navItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
         ...(isPro ? [{ icon: Map, label: 'Live Map', path: '/map' }] : []),
+        { icon: User, label: 'My Profile', path: '/profile' }, // [NEW]
     ];
 
     if (isPro) {
