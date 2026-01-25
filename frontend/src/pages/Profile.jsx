@@ -22,26 +22,35 @@ const Profile = () => {
         const fetchProfile = async () => {
             const token = localStorage.getItem('token');
             try {
-                // We can use the /auth/me or verify endpoint to get current details, 
-                // but since we have a specific update endpoint, let's assume we fetch current user details on load
-                // For now, we rely on AuthContext initial state, but to ensure fresh data:
-                const res = await fetch(`${API_BASE_URL}/auth/me`, { // Assuming this endpoint exists or similar
+                const res = await fetch(`${API_BASE_URL}/auth/me`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                // If /auth/me doesn't exist, we might need to rely on stored token data or add it.
-                // Given the file view of auth.py, we have `get_current_user` but no direct /me endpoint returning full profile except inside other calls.
-                // Let's rely on AuthContext for initial load, and only implement Save for now to avoid breaking if /me is missing.
+
+                if (res.ok) {
+                    const data = await res.json();
+                    setFormData({
+                        firstName: data.first_name || '',
+                        lastName: data.last_name || '',
+                        role: data.plan === 'pro' ? 'Lead Researcher' : 'Field Operative',
+                        bio: data.bio || 'Environmental enthusiast passionate about IoT and sustainable technology.',
+                        linkedin: data.linkedin || '',
+                        github: data.github || ''
+                    });
+                }
+            } catch (e) {
+                console.error("Profile Fetch Error:", e);
+                // Fallback to Context if API fails
                 if (currentUser) {
                     setFormData({
                         firstName: currentUser.first_name || '',
                         lastName: currentUser.last_name || '',
-                        role: 'Researcher', // Static for now as DB schema doesn't seem to have role field in User model shown in auth.py
+                        role: 'Researcher',
                         bio: 'Environmental enthusiast.',
                         linkedin: '',
                         github: ''
                     });
                 }
-            } catch (e) { console.error(e); }
+            }
         };
         fetchProfile();
     }, [currentUser]);
@@ -208,80 +217,77 @@ const Profile = () => {
 
                         {/* Info Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Contact Info */}
-                            <div className="bg-[#0B1221] p-6 rounded-3xl border border-white/5 hover:-translate-y-1 transition-transform duration-300">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="p-2 bg-cyan-500/10 rounded-lg text-cyan-400">
-                                        <Mail className="w-5 h-5" />
+                            {/* Info Grid - Refined */}
+                            <div className="bg-[#0B1221] p-6 rounded-3xl border border-white/5 relative overflow-hidden">
+                                <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-6">Personal Details</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-4">
+                                    {/* Email */}
+                                    <div className="group">
+                                        <div className="flex items-center gap-2 mb-1 text-slate-400 text-xs">
+                                            <Mail className="w-3 h-3" /> Email
+                                        </div>
+                                        <div className="text-slate-200 font-medium truncate" title={currentUser?.email}>{currentUser?.email}</div>
                                     </div>
-                                    <span className="text-slate-400 text-sm font-medium">Email Address</span>
-                                </div>
-                                <p className="text-white font-medium pl-12">{currentUser?.email || 'user@example.com'}</p>
-                            </div>
 
-                            <div className="bg-[#0B1221] p-6 rounded-3xl border border-white/5 hover:-translate-y-1 transition-transform duration-300">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="p-2 bg-purple-500/10 rounded-lg text-purple-400">
-                                        <MapPin className="w-5 h-5" />
+                                    {/* Location */}
+                                    <div className="group">
+                                        <div className="flex items-center gap-2 mb-1 text-slate-400 text-xs">
+                                            <MapPin className="w-3 h-3" /> Location
+                                        </div>
+                                        <div className="text-slate-200 font-medium">{formData.location_name || 'Hyderabad, IN'}</div>
                                     </div>
-                                    <span className="text-slate-400 text-sm font-medium">Location</span>
-                                </div>
-                                <p className="text-white font-medium pl-12">Hyderabad, India</p>
-                            </div>
 
-                            <div className="bg-[#0B1221] p-6 rounded-3xl border border-white/5 hover:-translate-y-1 transition-transform duration-300">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="p-2 bg-orange-500/10 rounded-lg text-orange-400">
-                                        <User className="w-5 h-5" />
+                                    {/* First Name */}
+                                    <div className="group">
+                                        <div className="flex items-center gap-2 mb-1 text-slate-400 text-xs">
+                                            <User className="w-3 h-3" /> First Name
+                                        </div>
+                                        {isEditing ? (
+                                            <input
+                                                type="text"
+                                                value={formData.firstName}
+                                                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                                                className="w-full bg-black/20 border-b border-white/20 focus:border-emerald-500 outline-none text-emerald-400 py-1"
+                                            />
+                                        ) : (
+                                            <div className="text-slate-200 font-medium">{formData.firstName}</div>
+                                        )}
                                     </div>
-                                    <span className="text-slate-400 text-sm font-medium">First Name</span>
-                                </div>
-                                {isEditing ? (
-                                    <input
-                                        type="text"
-                                        value={formData.firstName}
-                                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                                        className="ml-12 bg-black/20 border border-white/10 rounded-lg px-3 py-1 text-white w-2/3"
-                                    />
-                                ) : (
-                                    <p className="text-white font-medium pl-12">{formData.firstName}</p>
-                                )}
-                            </div>
 
-                            <div className="bg-[#0B1221] p-6 rounded-3xl border border-white/5 hover:-translate-y-1 transition-transform duration-300">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="p-2 bg-orange-500/10 rounded-lg text-orange-400">
-                                        <User className="w-5 h-5" />
+                                    {/* Last Name */}
+                                    <div className="group">
+                                        <div className="flex items-center gap-2 mb-1 text-slate-400 text-xs">
+                                            <User className="w-3 h-3" /> Last Name
+                                        </div>
+                                        {isEditing ? (
+                                            <input
+                                                type="text"
+                                                value={formData.lastName}
+                                                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                                                className="w-full bg-black/20 border-b border-white/20 focus:border-emerald-500 outline-none text-emerald-400 py-1"
+                                            />
+                                        ) : (
+                                            <div className="text-slate-200 font-medium">{formData.lastName}</div>
+                                        )}
                                     </div>
-                                    <span className="text-slate-400 text-sm font-medium">Last Name</span>
                                 </div>
-                                {isEditing ? (
-                                    <input
-                                        type="text"
-                                        value={formData.lastName}
-                                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                                        className="ml-12 bg-black/20 border border-white/10 rounded-lg px-3 py-1 text-white w-2/3"
-                                    />
-                                ) : (
-                                    <p className="text-white font-medium pl-12">{formData.lastName}</p>
-                                )}
                             </div>
                         </div>
-
-                        {/* Save Button */}
-                        {isEditing && (
-                            <div className="flex justify-end pt-4 animate-fade-in-up">
-                                <button
-                                    onClick={handleSave}
-                                    className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-bold rounded-xl hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all transform hover:scale-105"
-                                >
-                                    <Save className="w-5 h-5" />
-                                    Save Changes
-                                </button>
-                            </div>
-                        )}
-
                     </div>
+
+                    {/* Save Button */}
+                    {isEditing && (
+                        <div className="flex justify-end pt-4 animate-fade-in-up">
+                            <button
+                                onClick={handleSave}
+                                className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-bold rounded-xl hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all transform hover:scale-105"
+                            >
+                                <Save className="w-5 h-5" />
+                                Save Changes
+                            </button>
+                        </div>
+                    )}
+
                 </div>
             </div>
         </div>

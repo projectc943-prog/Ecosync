@@ -145,19 +145,19 @@ const DiaryPanel = ({ fetchTrigger }) => {
         <Card className="h-full flex flex-col">
             <div className="flex items-center justify-between mb-3">
                 <h3 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
-                    <BookOpen size={14} className="text-indigo-400" />
+                    <BookOpen size={14} className="text-emerald-400" />
                     Air Quality Diary
                 </h3>
             </div>
 
             <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
                 <input
-                    className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+                    className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
                     placeholder="Note (e.g., Smell of smoke...)"
                     value={note}
                     onChange={e => setNote(e.target.value)}
                 />
-                <button type="submit" disabled={loading} className="bg-indigo-600 px-3 py-1 rounded text-xs text-white font-bold hover:bg-indigo-500">
+                <button type="submit" disabled={loading} className="bg-emerald-600 px-3 py-1 rounded text-xs text-white font-bold hover:bg-emerald-500">
                     {loading ? '...' : 'ADD'}
                 </button>
             </form>
@@ -165,7 +165,7 @@ const DiaryPanel = ({ fetchTrigger }) => {
             <div className="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-thin scrollbar-thumb-gray-700 max-h-[140px]">
                 {entries.length === 0 ? <p className="text-[10px] text-gray-600 text-center italic mt-4">No entries yet.</p> :
                     entries.map(e => (
-                        <div key={e.id} className="bg-[#1e2329] p-2 rounded border-l-2 border-indigo-500">
+                        <div key={e.id} className="bg-[#1e2329] p-2 rounded border-l-2 border-emerald-500">
                             <div className="text-xs text-gray-300">{e.note}</div>
                             <div className="text-[10px] text-gray-600 mt-1">{new Date(e.timestamp).toLocaleString()}</div>
                         </div>
@@ -266,9 +266,9 @@ const ForecastPanel = ({ forecast, bestWindows }) => {
                             <CloudSun size={16} className="text-gray-300" />
                             <span className="font-bold text-white text-sm">{item.temp}°</span>
                             <div className="flex flex-col items-center gap-0.5 mt-1">
-                                <span className="text-[9px] text-blue-400">0%</span>
+                                <span className="text-[9px] text-cyan-400">0%</span>
                                 <div className={`w-8 h-1 rounded-full ${item.aqi < 50 ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                                <span className="text-[9px] text-gray-500">AQI {item.aqi}</span>
+                                <span className="text-[9px] text-emerald-400">AQI {item.aqi}</span>
                             </div>
                         </div>
                     ))}
@@ -281,7 +281,7 @@ const ForecastPanel = ({ forecast, bestWindows }) => {
 const TimelinePanel = ({ events }) => (
     <Card className="h-full flex flex-col">
         <h3 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2 mb-4">
-            <ArrowRight size={14} className="text-indigo-400" />
+            <ArrowRight size={14} className="text-emerald-400" />
             Event Timeline
         </h3>
         <div className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-gray-700">
@@ -318,7 +318,7 @@ const FingerprintChart = ({ data }) => (
                 <PolarGrid stroke="#334155" />
                 <PolarAngleAxis dataKey="source" tick={{ fill: '#848E9C', fontSize: 10 }} />
                 <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                <Radar name="Source" dataKey="probability" stroke="#06b6d4" strokeWidth={2} fill="#06b6d4" fillOpacity={0.3} />
+                <Radar name="Source" dataKey="probability" stroke="#10b981" strokeWidth={2} fill="#10b981" fillOpacity={0.3} />
             </RadarChart>
         </ResponsiveContainer>
     </div>
@@ -405,7 +405,7 @@ const BioSignatureWidget = ({ weather, aqi }) => {
                         <PolarGrid stroke="#374151" />
                         <PolarAngleAxis dataKey="subject" tick={{ fill: '#9CA3AF', fontSize: 10 }} />
                         <PolarRadiusAxis angle={30} domain={[0, 150]} tick={false} axisLine={false} />
-                        <Radar name="Current Health" dataKey="A" stroke="#ec4899" strokeWidth={2} fill="#ec4899" fillOpacity={0.3} />
+                        <Radar name="Current Health" dataKey="A" stroke="#10b981" strokeWidth={2} fill="#10b981" fillOpacity={0.3} />
                         <Radar name="Baseline" dataKey="B" stroke="#6366f1" strokeWidth={1} fill="transparent" strokeDasharray="3 3" />
                         <Legend wrapperStyle={{ fontSize: '10px' }} />
                     </RadarChart>
@@ -545,7 +545,14 @@ const ProView = () => {
             {/* Header */}
             <div className="flex justify-between items-end">
                 <div>
-                    <h2 className={`text-xl font-bold ${THEME.colors.text}`}>Command Center</h2>
+                    <div className="mb-2">
+                        <h2 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-300 tracking-tighter uppercase mb-1 drop-shadow-lg">
+                            SYMBIOTIC ECO-INTELLIGENCE NETWORK
+                        </h2>
+                        <p className="text-[10px] md:text-xs text-emerald-500/80 font-mono tracking-widest uppercase border-l-2 border-emerald-500/50 pl-3">
+                            Next-gen platform merging IoT biosensors with generative AI for planetary health monitoring
+                        </p>
+                    </div>
 
                     {/* Search Bar with Autocomplete */}
                     <div className="flex items-center gap-2 mt-1 relative" ref={wrapperRef}>
@@ -565,7 +572,7 @@ const ProView = () => {
                                     onKeyDown={handleKeyDown}
                                     onFocus={() => inputValue.length > 2 && setShowSuggestions(true)}
                                     placeholder="Search City..."
-                                    className="pl-7 bg-gray-800 border border-gray-700 rounded-md px-2 py-1 text-xs text-white focus:outline-none focus:border-indigo-500 transition-colors w-48"
+                                    className="pl-7 bg-gray-800/50 border border-gray-700 rounded-md px-2 py-1 text-xs text-white focus:outline-none focus:border-emerald-500 transition-colors w-48"
                                 />
 
                                 {/* Dropdown Results */}
@@ -605,7 +612,7 @@ const ProView = () => {
                                         alert("Geolocation is not supported by this browser.");
                                     }
                                 }}
-                                className="p-1.5 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 rounded-md hover:bg-indigo-600 hover:text-white transition-colors"
+                                className="p-1.5 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-md hover:bg-emerald-600 hover:text-white transition-colors"
                                 title="Use Current Location"
                             >
                                 <Move size={14} />
@@ -624,7 +631,7 @@ const ProView = () => {
                         <button
                             key={r}
                             onClick={() => setRange(r)}
-                            className={`px-3 py-1 rounded text-xs font-bold border ${range === r ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-gray-700 text-gray-400 hover:text-white'}`}
+                            className={`px-3 py-1 rounded text-xs font-bold border ${range === r ? 'bg-emerald-600 border-emerald-500 text-white' : 'border-gray-700 text-gray-400 hover:text-white'}`}
                         >
                             {r}
                         </button>
@@ -657,10 +664,10 @@ const ProView = () => {
                 </Card>
 
                 {/* Humidity Monitor */}
-                <Card className={`relative overflow-hidden flex flex-col justify-center items-center py-8 border-2 ${weather?.humidity > 70 ? 'border-blue-500 bg-blue-900/10' : 'border-gray-700'}`}>
-                    {weather?.humidity > 70 && <div className="absolute top-0 inset-x-0 bg-blue-500 text-black text-[10px] font-bold text-center tracking-[0.3em] uppercase py-1 animate-pulse">High Moisture Alert</div>}
+                <Card className={`relative overflow-hidden flex flex-col justify-center items-center py-8 border-2 ${weather?.humidity > 70 ? 'border-cyan-500 bg-cyan-900/10' : 'border-gray-700'}`}>
+                    {weather?.humidity > 70 && <div className="absolute top-0 inset-x-0 bg-cyan-500 text-black text-[10px] font-bold text-center tracking-[0.3em] uppercase py-1 animate-pulse">High Moisture Alert</div>}
                     <div className="flex items-center gap-3 mb-2">
-                        <Activity size={24} className={weather?.humidity > 70 ? 'text-blue-500' : 'text-cyan-400'} />
+                        <Activity size={24} className={weather?.humidity > 70 ? 'text-cyan-500' : 'text-cyan-400'} />
                         <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Humidity</h3>
                     </div>
                     <div className="text-6xl md:text-7xl font-black text-white tracking-tighter relative">

@@ -188,7 +188,7 @@ const LandingPage = () => {
 
             {/* --- FOOTER --- */}
             <footer className="py-8 text-center text-emerald-900/50 text-xs tracking-widest uppercase border-t border-white/5 font-mono">
-                <p>ECOSYNC S4 // SECURE BIO-INFRASTRUCTURE // 2026</p>
+                <p>SYMBIOTIC ECO-INTELLIGENCE NETWORK // SECURE BIO-INFRASTRUCTURE // 2026</p>
             </footer>
 
         </div>

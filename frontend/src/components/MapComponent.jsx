@@ -12,11 +12,21 @@ const createIcon = (color) => new L.DivIcon({
 });
 
 // Robot Icon SVG as Leaflet Icon
+// Advanced AI Drone Icon
 const robotIcon = new L.DivIcon({
-    className: 'robot-icon',
-    html: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16] // Center
+    className: 'ai-drone-icon',
+    html: `
+    <div style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+        <div style="position: absolute; inset: 0; background: rgba(16, 185, 129, 0.2); border-radius: 50%; animation: pulse 2s infinite;"></div>
+        <div style="background: #064e3b; border: 2px solid #34d399; border-radius: 50%; padding: 6px; box-shadow: 0 0 15px rgba(52, 211, 153, 0.6); position: relative; z-index: 10;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 8h20"/><path d="M12 2v6"/><path d="M12 16v6"/><rect width="20" height="8" x="2" y="8" rx="2" fill="rgba(16, 185, 129, 0.4)"/>
+            </svg>
+        </div>
+    </div>
+    `,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20]
 });
 
 const LocateButton = ({ onLocate }) => {
@@ -97,15 +107,19 @@ const MapComponent = ({ isPro = false }) => {
                     fillOpacity={0.8}
                 >
                     <Popup className="custom-popup bio-popup">
-                        <div className="p-2 min-w-[150px]">
-                            <h3 className="font-bold text-emerald-900 flex items-center gap-2">
+                        <div className="p-2 min-w-[180px]">
+                            <h3 className="font-bold text-emerald-900 flex items-center gap-2 mb-1">
                                 <Navigation size={16} className="text-emerald-600" />
-                                Operative Location
+                                OPERATIVE STATUS
                             </h3>
-                            <p className="text-xs text-slate-600 mt-1 font-mono">
-                                Lat: {position[0].toFixed(4)} <br />
-                                Lon: {position[1].toFixed(4)}
-                            </p>
+                            <div className="space-y-1 text-xs text-slate-700">
+                                <p><strong>Status:</strong> <span className="text-emerald-600 font-bold">ONLINE</span></p>
+                                <p><strong>Role:</strong> Field Researcher</p>
+                                <div className="bg-emerald-100 p-1.5 rounded border border-emerald-200 font-mono mt-1">
+                                    Lat: {position[0].toFixed(5)}<br />
+                                    Lon: {position[1].toFixed(5)}
+                                </div>
+                            </div>
                         </div>
                     </Popup>
                 </CircleMarker>
@@ -117,15 +131,32 @@ const MapComponent = ({ isPro = false }) => {
                             <h3 className="text-emerald-700 font-bold flex items-center gap-2">
                                 <Bot size={16} /> S4 AGENT
                             </h3>
-                            <div className="text-xs text-slate-600">Patrolling Sector</div>
-                            <div className="text-xs font-mono text-emerald-600 mt-1">Temp: 24.5°C</div>
+                            <div className="text-xs text-slate-600 mb-1">Patrolling Sector 7G</div>
+                            <div className="bg-emerald-50 text-emerald-700 text-[10px] p-1 rounded font-mono border border-emerald-100">
+                                BATTERY: 85%<br />
+                                SIGNAL: STRONG
+                            </div>
                         </div>
                     </Popup>
                 </Marker>
 
                 {/* Sensor Nodes (Hardcoded Demo Nodes) */}
-                <CircleMarker center={[17.3950, 78.4967]} radius={6} fillColor="#f59e0b" color="transparent" fillOpacity={0.6}>
-                    <Popup>Node A - Hyd North</Popup>
+                <CircleMarker center={[17.3950, 78.4967]} radius={6} fillColor="#f59e0b" color="transparent" fillOpacity={0.8}>
+                    <Popup>
+                        <div className="p-2 min-w-[160px]">
+                            <h3 className="font-bold text-amber-900 mb-1 flex items-center gap-2">
+                                <Activity size={14} className="text-amber-600" /> NODE A - HYD NORTH
+                            </h3>
+                            <div className="text-xs space-y-1 text-slate-700">
+                                <p className="flex justify-between"><span>Temp:</span> <span>32.5°C</span></p>
+                                <p className="flex justify-between"><span>Humidity:</span> <span>45%</span></p>
+                                <p className="flex justify-between"><span>AQI:</span> <span className="text-amber-400 font-bold">112 (Mod)</span></p>
+                                <div className="text-[10px] text-slate-400 mt-2 pt-1 border-t border-slate-200">
+                                    Last Update: 2m ago
+                                </div>
+                            </div>
+                        </div>
+                    </Popup>
                 </CircleMarker>
 
             </MapContainer>

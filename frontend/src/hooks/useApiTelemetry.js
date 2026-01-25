@@ -72,15 +72,8 @@ export const useApiTelemetry = (param = { city: 'Hyderabad' }) => {
                     console.warn("Forecast fetch failed", e);
                 }
 
-                // Fallback Forecast
-                if (forecastList.length === 0) {
-                    const baseTemp = data.weather?.temp || 0;
-                    forecastList = Array.from({ length: 5 }, (_, i) => ({
-                        time: `+${i}h`,
-                        temp: baseTemp,
-                        aqi: 50 + (i * 5)
-                    }));
-                }
+                // No Mock Fallback - User Requested Strict Real Data Only
+                // if (forecastList.length === 0) { ... } REMOVED
 
                 // Map Response -> UI State
                 const mappedWeather = {

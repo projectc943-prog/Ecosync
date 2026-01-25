@@ -105,7 +105,7 @@ const LightDashboard = ({ onToggle }) => {
                 <div className="flex-1 w-full space-y-4 px-4">
                     {[
                         { id: 'overview', icon: Activity, label: 'Monitor' },
-                        { id: 'map', icon: MapIcon, label: 'Geo-Map' },
+                        // Map removed for Lite Mode
                         { id: 'news', icon: Newspaper, label: 'Eco-Intel' }
                     ].map(item => (
                         <button key={item.id} onClick={() => setActiveView(item.id)} className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all ${activeView === item.id ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-500 hover:text-emerald-200'}`}>
@@ -138,7 +138,7 @@ const LightDashboard = ({ onToggle }) => {
 
                 <main className="flex-1 overflow-y-auto p-6">
                     {activeView === 'overview' && renderOverview()}
-                    {activeView === 'map' && <div className="h-full rounded-xl overflow-hidden border border-white/5"><MapComponent /></div>}
+                    {/* Map Removed for Lite Mode */}
                     {activeView === 'news' && <div className="h-full"><NewsComponent /></div>}
                 </main>
             </div>

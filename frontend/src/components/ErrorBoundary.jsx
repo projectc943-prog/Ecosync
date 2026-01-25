@@ -18,7 +18,7 @@ class ErrorBoundary extends React.Component {
         });
 
         // Log to console in development
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.DEV) {
             console.error('Error caught by boundary:', error, errorInfo);
         }
     }
@@ -43,7 +43,7 @@ class ErrorBoundary extends React.Component {
                             </div>
                         </div>
 
-                        {process.env.NODE_ENV === 'development' && this.state.error && (
+                        {import.meta.env.DEV && this.state.error && (
                             <div className="mb-6 p-4 bg-slate-900/50 border border-white/5 rounded-xl">
                                 <p className="text-xs font-mono text-rose-400 mb-2">
                                     {this.state.error.toString()}

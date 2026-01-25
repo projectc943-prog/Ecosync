@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate, useSearchParams } from 'react-router-dom';
-import { LayoutDashboard, Map, Server, Zap, LogOut, TrendingUp, User } from 'lucide-react';
+import { LayoutDashboard, Map, Server, Zap, LogOut, TrendingUp, User, Activity, BarChart3 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar = () => {
@@ -9,16 +9,18 @@ const Sidebar = () => {
     const [searchParams] = useSearchParams();
     const mode = searchParams.get('mode') || localStorage.getItem('dashboardMode') || 'lite';
     const isPro = mode === 'pro';
+    const [isMobileOpen, setIsMobileOpen] = React.useState(false);
 
     const navItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
         { icon: Activity, label: 'Analysis', path: '/analysis' },
-        { icon: Map, label: 'Global Map', path: '/global' }, // [NEW]
-        { icon: BarChart3, label: 'Analytics', path: '/analytics' }, // [NEW]
+        { icon: Map, label: 'Global Map', path: '/global' },
+        { icon: BarChart3, label: 'Analytics', path: '/analytics' },
+        { icon: User, label: 'Profile', path: '/profile' },
     ];
 
-    if (isPro) {
-        navItems.splice(1, 0, { icon: TrendingUp, label: 'Analytics', path: '/analytics' });
+    if (!isPro) {
+        // Filter items for Lite mode if needed, but sidebar usually for Pro/DashboardLayout
     }
 
     const handleLogout = async () => {
@@ -31,50 +33,76 @@ const Sidebar = () => {
     };
 
     return (
-        <div className="fixed left-4 top-4 bottom-4 w-20 flex flex-col items-center py-8 glass-panel rounded-[2.5rem] border border-white/10 z-50 transition-all hover:w-24 group-hover:duration-300">
-            {/* Brand Icon */}
-            <div className="mb-12 p-3 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-600 shadow-xl shadow-emerald-500/20 flex flex-col items-center justify-center transform hover:scale-110 transition-transform cursor-pointer" onClick={() => navigate('/')}>
-                <Zap className="w-6 h-6 text-white" fill="white" />
-            </div>
-            {/* Vertical Text Brand - Hidden on small, shown on hover/large maybe? Simplified to just Icon for floating look */}
+        <>
+            {/* Mobile Toggle Button (Visible only on small screens) */}
+            <button
+                onClick={() => setIsMobileOpen(!isMobileOpen)}
+                className="lg:hidden fixed top-4 left-4 z-[60] p-2 bg-slate-900 border border-white/10 rounded-xl text-emerald-400 shadow-lg"
+            >
+                <Zap className="w-6 h-6" />
+            </button>
 
-            {/* Navigation */}
-            <nav className="flex-1 w-full flex flex-col items-center gap-8">
-                {navItems.map((item) => (
-                    <NavLink
-                        key={item.path}
-                        to={item.path}
-                        className={({ isActive }) => `
-              p-3 rounded-2xl transition-all duration-300 relative group/icon
-              ${isActive
-                                ? 'bg-white/10 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.3)] scale-110'
-                                : 'text-slate-400 hover:text-white hover:bg-white/5 hover:scale-105'}
-            `}
+            {/* Sidebar Container */}
+            <div className={`
+                fixed top-0 bottom-0 left-0 z-50
+                flex flex-col items-center py-6 
+                bg-[#020617]/90 backdrop-blur-md border-r border-white/5
+                transition-all duration-300 ease-out
+                ${isMobileOpen ? 'w-[80px] translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-[72px] hover:lg:w-[88px]'}
+            `}>
+
+                {/* Brand Logo */}
+                <div className="mb-10 p-3 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-600 shadow-lg shadow-emerald-500/20 cursor-pointer" onClick={() => navigate('/')}>
+                    <Zap className="w-6 h-6 text-white" />
+                </div>
+
+                {/* Navigation Items */}
+                <nav className="flex-1 w-full flex flex-col items-center gap-6">
+                    {navItems.map((item) => (
+                        <NavLink
+                            key={item.path}
+                            to={item.path}
+                            onClick={() => setIsMobileOpen(false)} // Close on click (mobile)
+                            className={({ isActive }) => `
+                                relative group p-3 rounded-xl transition-all duration-300
+                                ${isActive
+                                    ? 'bg-emerald-500/10 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]'
+                                    : 'text-slate-500 hover:text-white hover:bg-white/5'}
+                            `}
+                        >
+                            <item.icon className="w-6 h-6" strokeWidth={1.5} />
+
+                            {/* Floating Tooltip (Desktop Only) */}
+                            <div className="absolute left-full top-1/2 -translate-y-1/2 ml-4 px-2 py-1 bg-slate-800 text-slate-200 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none hidden lg:block border border-white/10">
+                                {item.label}
+                            </div>
+                        </NavLink>
+                    ))}
+                </nav>
+
+                {/* Bottom Actions */}
+                <div className="mt-auto flex flex-col items-center gap-6 mb-4">
+                    <button
+                        onClick={handleLogout}
+                        className="group p-3 rounded-xl text-red-400/50 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                        title="Disconnect"
                     >
-                        <item.icon className="w-6 h-6" strokeWidth={1.5} />
+                        <LogOut className="w-5 h-5" />
+                    </button>
 
-                        {/* Floating Tooltip */}
-                        <div className="absolute left-14 top-1/2 -translate-y-1/2 px-3 py-2 bg-slate-900/90 backdrop-blur text-white text-xs font-bold rounded-xl opacity-0 group-hover/icon:opacity-100 transition-all whitespace-nowrap border border-white/10 pointer-events-none translate-x-2 group-hover/icon:translate-x-0 shadow-xl">
-                            {item.label}
-                        </div>
-                    </NavLink>
-                ))}
-            </nav>
-
-            {/* Logout / Status */}
-            <div className="mt-auto flex flex-col items-center gap-6">
-                <button
-                    onClick={handleLogout}
-                    className="text-red-400 hover:text-red-300 transition-colors p-3 hover:bg-red-500/10 rounded-xl relative group/logout"
-                >
-                    <LogOut size={20} />
-                    <div className="absolute left-14 top-1/2 -translate-y-1/2 px-3 py-2 bg-red-900/90 text-red-200 text-xs font-bold rounded-xl opacity-0 group-hover/logout:opacity-100 transition-all whitespace-nowrap border border-red-500/20 pointer-events-none translate-x-2 group-hover/logout:translate-x-0">
-                        Disconnect
-                    </div>
-                </button>
-                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981] animate-pulse"></div>
+                    {/* Status Indicator */}
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse"></div>
+                </div>
             </div>
-        </div>
+
+            {/* Overlay for Mobile */}
+            {isMobileOpen && (
+                <div
+                    className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+                    onClick={() => setIsMobileOpen(false)}
+                />
+            )}
+        </>
     );
 };
 

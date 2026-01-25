@@ -46,37 +46,63 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         // Check active session
         const initSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
-                setCurrentUser(session.user);
-                // Fetch profile
-                const { data } = await supabase.from('users').select('*').eq('email', session.user.email).single();
-                if (data) {
-                    setUserProfile(data);
-                    localStorage.setItem('plan', data.plan || 'lite');
+            console.log("AuthContext: initSession started");
+            try {
+                const { data, error } = await supabase.auth.getSession();
+                console.log("AuthContext: getSession result", { data, error });
+
+                if (error) throw error;
+
+                const session = data.session;
+                if (session?.user) {
+                    console.log("AuthContext: User found", session.user.email);
+                    setCurrentUser(session.user);
+                    // Fetch profile
+                    try {
+                        const { data: profile, error: profileError } = await supabase.from('users').select('*').eq('email', session.user.email).maybeSingle();
+                        console.log("AuthContext: Profile fetch", { profile, profileError });
+                        if (profile) {
+                            setUserProfile(profile);
+                            localStorage.setItem('plan', profile.plan || 'lite');
+                        }
+                    } catch (err) {
+                        console.error("AuthContext: Profile fetch error", err);
+                    }
+                } else {
+                    console.log("AuthContext: No active session");
+                    setCurrentUser(null);
+                    setUserProfile(null);
                 }
-            } else {
-                setCurrentUser(null);
-                setUserProfile(null);
+            } catch (err) {
+                console.error("AuthContext: initSession Critical Error", err);
+            } finally {
+                console.log("AuthContext: Setting loading FALSE");
+                setLoading(false);
             }
-            setLoading(false);
         };
 
-        initSession();
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            setCurrentUser(session?.user ?? null);
-            if (session?.user) {
-                const { data } = await supabase.from('users').select('*').eq('email', session.user.email).single();
-                if (data) {
-                    setUserProfile(data);
-                    localStorage.setItem('plan', data.plan || 'lite');
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            // Only react to meaningful auth changes to avoid loops
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
+                setCurrentUser(session?.user ?? null);
+                if (session?.user) {
+                    try {
+                        const { data } = await supabase.from('users').select('*').eq('email', session.user.email).maybeSingle();
+                        if (data) {
+                            setUserProfile(data);
+                            localStorage.setItem('plan', data.plan || 'lite');
+                        }
+                    } catch (err) {
+                        console.error("Profile fetch error on change:", err);
+                    }
+                } else {
+                    setUserProfile(null);
                 }
-            } else {
-                setUserProfile(null);
+                setLoading(false);
             }
-            setLoading(false);
         });
+
+        initSession();
 
         return () => subscription.unsubscribe();
     }, []);

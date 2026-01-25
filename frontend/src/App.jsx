@@ -57,12 +57,19 @@ function AppContent() {
 
   // Mouse Glow Effect
   useEffect(() => {
+    let frameId;
     const handleMouseMove = (e) => {
-      document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
-      document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
+      cancelAnimationFrame(frameId);
+      frameId = requestAnimationFrame(() => {
+        document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
+        document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
+      });
     };
     window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      if (frameId) cancelAnimationFrame(frameId);
+    };
   }, []);
 
   return (
@@ -85,7 +92,7 @@ function AppContent() {
         <ProtectedRoute>
           <div className="flex h-screen w-full bg-[#030712] text-slate-200 overflow-hidden font-outfit relative">
             <div className="mouse-glow" />
-            <AIAssistant />
+            {/* <AIAssistant /> */}
             <Dashboard />
           </div>
         </ProtectedRoute>

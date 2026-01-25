@@ -74,8 +74,8 @@ const LiteView = () => {
             {/* Header / Connection Bar */}
             <div className="flex flex-wrap justify-between items-end gap-4">
                 <div>
-                    <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
-                        ECOSYNC S4 <span className="text-slate-500 text-lg">|</span> LITE
+                    <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-300">
+                        SYMBIOTIC ECO-INTELLIGENCE NETWORK <span className="text-slate-500 text-lg">|</span> LITE
                     </h2>
                     <p className="text-slate-400 text-xs font-mono mt-1">
                         DEVICE ID: <span className="text-slate-200">{data.deviceId}</span>
@@ -133,7 +133,7 @@ const LiteView = () => {
                             value={data.humidity.toFixed(1)}
                             unit="%"
                             icon={Droplets}
-                            color="blue"
+                            color="emerald"
                         />
                         <LiveTile
                             label="Air Quality"

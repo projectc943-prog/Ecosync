@@ -228,6 +228,13 @@ def update_profile(profile: schemas.UserProfileUpdate, current_user: models.User
     db.refresh(current_user)
     return {"status": "success", "message": "Profile Updated"}
 
+@router.get("/me", response_model=schemas.UserResponse)
+def read_users_me(current_user: models.User = Depends(get_current_user)):
+    """
+    Get current user profile
+    """
+    return current_user
+
 class GoogleLoginRequest(schemas.BaseModel):
     token: str
 

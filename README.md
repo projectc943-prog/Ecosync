@@ -12,9 +12,17 @@
 
 ---
 
-## 🚀 Live Demo
-**Access the Dashboard Here:** [**https://ecosync-s4-demo-final-2026.netlify.app**](https://ecosync-s4-demo-final-2026.netlify.app)  
-*(Note: Create a new account to experience the Bio-Auth Login flow)*
+## 🚀 Live Access
+> **Academic Project Disclaimer**: This application is a prototype developed for the "Symbiotic Eco-Intelligence Network" capstone project. Data shown may be simulated if hardware nodes are offline.
+
+- **Frontend (Dashboard)**: [https://ecosync-s4-demo-final-2026.netlify.app](https://ecosync-s4-demo-final-2026.netlify.app)
+- **Backend (API)**: [https://capstone-backend-djdd.onrender.com/docs](https://capstone-backend-djdd.onrender.com/docs)
+- **Database (Supabase)**: Connected via Secure RPC
+
+### 🔐 Test Credentials
+- **Email**: `duppala@gitam.in`
+- **Password**: `Asdf7890`
+- *(Or use the "Register" button to create a new bio-profile)*
 
 ---
 
