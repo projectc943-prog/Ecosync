@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+```javascript
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import LiteView from '../components/dashboard/LiteView';
-import ProView from '../components/dashboard/ProView';
-// import SidebarModeSwitch from '../components/dashboard/SidebarModeSwitch';
 import { THEME } from '../components/dashboard/shared/Common';
 import { useLocation } from '../contexts/LocationContext';
+
+// Lazy Load Heavy Views
+const LiteView = React.lazy(() => import('../components/dashboard/LiteView'));
+const ProView = React.lazy(() => import('../components/dashboard/ProView'));
 
 const DashboardShell = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -24,7 +26,7 @@ const DashboardShell = () => {
             // Fallback
             return 'lite';
         } catch (e) {
-            console.warn("Storage Error, defaulting to Lite", e);
+            console.warn("Storage Error, default Lite", e);
             return 'lite';
         }
     });
@@ -35,29 +37,10 @@ const DashboardShell = () => {
         localStorage.setItem('dashboardMode', mode);
     }, [mode, setSearchParams]);
 
-    const handleSwitchMode = (newMode) => {
-        setMode(newMode);
-    };
-
     // Location Modal Logic
     const [showLocModal, setShowLocModal] = useState(false);
 
-    // Import Context (Assuming you wrapped App in LocationProvider)
-    // We need to dynamically import/use context if DashboardShell is inside the provider.
-    // Ideally DashboardShell is a child.
-
-    /*
-       NOTE: To use `useLocation` here, DashboardShell must be inside LocationProvider.
-       Verify App.jsx structure later. For now, we assume it is.
-    */
-    const { triggerLocate } = useLocation(); // Uncomment if import available
-
-    // TEMPORARY: Re-implementing raw logic here to be safe if Context isn't wrapping this level yet,
-    // BUT user asked for "Pro Mode sees it". Pro Mode DOES see it via Context.
-    // So we must ensure Context is updated.
-
-    // Since I cannot easily check App.jsx nesting right now without potentially breaking flow,
-    // I will write to localStorage AND try to update context if possible.
+    const { triggerLocate } = useLocation();
 
     const handleLocateNow = async () => {
         try {
@@ -66,7 +49,7 @@ const DashboardShell = () => {
             setShowLocModal(false);
             window.location.reload(); // Hard reload guarantees ProView mounts with fresh storage read
         } catch (error) {
-            alert("Location access denied. Using default.");
+            alert("Using default location.");
             setShowLocModal(false);
         }
     };
@@ -84,13 +67,8 @@ const DashboardShell = () => {
         }
     }, [mode]);
 
-    const handleManual = () => {
-        localStorage.setItem('location_preference', 'manual');
-        setShowLocModal(false);
-    };
-
     return (
-        <div className={`min-h-screen w-full relative overflow-x-hidden text-gray-200 font-sans selection:bg-yellow-500/30`}>
+        <div className={`min - h - screen w - full relative overflow - x - hidden text - gray - 200 font - sans selection: bg - yellow - 500 / 30`}>
 
             {/* --- LOCATION MODAL --- */}
             {showLocModal && (
@@ -104,7 +82,7 @@ const DashboardShell = () => {
 
                         <h2 className="text-2xl font-bold text-white mb-2">Enable Local Intelligence?</h2>
                         <p className="text-slate-400 text-sm mb-8">
-                            EcoSync Pro uses your precise location to provide hyper-local air quality fusion and real-time alerts.
+                            EcoSync Pro uses precise location for hyper-local alerts.
                         </p>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -146,16 +124,22 @@ const DashboardShell = () => {
 
                 {/* Mode Switcher */}
                 <div className="sticky top-4 z-50">
-                    {/* <SidebarModeSwitch mode={mode} setMode={handleSwitchMode} /> */}
                 </div>
 
                 {/* Content Area with Error Boundary Placeholder */}
                 <main className="mt-8 transition-opacity duration-300 ease-in-out">
-                    {mode === 'lite' ? (
-                        <LiteView />
-                    ) : (
-                        <ProView />
-                    )}
+                    <Suspense fallback={
+                        <div className="flex flex-col items-center justify-center h-screen">
+                            <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                            <div className="mt-4 text-emerald-500 font-mono text-sm animate-pulse">INITIALIZING NEURAL CORE...</div>
+                        </div>
+                    }>
+                        {mode === 'lite' ? (
+                            <LiteView />
+                        ) : (
+                            <ProView />
+                        )}
+                    </Suspense>
                 </main>
 
             </div>
@@ -164,3 +148,4 @@ const DashboardShell = () => {
 };
 
 export default DashboardShell;
+```

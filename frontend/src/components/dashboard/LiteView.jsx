@@ -69,6 +69,58 @@ const LiteView = () => {
     // Stale Check (5s)
     const isStale = (Date.now() - lastSeen) > 5000;
 
+    // --- BLUETOOTH LOGIC ---
+    const [bleConnected, setBleConnected] = React.useState(false);
+    const [bleData, setBleData] = React.useState(null);
+    const deviceRef = React.useRef(null);
+
+    const connectBluetooth = async () => {
+        try {
+            const device = await navigator.bluetooth.requestDevice({
+                filters: [{ namePrefix: 'ESP32' }, { namePrefix: 'EcoSync' }],
+                optionalServices: ['6e400001-b5a3-f393-e0a9-e50e24dcca9e'] // Nordic UART
+            });
+
+            const server = await device.gatt.connect();
+            const service = await server.getPrimaryService('6e400001-b5a3-f393-e0a9-e50e24dcca9e');
+            const characteristic = await service.getCharacteristic('6e400003-b5a3-f393-e0a9-e50e24dcca9e'); // RX/TX
+
+            await characteristic.startNotifications();
+            characteristic.addEventListener('characteristicvaluechanged', (e) => {
+                const dec = new TextDecoder();
+                const raw = dec.decode(e.target.value);
+                try {
+                    // Expecting JSON like: {"temp":25.5,"hum":60,"gas":120}
+                    const json = JSON.parse(raw);
+                    setBleData({
+                        temperature: json.temp || json.temperature || 0,
+                        humidity: json.hum || json.humidity || 0,
+                        mq_ppm: json.gas || json.aqi || 0,
+                        mq_raw: json.raw || 0,
+                        rssi: -50, // Mock RSSI for BLE
+                        battery: 100,
+                        trustScore: 99,
+                        deviceId: device.name
+                    });
+                } catch (err) {
+                    console.log("Partial/Invalid BLE Data:", raw);
+                }
+            });
+
+            deviceRef.current = device;
+            device.addEventListener('gattserverdisconnected', () => setBleConnected(false));
+            setBleConnected(true);
+
+        } catch (err) {
+            console.error("BLE Error:", err);
+            alert("Pairing Failed: " + err.message);
+        }
+    };
+
+    // Merge API Data with BLE Data (BLE takes precedence)
+    const activeData = bleConnected && bleData ? bleData : data;
+    const isLive = bleConnected || (connected && !isStale);
+
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             {/* Header / Connection Bar */}
@@ -78,20 +130,32 @@ const LiteView = () => {
                         CLOUD-BASED IOT ENVIRONMENTAL MONITORING <span className="text-slate-500 text-lg">|</span> LITE
                     </h2>
                     <p className="text-slate-400 text-xs font-mono mt-1">
-                        DEVICE ID: <span className="text-slate-200">{data.deviceId}</span>
+                        SOURCE: <span className="text-white font-bold">{bleConnected ? 'DIRECT BLUETOOTH (BLE)' : 'CLOUD RELAY (API)'}</span>
                     </p>
                 </div>
 
-                <div className={`px-4 py-2 rounded-lg border flex items-center gap-3 backdrop-blur-md transition-colors ${!connected ? 'bg-red-500/10 border-red-500/20 text-red-400' :
-                    isStale ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400' :
-                        'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                    }`}>
-                    <Wifi size={16} className={!isStale && connected ? 'animate-pulse' : ''} />
-                    <div className="flex flex-col">
-                        <span className="text-[10px] font-bold tracking-widest leading-none mb-0.5">STATUS</span>
-                        <span className="text-xs font-mono font-bold leading-none">
-                            {!connected ? 'DISCONNECTED' : isStale ? 'STALE CONNECTION' : 'ONLINE'}
-                        </span>
+                <div className="flex gap-4">
+                    <button
+                        onClick={connectBluetooth}
+                        disabled={bleConnected}
+                        className={`px-4 py-2 rounded-lg border flex items-center gap-3 backdrop-blur-md transition-all font-bold tracking-wider text-xs
+                            ${bleConnected ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-300'}
+                         `}
+                    >
+                        <Wifi size={16} className={bleConnected ? 'animate-pulse' : ''} />
+                        {bleConnected ? 'DEVICE PAIRED' : 'PAIR DEVICE'}
+                    </button>
+
+                    <div className={`px-4 py-2 rounded-lg border flex items-center gap-3 backdrop-blur-md transition-colors ${!isLive ? 'bg-red-500/10 border-red-500/20 text-red-400' :
+                        isStale && !bleConnected ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400' :
+                            'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                        }`}>
+                        <div className="flex flex-col text-right">
+                            <span className="text-[10px] font-bold tracking-widest leading-none mb-0.5">STATUS</span>
+                            <span className="text-xs font-mono font-bold leading-none">
+                                {isLive ? 'ONLINE' : 'DISCONNECTED'}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -115,7 +179,7 @@ const LiteView = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left: Pulse */}
                 <div className="lg:col-span-1">
-                    <EnvironmentalPulse data={data} />
+                    <EnvironmentalPulse data={activeData || data} />
                 </div>
 
                 {/* Right: Tiles & Metrics */}
@@ -123,25 +187,25 @@ const LiteView = () => {
                     <div className="grid grid-cols-2 gap-4">
                         <LiveTile
                             label="Temperature"
-                            value={data.temperature.toFixed(1)}
+                            value={activeData?.temperature?.toFixed(1) || data.temperature.toFixed(1)}
                             unit="°C"
                             icon={Thermometer}
                             color="cyan"
                         />
                         <LiveTile
                             label="Humidity"
-                            value={data.humidity.toFixed(1)}
+                            value={activeData?.humidity?.toFixed(0) || data.humidity.toFixed(0)}
                             unit="%"
                             icon={Droplets}
                             color="emerald"
                         />
                         <LiveTile
                             label="Air Quality"
-                            value={data.mq_ppm.toFixed(1)}
+                            value={activeData?.mq_ppm?.toFixed(0) || data.mq_ppm.toFixed(0)}
                             unit="PPM"
                             icon={Activity}
-                            color={data.mq_ppm > 50 ? 'red' : 'emerald'}
-                            subtext={`Raw: ${data.mq_raw.toFixed(0)}`}
+                            color={(activeData?.mq_ppm || data.mq_ppm) > 50 ? 'red' : 'emerald'}
+                            subtext={`Raw: ${activeData?.mq_raw?.toFixed(0) || data.mq_raw.toFixed(0)}`}
                         />
 
                         {/* Trust Score Widget (New Feature) */}
@@ -151,17 +215,17 @@ const LiteView = () => {
                                 <Zap size={18} className="text-yellow-400" />
                             </div>
                             <div className="flex items-end gap-2">
-                                <span className={`text-4xl font-black font-mono ${data.trustScore > 90 ? 'text-emerald-400' :
-                                    data.trustScore > 70 ? 'text-yellow-400' : 'text-red-400'
+                                <span className={`text-4xl font-black font-mono ${(activeData?.trustScore || data.trustScore) > 90 ? 'text-emerald-400' :
+                                    (activeData?.trustScore || data.trustScore) > 70 ? 'text-yellow-400' : 'text-red-400'
                                     }`}>
-                                    {data.trustScore}%
+                                    {activeData?.trustScore || data.trustScore}%
                                 </span>
                                 <span className="text-[10px] bg-slate-800 px-2 py-1 rounded border border-slate-700 text-slate-400 mb-2">
-                                    {data.trustScore > 90 ? 'LAB GRADE' : 'CONSUMER'}
+                                    {(activeData?.trustScore || data.trustScore) > 90 ? 'LAB GRADE' : 'CONSUMER'}
                                 </span>
                             </div>
                             <div className="w-full bg-slate-800 h-1 mt-2 rounded-full overflow-hidden">
-                                <div className={`h-full ${data.trustScore > 90 ? 'bg-emerald-500' : 'bg-yellow-500'}`} style={{ width: `${data.trustScore}%` }} />
+                                <div className={`h-full ${(activeData?.trustScore || data.trustScore) > 90 ? 'bg-emerald-500' : 'bg-yellow-500'}`} style={{ width: `${activeData?.trustScore || data.trustScore}%` }} />
                             </div>
                         </div>
                     </div>
@@ -248,7 +312,7 @@ const LiteView = () => {
                     <Wifi size={18} className="text-cyan-400" />
                     <h3 className="text-sm font-bold text-white uppercase tracking-widest">LIVE SERIAL OUTPUT</h3>
                 </div>
-                <SerialMonitor data={data} />
+                <SerialMonitor data={activeData || data} />
             </div>
         </div>
     );

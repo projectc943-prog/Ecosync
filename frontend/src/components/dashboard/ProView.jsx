@@ -247,33 +247,60 @@ const ForecastPanel = ({ forecast, bestWindows }) => {
     // forecast: [{time, temp, pm25, aqi}, ...]
 
     return (
-        <Card className="col-span-1 lg:col-span-2 relative p-4 flex flex-col h-[300px]">
-            <div className="flex justify-between items-start mb-4">
-                <div>
-                    <h3 className="text-sm font-bold text-gray-200 flex items-center gap-2">
-                        <Sun size={14} className="text-amber-400" />
-                        24H DETAILED FORECAST
-                    </h3>
-                    <p className="text-[10px] text-gray-500 mt-1">
-                        Hourly Temperature & Air Quality
-                    </p>
-                </div>
+        <Card className="col-span-1 lg:col-span-2 relative p-6 flex flex-col h-[340px] overflow-hidden group">
+            {/* Google-ish Weather Character Background - Simulated with CSS Art/Icon */}
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <CloudSun size={120} className="text-emerald-400" />
             </div>
 
-            <div className="flex-1 w-full min-h-0 overflow-x-auto text-xs">
-                <div className="flex min-w-max pb-2">
-                    {forecast.map((item, idx) => (
-                        <div key={idx} className={`flex flex-col items-center gap-2 px-3 py-2 border-r border-gray-800 last:border-0 ${idx === 0 ? 'bg-white/5 rounded-l-lg' : ''}`}>
-                            <span className="text-gray-400 text-[10px]">{item.time}</span>
-                            <CloudSun size={16} className="text-gray-300" />
-                            <span className="font-bold text-white text-sm">{item.temp}°</span>
-                            <div className="flex flex-col items-center gap-0.5 mt-1">
-                                <span className="text-[9px] text-cyan-400">0%</span>
-                                <div className={`w-8 h-1 rounded-full ${item.aqi < 50 ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                                <span className="text-[9px] text-emerald-400">AQI {item.aqi}</span>
+            <div className="relative z-10">
+                <div className="flex justify-between items-start mb-6">
+                    <div>
+                        <h3 className="text-sm font-bold text-gray-200 flex items-center gap-2 uppercase tracking-widest">
+                            <Sun size={14} className="text-amber-400" />
+                            24h Biosphere Outlook
+                        </h3>
+                        <p className="text-[10px] text-gray-400 mt-1">
+                            Predictive Environmental Intelligence
+                        </p>
+                    </div>
+                </div>
+
+                {/* Horizontal Scroll Container - "Google Style" Pills */}
+                <div className="w-full overflow-x-auto pb-4 scrollbar-hide">
+                    <div className="flex gap-3 min-w-max px-1">
+                        {forecast.map((item, idx) => (
+                            <div
+                                key={idx}
+                                className={`
+                                    flex flex-col items-center justify-between
+                                    w-16 h-32 rounded-3xl py-3
+                                    border border-white/5 
+                                    transition-all duration-300 hover:scale-105 hover:bg-white/5
+                                    ${idx === 0 ? 'bg-emerald-500/20 border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'bg-[#1e2329]'}
+                                `}
+                            >
+                                <span className="text-[10px] font-mono text-gray-400">{item.time}</span>
+
+                                {/* Icon based on AQI/Temp */}
+                                {item.aqi > 100 ? <AlertTriangle size={18} className="text-amber-500" /> :
+                                    item.temp > 30 ? <Sun size={18} className="text-amber-300" /> :
+                                        <CloudSun size={18} className={idx === 0 ? "text-emerald-300" : "text-gray-400"} />
+                                }
+
+                                <span className="text-lg font-bold text-white">{Math.round(item.temp)}°</span>
+
+                                <div className="w-full flex flex-col items-center gap-1">
+                                    <div className="h-8 w-1.5 bg-gray-700 rounded-full relative overflow-hidden">
+                                        <div
+                                            className={`absolute bottom-0 w-full rounded-full ${item.aqi < 50 ? 'bg-emerald-500' : item.aqi < 100 ? 'bg-amber-500' : 'bg-red-500'}`}
+                                            style={{ height: `${Math.min(100, (item.aqi / 200) * 100)}%` }}
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             </div>
         </Card>
@@ -576,113 +603,110 @@ const ProView = () => {
             {/* Header */}
             <div className="flex justify-between items-end">
                 <div>
-                    <div className="mb-2">
-                        <h2 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-300 tracking-tighter uppercase mb-1 drop-shadow-xl font-sans">
-                            CLOUD-BASED IOT ENVIRONMENTAL MONITORING
-                        </h2>
+                     <div className="flex items-center gap-4">
                         <p className="text-[10px] md:text-xs text-emerald-500/80 font-mono tracking-widest uppercase border-l-2 border-emerald-500/50 pl-3 flex items-center gap-2">
-                            MONITORING ZONE: <span className="text-white font-bold">{activeLocation.name || 'HYDERABAD'}</span>
+                            MONITORING ZONE: <span className="text-white font-bold text-lg">{activeLocation.name || 'HYDERABAD'}</span>
                         </p>
+                        <button
+                            onClick={() => inputValue.length > 2 && setShowSuggestions(true)}
+                            className="text-[10px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-1 rounded transition-colors uppercase font-bold tracking-wider"
+                        >
+                            Change Location
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Search Bar with Autocomplete */}
+            <div className="flex items-center gap-2 mt-1 relative" ref={wrapperRef}>
+                <div className="relative flex items-center gap-2 w-full md:w-auto">
+                    <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                            <Search size={12} className="text-gray-500" />
+                        </div>
+                        <input
+                            type="text"
+                            value={inputValue}
+                            onChange={handleInputChange}
+                            onKeyDown={handleKeyDown}
+                            onFocus={() => inputValue.length > 2 && setShowSuggestions(true)}
+                            placeholder="Search City..."
+                            className="pl-7 bg-gray-800/50 border border-gray-700 rounded-md px-2 py-1 text-xs text-white focus:outline-none focus:border-emerald-500 transition-colors w-48"
+                        />
+
+                        {/* Dropdown Results */}
+                        {showSuggestions && suggestions.length > 0 && (
+                            <ul className="absolute left-0 top-full mt-1 w-full bg-[#1e2329] border border-gray-700 rounded-md shadow-xl z-50 max-h-48 overflow-y-auto">
+                                {suggestions.map((s) => (
+                                    <li
+                                        key={s.id}
+                                        onClick={() => handleSelectCity(s)}
+                                        className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-xs text-gray-200 border-b border-gray-800 last:border-0 flex flex-col"
+                                    >
+                                        <span className="font-bold">{s.name}</span>
+                                        <span className="text-[10px] text-gray-500">{s.admin1}, {s.country}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </div>
 
-                    {/* Search Bar with Autocomplete */}
-                    <div className="flex items-center gap-2 mt-1 relative" ref={wrapperRef}>
-                        <div className="relative flex items-center gap-2">
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-                                    <Search size={12} className="text-gray-500" />
-                                </div>
-                                <input
-                                    type="text"
-                                    value={inputValue}
-                                    onChange={handleInputChange}
-                                    onKeyDown={handleKeyDown}
-                                    onFocus={() => inputValue.length > 2 && setShowSuggestions(true)}
-                                    placeholder="Search City..."
-                                    className="pl-7 bg-gray-800/50 border border-gray-700 rounded-md px-2 py-1 text-xs text-white focus:outline-none focus:border-emerald-500 transition-colors w-48"
-                                />
+                    {/* [NEW] Current Location Button */}
+                    <button
+                        onClick={async () => {
+                            /* User Requested explicit button for "Use Current Location" */
+                            if (navigator.geolocation) {
+                                navigator.geolocation.getCurrentPosition(pos => {
+                                    const { latitude, longitude } = pos.coords;
+                                    // Manual Context Update fallback
+                                    setSearchQuery({ lat: latitude, lon: longitude, city: 'Current Location' });
+                                });
+                            }
+                        }}
+                        className="p-1.5 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-md hover:bg-emerald-600 hover:text-white transition-colors"
+                        title="Locate Me"
+                    >
+                        <Move size={14} />
+                    </button>
+                </div>
+            </div>
 
-                                {/* Dropdown Results */}
-                                {showSuggestions && suggestions.length > 0 && (
-                                    <ul className="absolute left-0 top-full mt-1 w-full bg-[#1e2329] border border-gray-700 rounded-md shadow-xl z-50 max-h-48 overflow-y-auto">
-                                        {suggestions.map((s) => (
-                                            <li
-                                                key={s.id}
-                                                onClick={() => handleSelectCity(s)}
-                                                className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-xs text-gray-200 border-b border-gray-800 last:border-0 flex flex-col"
-                                            >
-                                                <span className="font-bold">{s.name}</span>
-                                                <span className="text-[10px] text-gray-500">{s.admin1}, {s.country}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </div>
 
-                            {/* [NEW] Current Location Button */}
-                            <button
-                                onClick={() => {
-                                    if (navigator.geolocation) {
-                                        navigator.geolocation.getCurrentPosition(
-                                            (pos) => {
-                                                const { latitude, longitude } = pos.coords;
-                                                setSearchQuery({ lat: latitude, lon: longitude, city: 'Current Location' });
-                                                setInputValue('Current Location');
-                                                setFusionHistory([]);
-                                            },
-                                            (err) => {
-                                                alert("Location Access Denied or Unavailable.");
-                                                console.error(err);
-                                            }
-                                        );
-                                    } else {
-                                        alert("Geolocation is not supported by this browser.");
-                                    }
-                                }}
-                                className="p-1.5 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-md hover:bg-emerald-600 hover:text-white transition-colors"
-                                title="Use Current Location"
-                            >
-                                <Move size={14} />
-                            </button>
+                    {/* [NEW] Dynamic Map Widget (OpenStreetMap) */ }
+                    <div className="mt-4 w-full h-[250px] rounded-xl overflow-hidden border border-gray-700 relative shadow-2xl">
+                        <iframe
+                            width="100%"
+                            height="100%"
+                            frameBorder="0"
+                            scrolling="no"
+                            marginHeight="0"
+                            marginWidth="0"
+                            src={`https://www.openstreetmap.org/export/embed.html?bbox=${activeLocation.lon - 0.05}%2C${activeLocation.lat - 0.05}%2C${activeLocation.lon + 0.05}%2C${activeLocation.lat + 0.05}&layer=mapnik&marker=${activeLocation.lat}%2C${activeLocation.lon}`}
+                            style={{ filter: 'invert(90%) hue-rotate(180deg) contrast(85%) grayscale(20%)' }}
+                        ></iframe>
+                        <div className="absolute top-3 left-3 bg-black/80 px-3 py-1 rounded text-xs text-emerald-400 font-mono border border-emerald-500/30 flex items-center gap-2 backdrop-blur-md">
+                            <Activity size={12} className="animate-pulse" />
+                            LIVE TRACKING: {activeLocation.name}
                         </div>
                     </div>
-                </div>
 
-                {/* [NEW] Dynamic Map Widget (OpenStreetMap) */}
-                <div className="mt-4 w-full h-[250px] rounded-xl overflow-hidden border border-gray-700 relative shadow-2xl">
-                    <iframe
-                        width="100%"
-                        height="100%"
-                        frameBorder="0"
-                        scrolling="no"
-                        marginHeight="0"
-                        marginWidth="0"
-                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${activeLocation.lon - 0.05}%2C${activeLocation.lat - 0.05}%2C${activeLocation.lon + 0.05}%2C${activeLocation.lat + 0.05}&layer=mapnik&marker=${activeLocation.lat}%2C${activeLocation.lon}`}
-                        style={{ filter: 'invert(90%) hue-rotate(180deg) contrast(85%) grayscale(20%)' }}
-                    ></iframe>
-                    <div className="absolute top-3 left-3 bg-black/80 px-3 py-1 rounded text-xs text-emerald-400 font-mono border border-emerald-500/30 flex items-center gap-2 backdrop-blur-md">
-                        <Activity size={12} className="animate-pulse" />
-                        LIVE TRACKING: {activeLocation.name}
-                    </div>
-                </div>
+                    <div className="flex gap-2">
+                        {['1H', '24H', '7D'].map(r => (
+                            <button
+                                key={r}
+                                onClick={() => setRange(r)}
+                                className={`px-3 py-1 rounded text-xs font-bold border ${range === r ? 'bg-emerald-600 border-emerald-500 text-white' : 'border-gray-700 text-gray-400 hover:text-white'}`}
+                            >
+                                {r}
+                            </button>
+                        ))}
 
-                <div className="flex gap-2">
-                    {['1H', '24H', '7D'].map(r => (
                         <button
-                            key={r}
-                            onClick={() => setRange(r)}
-                            className={`px-3 py-1 rounded text-xs font-bold border ${range === r ? 'bg-emerald-600 border-emerald-500 text-white' : 'border-gray-700 text-gray-400 hover:text-white'}`}
-                        >
-                            {r}
-                        </button>
-                    ))}
-
-                    <button
-                        onClick={() => {
-                            // Trigger Full Screen Alert
-                            const alertOverlay = document.createElement('div');
-                            alertOverlay.className = 'fixed inset-0 z-[9999] bg-red-950/90 flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300';
-                            alertOverlay.innerHTML = `
+                            onClick={() => {
+                                // Trigger Full Screen Alert
+                                const alertOverlay = document.createElement('div');
+                                alertOverlay.className = 'fixed inset-0 z-[9999] bg-red-950/90 flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300';
+                                alertOverlay.innerHTML = `
                                 <div class="bg-red-600/20 p-8 rounded-full animate-ping mb-8">
                                     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-red-500"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                                 </div>
@@ -692,232 +716,232 @@ const ProView = () => {
                                     ACKNOWLEDGE & DISMISS
                                 </button>
                             `;
-                            document.body.appendChild(alertOverlay);
-                            // Beep (simple osc)
-                            try {
-                                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                                const oscillator = audioCtx.createOscillator();
-                                oscillator.type = 'sawtooth';
-                                oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
-                                oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.5);
-                                oscillator.connect(audioCtx.destination);
-                                oscillator.start();
-                                oscillator.stop(audioCtx.currentTime + 0.5);
-                            } catch (e) { }
-                        }}
-                        className="p-1 px-2 rounded border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-white transition-colors"
-                        title="Simulate Alert"
-                    >
-                        <AlertTriangle size={18} />
-                    </button>
-                    <button onClick={() => window.print()} className="p-1 px-2 rounded border border-cyan-500/30 text-cyan-400 hover:text-white hover:bg-cyan-500/20 transition-colors" title="Export PDF Report">
-                        <Share2 size={18} />
-                    </button>
-                    <button onClick={() => setIsSettingsOpen(true)} className="p-1 px-2 rounded border border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
-                        <Settings size={18} />
-                    </button>
+                                document.body.appendChild(alertOverlay);
+                                // Beep (simple osc)
+                                try {
+                                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                                    const oscillator = audioCtx.createOscillator();
+                                    oscillator.type = 'sawtooth';
+                                    oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
+                                    oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.5);
+                                    oscillator.connect(audioCtx.destination);
+                                    oscillator.start();
+                                    oscillator.stop(audioCtx.currentTime + 0.5);
+                                } catch (e) { }
+                            }}
+                            className="p-1 px-2 rounded border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-white transition-colors"
+                            title="Simulate Alert"
+                        >
+                            <AlertTriangle size={18} />
+                        </button>
+                        <button onClick={() => window.print()} className="p-1 px-2 rounded border border-cyan-500/30 text-cyan-400 hover:text-white hover:bg-cyan-500/20 transition-colors" title="Export PDF Report">
+                            <Share2 size={18} />
+                        </button>
+                        <button onClick={() => setIsSettingsOpen(true)} className="p-1 px-2 rounded border border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+                            <Settings size={18} />
+                        </button>
+                    </div>
+                </div >
+
+    <SettingsDialog isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+
+{/* Life Support Monitor (Temp & Humidity Focus) */ }
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        {/* Temperature Monitor */}
+        <Card className={`relative overflow-hidden flex flex-col justify-center items-center py-8 border-2 ${weather?.temp > 35 ? 'border-red-500 bg-red-900/10' : 'border-gray-700'}`}>
+            {weather?.temp > 35 && <div className="absolute top-0 inset-x-0 bg-red-500 text-black text-[10px] font-bold text-center tracking-[0.3em] uppercase py-1 animate-pulse">Critical Thermal Levels</div>}
+            <div className="flex items-center gap-3 mb-2">
+                <Sun size={24} className={weather?.temp > 35 ? 'text-red-500 animate-spin-slow' : 'text-amber-400'} />
+                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Ambient Temp</h3>
+            </div>
+            <div className="text-6xl md:text-7xl font-black text-white tracking-tighter relative">
+                {weather?.temp}
+                <span className="text-2xl text-gray-500 absolute top-2 -right-6">°C</span>
+            </div>
+            <div className="mt-4 text-xs font-mono text-gray-500 bg-gray-900/50 px-3 py-1 rounded-full border border-white/5">
+                THRESHOLD: 35°C
+            </div>
+        </Card>
+
+        {/* Humidity Monitor */}
+        <Card className={`relative overflow-hidden flex flex-col justify-center items-center py-8 border-2 ${weather?.humidity > 70 ? 'border-cyan-500 bg-cyan-900/10' : 'border-gray-700'}`}>
+            {weather?.humidity > 70 && <div className="absolute top-0 inset-x-0 bg-cyan-500 text-black text-[10px] font-bold text-center tracking-[0.3em] uppercase py-1 animate-pulse">High Moisture Alert</div>}
+            <div className="flex items-center gap-3 mb-2">
+                <Activity size={24} className={weather?.humidity > 70 ? 'text-cyan-500' : 'text-cyan-400'} />
+                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Humidity</h3>
+            </div>
+            <div className="text-6xl md:text-7xl font-black text-white tracking-tighter relative">
+                {weather?.humidity}
+                <span className="text-2xl text-gray-500 absolute top-2 -right-8">%</span>
+            </div>
+            <div className="mt-4 text-xs font-mono text-gray-500 bg-gray-900/50 px-3 py-1 rounded-full border border-white/5">
+                THRESHOLD: 70%
+            </div>
+        </Card>
+    </div>
+
+
+    {/* Google-Style Weather Grid */ }
+    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        {/* UV Index */}
+        <Card className="flex flex-col justify-between h-24">
+            <div className="flex items-center gap-2 text-gray-400 text-[10px] uppercase font-bold">
+                <Sun size={14} /> UV Index
+            </div>
+            <div className="text-2xl font-bold text-white">{weather?.uv_index || 0}</div>
+            <div className="text-[10px] text-gray-500">Moderate</div>
+        </Card>
+
+        {/* Sunrise */}
+        <Card className="flex flex-col justify-between h-24">
+            <div className="flex items-center gap-2 text-gray-400 text-[10px] uppercase font-bold">
+                <Sunrise size={14} /> Sunrise
+            </div>
+            <div className="text-2xl font-bold text-white">06:23</div>
+            <div className="text-[10px] text-gray-500">AM</div>
+        </Card>
+
+        {/* Sunset */}
+        <Card className="flex flex-col justify-between h-24">
+            <div className="flex items-center gap-2 text-gray-400 text-[10px] uppercase font-bold">
+                <Sunset size={14} /> Sunset
+            </div>
+            <div className="text-2xl font-bold text-white">18:45</div>
+            <div className="text-[10px] text-gray-500">PM</div>
+        </Card>
+
+        {/* Humidity */}
+        <Card className="flex flex-col justify-between h-24">
+            <div className="flex items-center gap-2 text-gray-400 text-[10px] uppercase font-bold">
+                <Droplets size={14} /> Humidity
+            </div>
+            <div className="text-2xl font-bold text-white">{weather?.humidity}%</div>
+            <div className="text-[10px] text-gray-500">Dew Point: 22°</div>
+        </Card>
+
+        {/* Pressure */}
+        <Card className="flex flex-col justify-between h-24">
+            <div className="flex items-center gap-2 text-gray-400 text-[10px] uppercase font-bold">
+                <Activity size={14} /> Pressure
+            </div>
+            <div className="text-2xl font-bold text-white">1013</div>
+            <div className="text-[10px] text-gray-500">hPa</div>
+        </Card>
+
+        {/* Visibility */}
+        <Card className="flex flex-col justify-between h-24">
+            <div className="flex items-center gap-2 text-gray-400 text-[10px] uppercase font-bold">
+                <Eye size={14} /> Visibility
+            </div>
+            <div className="text-2xl font-bold text-white">10 km</div>
+            <div className="text-[10px] text-gray-500">Clear View</div>
+        </Card>
+    </div>
+
+    {/* Main Widget Grid - Dynamic Ordering Handling (Simulated Grid) */ }
+
+    {/* Row 1: The Heavy Hitters */ }
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Fusion Chart (Spans 2 cols) */}
+        <Card className="lg:col-span-2 relative p-4 flex flex-col h-[320px]">
+            {/* ... Fusion Chart Content ... */}
+            <div className="flex justify-between items-start mb-4">
+                <div>
+                    <h3 className="text-sm font-bold text-gray-200 flex items-center gap-2">
+                        <Shield size={14} className="text-emerald-400" />
+                        KALMAN FILTER REAL-TIME ANALYSIS
+                    </h3>
+                    <p className="text-[10px] text-gray-500 mt-1">
+                        Fusing Local Sensors ({fusion?.temperature?.local || 'N/A'}) + Public API ({fusion?.temperature?.external || 'N/A'})
+                    </p>
                 </div>
+                <Badge type="success">AI ACTIVE</Badge>
             </div>
-
-            <SettingsDialog isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
-
-            {/* Life Support Monitor (Temp & Humidity Focus) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                {/* Temperature Monitor */}
-                <Card className={`relative overflow-hidden flex flex-col justify-center items-center py-8 border-2 ${weather?.temp > 35 ? 'border-red-500 bg-red-900/10' : 'border-gray-700'}`}>
-                    {weather?.temp > 35 && <div className="absolute top-0 inset-x-0 bg-red-500 text-black text-[10px] font-bold text-center tracking-[0.3em] uppercase py-1 animate-pulse">Critical Thermal Levels</div>}
-                    <div className="flex items-center gap-3 mb-2">
-                        <Sun size={24} className={weather?.temp > 35 ? 'text-red-500 animate-spin-slow' : 'text-amber-400'} />
-                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Ambient Temp</h3>
-                    </div>
-                    <div className="text-6xl md:text-7xl font-black text-white tracking-tighter relative">
-                        {weather?.temp}
-                        <span className="text-2xl text-gray-500 absolute top-2 -right-6">°C</span>
-                    </div>
-                    <div className="mt-4 text-xs font-mono text-gray-500 bg-gray-900/50 px-3 py-1 rounded-full border border-white/5">
-                        THRESHOLD: 35°C
-                    </div>
-                </Card>
-
-                {/* Humidity Monitor */}
-                <Card className={`relative overflow-hidden flex flex-col justify-center items-center py-8 border-2 ${weather?.humidity > 70 ? 'border-cyan-500 bg-cyan-900/10' : 'border-gray-700'}`}>
-                    {weather?.humidity > 70 && <div className="absolute top-0 inset-x-0 bg-cyan-500 text-black text-[10px] font-bold text-center tracking-[0.3em] uppercase py-1 animate-pulse">High Moisture Alert</div>}
-                    <div className="flex items-center gap-3 mb-2">
-                        <Activity size={24} className={weather?.humidity > 70 ? 'text-cyan-500' : 'text-cyan-400'} />
-                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Humidity</h3>
-                    </div>
-                    <div className="text-6xl md:text-7xl font-black text-white tracking-tighter relative">
-                        {weather?.humidity}
-                        <span className="text-2xl text-gray-500 absolute top-2 -right-8">%</span>
-                    </div>
-                    <div className="mt-4 text-xs font-mono text-gray-500 bg-gray-900/50 px-3 py-1 rounded-full border border-white/5">
-                        THRESHOLD: 70%
-                    </div>
-                </Card>
+            <div className="flex-1 min-h-0">
+                <FusionChart history={fusionHistory} />
             </div>
+            {/* Widget Control - Mock */}
+            <button onClick={() => moveWidgetUp('fusion')} className="absolute top-2 right-2 opacity-0 hover:opacity-100 text-gray-500 hover:text-white p-1" title="Move Top"><Move size={12} /></button>
+        </Card>
 
-
-            {/* Google-Style Weather Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {/* UV Index */}
-                <Card className="flex flex-col justify-between h-24">
-                    <div className="flex items-center gap-2 text-gray-400 text-[10px] uppercase font-bold">
-                        <Sun size={14} /> UV Index
-                    </div>
-                    <div className="text-2xl font-bold text-white">{weather?.uv_index || 0}</div>
-                    <div className="text-[10px] text-gray-500">Moderate</div>
-                </Card>
-
-                {/* Sunrise */}
-                <Card className="flex flex-col justify-between h-24">
-                    <div className="flex items-center gap-2 text-gray-400 text-[10px] uppercase font-bold">
-                        <Sunrise size={14} /> Sunrise
-                    </div>
-                    <div className="text-2xl font-bold text-white">06:23</div>
-                    <div className="text-[10px] text-gray-500">AM</div>
-                </Card>
-
-                {/* Sunset */}
-                <Card className="flex flex-col justify-between h-24">
-                    <div className="flex items-center gap-2 text-gray-400 text-[10px] uppercase font-bold">
-                        <Sunset size={14} /> Sunset
-                    </div>
-                    <div className="text-2xl font-bold text-white">18:45</div>
-                    <div className="text-[10px] text-gray-500">PM</div>
-                </Card>
-
-                {/* Humidity */}
-                <Card className="flex flex-col justify-between h-24">
-                    <div className="flex items-center gap-2 text-gray-400 text-[10px] uppercase font-bold">
-                        <Droplets size={14} /> Humidity
-                    </div>
-                    <div className="text-2xl font-bold text-white">{weather?.humidity}%</div>
-                    <div className="text-[10px] text-gray-500">Dew Point: 22°</div>
-                </Card>
-
-                {/* Pressure */}
-                <Card className="flex flex-col justify-between h-24">
-                    <div className="flex items-center gap-2 text-gray-400 text-[10px] uppercase font-bold">
-                        <Activity size={14} /> Pressure
-                    </div>
-                    <div className="text-2xl font-bold text-white">1013</div>
-                    <div className="text-[10px] text-gray-500">hPa</div>
-                </Card>
-
-                {/* Visibility */}
-                <Card className="flex flex-col justify-between h-24">
-                    <div className="flex items-center gap-2 text-gray-400 text-[10px] uppercase font-bold">
-                        <Eye size={14} /> Visibility
-                    </div>
-                    <div className="text-2xl font-bold text-white">10 km</div>
-                    <div className="text-[10px] text-gray-500">Clear View</div>
-                </Card>
+        {/* Decision Panel (1 Col) */}
+        <div className="space-y-4">
+            <IndoorOutdoorPanel
+                local={fusion?.pm25?.local}
+                outdoor={aqi?.pm25}
+                recommendation={recommendation}
+            />
+            {/* Exposure Timer (Replacing compact Source for more utility in premium view) */}
+            <div className="h-[160px]">
+                <ExposureTimer pm25={aqi?.pm25 || 0} />
             </div>
+        </div>
+    </div>
 
-            {/* Main Widget Grid - Dynamic Ordering Handling (Simulated Grid) */}
+    {/* Row 2: Analysis & Diary */ }
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+            <ForecastPanel forecast={forecast} bestWindows={bestWindows} />
+        </div>
 
-            {/* Row 1: The Heavy Hitters */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Fusion Chart (Spans 2 cols) */}
-                <Card className="lg:col-span-2 relative p-4 flex flex-col h-[320px]">
-                    {/* ... Fusion Chart Content ... */}
-                    <div className="flex justify-between items-start mb-4">
-                        <div>
-                            <h3 className="text-sm font-bold text-gray-200 flex items-center gap-2">
-                                <Shield size={14} className="text-emerald-400" />
-                                KALMAN FILTER REAL-TIME ANALYSIS
-                            </h3>
-                            <p className="text-[10px] text-gray-500 mt-1">
-                                Fusing Local Sensors ({fusion?.temperature?.local || 'N/A'}) + Public API ({fusion?.temperature?.external || 'N/A'})
-                            </p>
-                        </div>
-                        <Badge type="success">AI ACTIVE</Badge>
-                    </div>
-                    <div className="flex-1 min-h-0">
-                        <FusionChart history={fusionHistory} />
-                    </div>
-                    {/* Widget Control - Mock */}
-                    <button onClick={() => moveWidgetUp('fusion')} className="absolute top-2 right-2 opacity-0 hover:opacity-100 text-gray-500 hover:text-white p-1" title="Move Top"><Move size={12} /></button>
-                </Card>
-
-                {/* Decision Panel (1 Col) */}
-                <div className="space-y-4">
-                    <IndoorOutdoorPanel
-                        local={fusion?.pm25?.local}
-                        outdoor={aqi?.pm25}
-                        recommendation={recommendation}
-                    />
-                    {/* Exposure Timer (Replacing compact Source for more utility in premium view) */}
-                    <div className="h-[160px]">
-                        <ExposureTimer pm25={aqi?.pm25 || 0} />
-                    </div>
-                </div>
+        <div className="space-y-4">
+            <div className="h-[180px]">
+                <CauseExplorer weather={weather} aqi={aqi} />
             </div>
-
-            {/* Row 2: Analysis & Diary */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                    <ForecastPanel forecast={forecast} bestWindows={bestWindows} />
-                </div>
-
-                <div className="space-y-4">
-                    <div className="h-[180px]">
-                        <CauseExplorer weather={weather} aqi={aqi} />
-                    </div>
-                    <div className="h-[200px]">
-                        <DiaryPanel />
-                    </div>
-                </div>
+            <div className="h-[200px]">
+                <DiaryPanel />
             </div>
+        </div>
+    </div>
 
-            {/* NEW: Weather News Ticker */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 h-[200px]">
-                    <WeatherNews />
-                </div>
-                <div className="h-[200px]">
-                    <AIAnalysisCard weather={weather} aqi={aqi} locationName={activeLocation.name} />
-                </div>
+    {/* NEW: Weather News Ticker */ }
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 h-[200px]">
+            <WeatherNews />
+        </div>
+        <div className="h-[200px]">
+            <AIAnalysisCard weather={weather} aqi={aqi} locationName={activeLocation.name} />
+        </div>
+    </div>
+
+    {/* NEW: Biosphere DNA Row & Top Locations */ }
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[250px]">
+        <Card className="lg:col-span-1">
+            <BioSignatureWidget weather={weather} aqi={aqi} />
+        </Card>
+        <Card className="lg:col-span-2 overflow-hidden flex flex-col">
+            <TopLocations />
+        </Card>
+    </div>
+
+    {/* Row 3: Advanced Source Analytics */ }
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[300px]">
+        <Card className="flex flex-col">
+            <div className="flex items-center gap-2 mb-4">
+                <Fingerprint size={14} className="text-indigo-400" />
+                <span className="text-[10px] font-bold uppercase text-gray-400">Full Pollution Signature</span>
             </div>
+            <FingerprintChart data={fingerprint} />
+        </Card>
 
-            {/* NEW: Biosphere DNA Row & Top Locations */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[250px]">
-                <Card className="lg:col-span-1">
-                    <BioSignatureWidget weather={weather} aqi={aqi} />
-                </Card>
-                <Card className="lg:col-span-2 overflow-hidden flex flex-col">
-                    <TopLocations />
-                </Card>
+        <Card className="flex flex-col relative overflow-hidden">
+            <div className="flex items-center gap-2 mb-4">
+                <AlertTriangle size={14} className="text-red-400" />
+                <span className="text-[10px] font-bold uppercase text-gray-400">Active Anomalies</span>
             </div>
-
-            {/* Row 3: Advanced Source Analytics */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[300px]">
-                <Card className="flex flex-col">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Fingerprint size={14} className="text-indigo-400" />
-                        <span className="text-[10px] font-bold uppercase text-gray-400">Full Pollution Signature</span>
+            <div className="space-y-2">
+                {anomalies.map((a, i) => (
+                    <div key={i} className="text-xs bg-red-500/10 p-2 rounded text-red-300 border border-red-500/20 flex justify-between">
+                        <span className="font-bold">{a.type}</span>
+                        <span>{(a.confidence * 100).toFixed(0)}% Conf.</span>
                     </div>
-                    <FingerprintChart data={fingerprint} />
-                </Card>
-
-                <Card className="flex flex-col relative overflow-hidden">
-                    <div className="flex items-center gap-2 mb-4">
-                        <AlertTriangle size={14} className="text-red-400" />
-                        <span className="text-[10px] font-bold uppercase text-gray-400">Active Anomalies</span>
-                    </div>
-                    <div className="space-y-2">
-                        {anomalies.map((a, i) => (
-                            <div key={i} className="text-xs bg-red-500/10 p-2 rounded text-red-300 border border-red-500/20 flex justify-between">
-                                <span className="font-bold">{a.type}</span>
-                                <span>{(a.confidence * 100).toFixed(0)}% Conf.</span>
-                            </div>
-                        ))}
-                    </div>
-                </Card>
+                ))}
             </div>
-        </div >
-    );
+        </Card>
+    </div>
+            </div >
+            );
 };
 
 export default ProView;
