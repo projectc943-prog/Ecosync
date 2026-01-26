@@ -4,14 +4,16 @@ import { Map, ArrowUp, ArrowDown } from 'lucide-react';
 const CITIES = [
     { name: "Delhi", lat: 28.6139, lon: 77.2090 },
     { name: "Mumbai", lat: 19.0760, lon: 72.8777 },
+    { name: "Bengaluru", lat: 12.9716, lon: 77.5946 },
+    { name: "Hyderabad", lat: 17.3850, lon: 78.4867 },
     { name: "Chennai", lat: 13.0827, lon: 80.2707 },
     { name: "Kolkata", lat: 22.5726, lon: 88.3639 },
-    { name: "Bangalore", lat: 12.9716, lon: 77.5946 },
-    { name: "Hyderabad", lat: 17.3850, lon: 78.4867 },
-    { name: "New York", lat: 40.7128, lon: -74.0060 },
-    { name: "London", lat: 51.5074, lon: -0.1278 },
-    { name: "Tokyo", lat: 35.6762, lon: 139.6503 },
-    { name: "Dubai", lat: 25.2048, lon: 55.2708 }
+    { name: "Pune", lat: 18.5204, lon: 73.8567 },
+    { name: "Ahmedabad", lat: 23.0225, lon: 72.5714 },
+    { name: "Jaipur", lat: 26.9124, lon: 75.7873 },
+    { name: "Visakhapatnam", lat: 17.6868, lon: 83.2185 },
+    { name: "Surat", lat: 21.1702, lon: 72.8311 },
+    { name: "Lucknow", lat: 26.8467, lon: 80.9461 }
 ];
 
 const TopLocations = () => {
@@ -67,7 +69,7 @@ const TopLocations = () => {
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                     <Map size={14} className="text-orange-400" />
-                    <h3 className="text-xs font-bold text-gray-400 uppercase">Global Heat Index (Live)</h3>
+                    <h3 className="text-xs font-bold text-gray-400 uppercase">Pan-India Air Monitor</h3>
                 </div>
                 <div className="text-[10px] text-emerald-500 animate-pulse">● UPDATING</div>
             </div>
