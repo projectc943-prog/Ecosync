@@ -36,8 +36,8 @@ void sendSensorData() {
     // Send "Error" values or keep last known
   } else {
     // Send to Blynk
-    Blynk.virtualWrite(V0, t); // V0: Temperature
-    Blynk.virtualWrite(V1, h); // V1: Humidity
+    Blynk.virtualWrite(V5, t); // V5: Temperature
+    Blynk.virtualWrite(V6, h); // V6: Humidity
 
     Serial.print("Temp: ");
     Serial.print(t);
@@ -50,9 +50,10 @@ void sendSensorData() {
 
   // Convert to approximate percentage (0-4095 range for ESP32)
   // This is a raw value mapping, calibration depends on specific sensor
-  int gasPercent = map(gasValue, 0, 4095, 0, 100);
+  int gasPercent =
+      map(gasValue, 0, 4095, 0, 1000); // Mapped to 0-1000 as per user config
 
-  Blynk.virtualWrite(V2, gasPercent); // V2: Gas/Air Quality
+  Blynk.virtualWrite(V7, gasPercent); // V7: Gas Values
 
   Serial.print("Gas Raw: ");
   Serial.print(gasValue);

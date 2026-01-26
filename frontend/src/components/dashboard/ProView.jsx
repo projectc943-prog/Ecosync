@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, Cell } from 'recharts';
-import { Map, Wind, CloudSun, Shield, Fingerprint, Layers, Share2, Search, ArrowRight, Home, Sun, AlertTriangle, BookOpen, Clock, Activity, Move, Save, Settings } from 'lucide-react';
+import { Map, Wind, CloudSun, Shield, Fingerprint, Layers, Share2, Search, ArrowRight, Home, Sun, AlertTriangle, BookOpen, Clock, Activity, Move, Save, Settings, Sunrise, Sunset, Eye, Droplets } from 'lucide-react';
 import { useApiTelemetry } from '../../hooks/useApiTelemetry';
 import { Card, Badge, Skeleton, StatRow, THEME } from './shared/Common';
 import API_BASE_URL from '../../config';
@@ -440,6 +440,9 @@ const ProView = () => {
     // Widget Order State (Simple Builder)
     const [widgetOrder, setWidgetOrder] = useState(['fusion', 'decision', 'forecast', 'timeline', 'cause', 'exposure', 'diary']);
 
+    // --- SETTINGS STATE ---
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
     // Function to reorder (Simple move to top)
     const moveWidgetUp = (id) => {
         const idx = widgetOrder.indexOf(id);
@@ -619,10 +622,23 @@ const ProView = () => {
                     </div>
                 </div>
 
-    // --- SETTINGS STATE ---
-                const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
-                // ... (inside return) ...
+                {/* [NEW] Dynamic Map Widget (OpenStreetMap) */}
+                <div className="mt-4 w-full h-[250px] rounded-xl overflow-hidden border border-gray-700 relative shadow-2xl">
+                    <iframe
+                        width="100%"
+                        height="100%"
+                        frameBorder="0"
+                        scrolling="no"
+                        marginHeight="0"
+                        marginWidth="0"
+                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${activeLocation.lon - 0.05}%2C${activeLocation.lat - 0.05}%2C${activeLocation.lon + 0.05}%2C${activeLocation.lat + 0.05}&layer=mapnik&marker=${activeLocation.lat}%2C${activeLocation.lon}`}
+                        style={{ filter: 'invert(90%) hue-rotate(180deg) contrast(85%) grayscale(20%)' }}
+                    ></iframe>
+                    <div className="absolute top-3 left-3 bg-black/80 px-3 py-1 rounded text-xs text-emerald-400 font-mono border border-emerald-500/30 flex items-center gap-2 backdrop-blur-md">
+                        <Activity size={12} className="animate-pulse" />
+                        LIVE TRACKING: {activeLocation.name}
+                    </div>
+                </div>
 
                 <div className="flex gap-2">
                     {['1H', '24H', '7D'].map(r => (
