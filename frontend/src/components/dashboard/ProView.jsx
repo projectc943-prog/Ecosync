@@ -446,6 +446,20 @@ const ProView = () => {
 
     // Data Hook
     // Data Hook (Updated to include NEW outputs)
+    // Data Hook (Updated to include NEW outputs)
+    const { activeLocation } = useLocation();
+
+    // Sync Local Search Query with Global Context Selection
+    useEffect(() => {
+        if (activeLocation && activeLocation.name !== 'DETECTING...' && activeLocation.name !== 'HYDERABAD (DEFAULT)') {
+            setSearchQuery({
+                city: activeLocation.name,
+                lat: activeLocation.lat,
+                lon: activeLocation.lon
+            });
+        }
+    }, [activeLocation]);
+
     const { weather, aqi, forecast, bestWindows, recommendation, anomalies, fingerprint, loading, error, fusion } = useApiTelemetry(searchQuery);
     const [range, setRange] = useState('1H');
 
