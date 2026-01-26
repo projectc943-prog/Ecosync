@@ -329,40 +329,52 @@ const FingerprintChart = ({ data }) => (
 const FusionChart = ({ history }) => {
     if (!history || history.length < 2) return (
         <div className="flex items-center justify-center h-full text-xs text-gray-500 font-mono animate-pulse">
-            INITIALIZING FUSION ENGINE...
+            INITIALIZING MARKET FUSION ENGINE...
         </div>
     );
 
     return (
         <div className="w-full h-full">
             <ResponsiveContainer width="100%" height="100%">
-                {/* CHANGED: Switched to AreaChart for "Stock Market" feel */}
-                <React.Fragment>
+                <AreaChart data={history}>
                     <defs>
                         <linearGradient id="colorFused" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
                             <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                         </linearGradient>
                     </defs>
-                    <LineChart data={history}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} vertical={false} />
-                        <XAxis dataKey="time" tick={{ fill: '#9CA3AF', fontSize: 10 }} interval="preserveStartEnd" minTickGap={30} />
-                        <YAxis domain={['auto', 'auto']} tick={{ fill: '#9CA3AF', fontSize: 10 }} orientation="right" />
-                        <Tooltip
-                            contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '4px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }}
-                            itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
-                            labelStyle={{ color: '#9CA3AF', marginBottom: '8px', borderBottom: '1px solid #374151', paddingBottom: '4px' }}
-                        />
-                        <Legend iconType="plainline" wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} vertical={false} />
+                    <XAxis dataKey="time" tick={{ fill: '#9CA3AF', fontSize: 10 }} interval="preserveStartEnd" minTickGap={30} />
+                    <YAxis domain={['auto', 'auto']} tick={{ fill: '#9CA3AF', fontSize: 10 }} orientation="right" tickFormatter={(val) => val.toFixed(1)} />
+                    <Tooltip
+                        contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '4px', fontFamily: 'monospace' }}
+                        itemStyle={{ fontSize: '11px' }}
+                        labelStyle={{ color: '#64748b', fontSize: '10px', marginBottom: '4px' }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
 
-                        {/* Financial Style Lines */}
-                        <Line type="step" dataKey="external" stroke="#60a5fa" strokeWidth={1} dot={false} name="Cloud API (Baseline)" strokeDasharray="4 4" opacity={0.5} />
-                        <Line type="monotone" dataKey="local" stroke="#f87171" strokeWidth={1} dot={false} name="Local Sensor (Raw)" opacity={0.6} />
+                    {/* Stock Market Style - "Candle" feel using Step Line */}
+                    <Area
+                        type="step"
+                        dataKey="local"
+                        stroke="#ef4444"
+                        fill="transparent"
+                        strokeWidth={1}
+                        name="Raw Volatility (Sensor)"
+                        opacity={0.7}
+                    />
 
-                        {/* The "Stock" Line - Thick, Green, Gradient underneath if using Area (using Line for now but styled heavily) */}
-                        <Line type="monotone" dataKey="fused" stroke="#10b981" strokeWidth={3} dot={{ r: 0 }} activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }} name="Kalman Projection" />
-                    </LineChart>
-                </React.Fragment>
+                    {/* The "Trend" Line - Thick, Green Area */}
+                    <Area
+                        type="monotone"
+                        dataKey="fused"
+                        stroke="#10b981"
+                        strokeWidth={2}
+                        fill="url(#colorFused)"
+                        name="Market Trend (Kalman)"
+                        activeDot={{ r: 4, stroke: '#fff', strokeWidth: 2 }}
+                    />
+                </AreaChart>
             </ResponsiveContainer>
         </div>
     );

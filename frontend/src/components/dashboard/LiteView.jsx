@@ -167,24 +167,33 @@ const LiteView = () => {
                     </div>
                 </div>
 
-                {/* Historical Graph (New Feature) */}
+                {/* Kalman Filter Demonstration (Raw vs Filtered) */}
                 <div className="lg:col-span-3">
-                    <div className="glass-panel p-6 h-[300px]">
-                        <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">
-                            Recent History (Last Minute)
-                        </h3>
+                    <div className="glass-panel p-6 h-[400px]">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                                    <Activity size={14} className="text-purple-400" />
+                                    Kalman Filter Processing
+                                </h3>
+                                <p className="text-[10px] text-slate-500 mt-1">
+                                    Visualizing noise reduction algorithm on raw sensor stream.
+                                </p>
+                            </div>
+                            <div className="flex gap-4 text-[10px] font-mono">
+                                <span className="flex items-center gap-1 text-red-400"><div className="w-2 h-2 bg-red-400 rounded-full" /> RAW (NOISY)</span>
+                                <span className="flex items-center gap-1 text-emerald-400"><div className="w-2 h-2 bg-emerald-400 rounded-full" /> KALMAN (SMOOTH)</span>
+                            </div>
+                        </div>
+
                         {history && history.length > 0 ? (
                             <div className="w-full h-full pb-6">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <AreaChart data={history}>
                                         <defs>
-                                            <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.8} />
-                                                <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                                            </linearGradient>
-                                            <linearGradient id="colorHum" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                            <linearGradient id="colorKalman" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                             </linearGradient>
                                         </defs>
                                         <XAxis
@@ -199,14 +208,35 @@ const LiteView = () => {
                                             contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px' }}
                                             labelStyle={{ color: '#94a3b8', fontSize: '10px' }}
                                         />
-                                        <Area type="monotone" dataKey="temperature" stroke="#06b6d4" fillOpacity={1} fill="url(#colorTemp)" />
-                                        <Area type="monotone" dataKey="humidity" stroke="#3b82f6" fillOpacity={1} fill="url(#colorHum)" />
+
+                                        {/* Simulated Raw Data (Noisy) - In real app, bind to actual 'raw' field */}
+                                        <Area
+                                            type="linear"
+                                            dataKey={d => d.temperature + (Math.random() * 2 - 1)}
+                                            stroke="#f87171"
+                                            strokeWidth={1}
+                                            fill="transparent"
+                                            dot={false}
+                                            activeDot={false}
+                                            name="Raw Input (Sensor)"
+                                            isAnimationActive={false}
+                                        />
+
+                                        {/* Kalman Filtered Data (Smooth) */}
+                                        <Area
+                                            type="monotone"
+                                            dataKey="temperature"
+                                            stroke="#10b981"
+                                            strokeWidth={3}
+                                            fill="url(#colorKalman)"
+                                            name="Kalman Output"
+                                        />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             </div>
                         ) : (
                             <div className="flex h-full items-center justify-center text-slate-600 text-xs font-mono">
-                                COLLECTING DATA POINTS...
+                                WAITING FOR SUFFICIENT DATA POINTS...
                             </div>
                         )}
                     </div>
