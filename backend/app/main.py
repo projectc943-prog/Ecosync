@@ -178,10 +178,12 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
     if measurement.temperature and measurement.temperature > 45:
         triggers.append(f"CRITICAL TEMP: {measurement.temperature}°C (Fire Risk)")
     
-    # 2. High Gas -> Toxic Leak
-    # Using PM10 field as MQ_Smoothed storage based on line 215
-    if measurement.pm10 and measurement.pm10 > 80: # Normalized 0-100 scale, 80 is high
-        triggers.append(f"GAS LEAK DETECTED: Level {measurement.pm10}% (Toxic)")
+    # 2. Humidity Extremes -> Biological Stress
+    if measurement.humidity:
+        if measurement.humidity > 80:
+            triggers.append(f"HIGH HUMIDITY: {measurement.humidity}% (Mold Risk)")
+        elif measurement.humidity < 20:
+            triggers.append(f"LOW HUMIDITY: {measurement.humidity}% (Dryness Alert)")
 
     # 3. High PM2.5 -> Hazardous Air
     if measurement.pm2_5 and measurement.pm2_5 > 150:
@@ -260,6 +262,9 @@ async def receive_iot_data(data: IoTSensorData, db: Session = Depends(get_db)):
         )
         db.add(measurement)
         db.commit()
+        
+        # 5. Alert Check
+        check_alerts(db, device, measurement)
         
         # 4. WebSocket Broadcast
         payload = {

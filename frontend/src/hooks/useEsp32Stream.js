@@ -152,27 +152,51 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867])
                     deviceId: "ESP32-S4-PRO-SAT"
                 };
 
-                // --- CLOUD PERSISTENCE LAYER ---
-                // Sync to Supabase EVERY update (3 seconds) for real-time dynamic feeling
-                if (true) {
-                    const localTime = new Date(now - (new Date().getTimezoneOffset() * 60000)).toISOString();
+                // --- CLOUD PERSISTENCE & ALERTS ---
+                const localTime = new Date(now - (new Date().getTimezoneOffset() * 60000)).toISOString();
 
-                    console.log("DEBUG: Cloud Sync >", localTime);
-                    supabase.from('sensor_readings').insert([
-                        {
-                            // device_id removed as requested
-                            temperature: packet.temperature,
-                            raw_temperature: packet.raw_temperature,
-                            humidity: packet.humidity,
-                            raw_humidity: packet.raw_humidity,
-                            air_quality: packet.mq_ppm,
-                            raw_air_quality: packet.raw_mq_ppm,
-                            created_at: localTime
+                // 1. Supabase Sync
+                (async () => {
+                    try {
+                        const { error } = await supabase.from('sensor_readings').insert([
+                            {
+                                temperature: packet.temperature,
+                                raw_temperature: packet.raw_temperature,
+                                humidity: packet.humidity,
+                                raw_humidity: packet.raw_humidity,
+                                air_quality: packet.mq_ppm,
+                                raw_air_quality: packet.raw_mq_ppm,
+                                created_at: localTime
+                            }
+                        ]);
+                        if (error) console.error("Supabase Sync Error:", error.message);
+                    } catch (err) {
+                        console.error("Supabase Sync Fatal Error:", err);
+                    }
+                })();
+
+                // 2. Local Backend Alerts Sync
+                (async () => {
+                    try {
+                        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/iot/data`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                temperature: Number(filteredTemp.toFixed(2)),
+                                humidity: Number(filteredHum.toFixed(2)),
+                                pm25: Number(filteredAqi.toFixed(2)),
+                                pressure: 1013,
+                                mq_raw: packet.mq_raw
+                            })
+                        });
+                        if (!response.ok) {
+                            const errData = await response.json();
+                            console.warn("Backend Alert Sync Warning:", errData.detail);
                         }
-                    ]).then(({ error }) => {
-                        if (error) console.error("❌ SYNC FAILED:", error.message);
-                    });
-                }
+                    } catch (err) {
+                        console.error("Backend Alert Sync Fatal Error:", err);
+                    }
+                })();
 
                 // Update Buffer
                 bufferRef.current = [...bufferRef.current, packet].slice(-50);
@@ -285,6 +309,43 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867])
                             trustScore: 100,
                             deviceId: "ESP32-SERIAL"
                         };
+
+                        // --- PERSISTENCE & ALERTS FOR SERIAL ---
+                        // 1. Supabase Sync (Serial Mode)
+                        (async () => {
+                            try {
+                                await supabase.from('sensor_data').insert([{
+                                    device_id: "ESP32-SERIAL",
+                                    timestamp: new Date().toISOString(),
+                                    temperature: Number(filtered.t.toFixed(2)),
+                                    humidity: Number(filtered.h.toFixed(2)),
+                                    pressure: Number(json.pressure || 1013),
+                                    pm2_5: Number(filtered.p.toFixed(2)),
+                                    vibration: Number(json.mq_raw || json.gas || 0)
+                                }]);
+                            } catch (err) {
+                                console.error("Serial Supabase Sync Error:", err);
+                            }
+                        })();
+
+                        // 2. Backend Alerts Sync (Serial Mode)
+                        (async () => {
+                            try {
+                                fetch(`${import.meta.env.VITE_API_BASE_URL}/iot/data`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        temperature: Number(filtered.t.toFixed(2)),
+                                        humidity: Number(filtered.h.toFixed(2)),
+                                        pm25: Number(filtered.p.toFixed(2)),
+                                        pressure: Number(json.pressure || 1013),
+                                        mq_raw: Number(json.mq_raw || json.gas || 0)
+                                    })
+                                });
+                            } catch (err) {
+                                console.error("Serial Backend Alert Sync Error:", err);
+                            }
+                        })();
 
                         bufferRef.current = [...bufferRef.current, packet].slice(-50);
                         setStream(prev => ({
