@@ -49,12 +49,20 @@ const LightDashboard = ({ onToggle }) => {
                             <p className="text-sm text-slate-400">Connect via USB to view real-time metrics on this dashboard.</p>
                         </div>
                     </div>
-                    <button
-                        onClick={connectSerial}
-                        className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-lg flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/20"
-                    >
-                        <Zap size={18} /> PAIR DEVICE
-                    </button>
+                    <div className="flex flex-col md:flex-row gap-3">
+                        <button
+                            onClick={connectSerial}
+                            className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-lg flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/20"
+                        >
+                            <Zap size={18} /> PAIR DEVICE
+                        </button>
+                        <button
+                            onClick={() => setIsDeviceConfigOpen(true)}
+                            className="px-6 py-3 bg-transparent border-2 border-emerald-500/30 hover:border-emerald-500 text-emerald-400 font-bold rounded-lg flex items-center gap-2 transition-all"
+                        >
+                            <Cpu size={18} /> SET UP DEVICE
+                        </button>
+                    </div>
                 </div>
             )}
 
@@ -141,6 +149,144 @@ const LightDashboard = ({ onToggle }) => {
                     {/* Map Removed for Lite Mode */}
                     {activeView === 'news' && <div className="h-full"><NewsComponent /></div>}
                 </main>
+
+                {isDeviceConfigOpen && (
+                    <SetupDeviceModal
+                        isOpen={isDeviceConfigOpen}
+                        onClose={() => setIsDeviceConfigOpen(false)}
+                        onPair={connectSerial}
+                        connectionStatus={connectionStatus}
+                    />
+                )}
+            </div>
+        </div>
+    );
+};
+
+const SetupDeviceModal = ({ isOpen, onClose, onPair, connectionStatus }) => {
+    const [step, setStep] = useState(1);
+
+    const arduinoCode = `#include <DHT.h>
+
+#define DHTPIN 4
+#define DHTTYPE DHT11
+DHT dht(DHTPIN, DHTTYPE);
+
+void setup() {
+  Serial.begin(115200);
+  dht.begin();
+}
+
+void loop() {
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
+  
+  if (!isnan(h) && !isnan(t)) {
+    Serial.print("{\\"temperature\\":");
+    Serial.print(t);
+    Serial.print(",\\"humidity\\":");
+    Serial.print(h);
+    Serial.print(",\\"pm25\\":");
+    Serial.print(random(10, 30)); // Placeholder for MQ sensor
+    Serial.println("}");
+  }
+  delay(2000);
+}`;
+
+    const copyCode = () => {
+        navigator.clipboard.writeText(arduinoCode);
+        alert("Code copied to clipboard!");
+    };
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+            <div className="glass-panel w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div className="p-6 border-b border-emerald-500/20 flex justify-between items-center bg-emerald-950/20">
+                    <h2 className="text-xl font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                        <Cpu className="text-emerald-400" /> ESP32 SETUP WIZARD
+                    </h2>
+                    <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors"><X /></button>
+                </div>
+
+                <div className="p-8 overflow-y-auto space-y-8">
+                    {/* Breadcrumbs */}
+                    <div className="flex justify-between relative">
+                        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-800 -translate-y-1/2 z-0" />
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs border-2 ${step >= i ? 'bg-emerald-500 border-emerald-400 text-black' : 'bg-slate-900 border-slate-700 text-slate-500'}`}>
+                                {i}
+                            </div>
+                        ))}
+                    </div>
+
+                    {step === 1 && (
+                        <div className="space-y-4 animate-in slide-in-from-right-4">
+                            <h3 className="text-lg font-bold text-white uppercase">Step 1: Hardware Connection</h3>
+                            <p className="text-slate-400 text-sm">Connect your ESP32 to your computer using a high-quality USB-C or Micro-USB data cable.</p>
+                            <div className="bg-slate-950 p-6 rounded-xl border border-slate-800 flex justify-center">
+                                <div className="text-emerald-500/50 flex flex-col items-center gap-2">
+                                    <Zap size={48} className="animate-pulse" />
+                                    <span className="text-[10px] tracking-widest uppercase">Awaiting Physical Link</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {step === 2 && (
+                        <div className="space-y-4 animate-in slide-in-from-right-4">
+                            <h3 className="text-lg font-bold text-white uppercase">Step 2: Flash Firmware</h3>
+                            <p className="text-slate-400 text-sm">Copy the code below into your Arduino IDE and upload it to your device.</p>
+                            <div className="relative group">
+                                <pre className="bg-slate-950 p-4 rounded-lg font-mono text-[10px] text-emerald-400 overflow-x-auto max-h-48 border border-slate-800">
+                                    {arduinoCode}
+                                </pre>
+                                <button onClick={copyCode} className="absolute top-2 right-2 p-2 bg-emerald-500 hover:bg-emerald-400 text-black rounded text-[10px] font-bold uppercase transition-colors">Copy Code</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {step === 3 && (
+                        <div className="space-y-6 animate-in slide-in-from-right-4 text-center">
+                            <h3 className="text-lg font-bold text-white uppercase">Step 3: Pair & Stream</h3>
+                            <p className="text-slate-400 text-sm">Click the button below to authorize the browser to access your ESP32's serial port.</p>
+
+                            <div className="flex flex-col items-center gap-4">
+                                <button
+                                    onClick={() => { onPair(); if (connectionStatus) onClose(); }}
+                                    className={`px-8 py-4 rounded-xl font-black text-lg transition-all flex items-center gap-3 ${connectionStatus ? 'bg-emerald-500 text-black' : 'bg-transparent border-2 border-emerald-500 text-emerald-400 hover:bg-emerald-500/10'}`}
+                                >
+                                    {connectionStatus ? <><Shield size={24} /> DEVICE ACTIVE</> : <><Zap size={24} /> INITIALIZE PAIRING</>}
+                                </button>
+                                {connectionStatus && <p className="text-emerald-500 text-xs font-bold animate-pulse tracking-widest">REAL-TIME DATA LINK ESTABLISHED</p>}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="p-6 border-t border-emerald-500/20 flex justify-between">
+                    <button
+                        disabled={step === 1}
+                        onClick={() => setStep(s => s - 1)}
+                        className="px-6 py-2 text-slate-400 hover:text-white disabled:opacity-0 transition-opacity uppercase font-bold text-xs"
+                    >
+                        Back
+                    </button>
+                    {step < 3 ? (
+                        <button
+                            onClick={() => setStep(s => s + 1)}
+                            className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded font-bold uppercase text-xs transition-colors"
+                        >
+                            Next Step
+                        </button>
+                    ) : (
+                        <button
+                            onClick={onClose}
+                            className="px-6 py-2 bg-emerald-500 hover:bg-emerald-400 text-black rounded font-bold uppercase text-xs transition-colors"
+                        >
+                            Done
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     );
