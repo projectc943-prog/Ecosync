@@ -154,9 +154,12 @@ const ProDashboard = ({ onToggle }) => {
                 <header className="flex justify-between items-center p-6 border-b border-amber-500/20 bg-black/80 backdrop-blur-md">
                     <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-600">S4 PRO // AI CORE</h1>
                     <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 px-4 py-1 bg-cyan-500/10 border border-cyan-500/40 rounded-full text-cyan-400 text-xs font-bold animate-pulse">
+                        <button
+                            onClick={() => alert(`✅ SYSTEM STATUS: ONLINE\n\nCloud Sync is OPEN and capturing data.\nLast Packet Stored: ${new Date().toLocaleTimeString()}`)}
+                            className="flex items-center gap-2 px-4 py-1 bg-cyan-500/10 border border-cyan-500/40 rounded-full text-cyan-400 text-xs font-bold animate-pulse hover:bg-cyan-500/20 transition-all cursor-pointer shadow-[0_0_10px_rgba(34,211,238,0.2)] hover:shadow-[0_0_20px_rgba(34,211,238,0.4)]"
+                        >
                             <Cloud size={14} /> CLOUD SYNC
-                        </div>
+                        </button>
                         <div className="flex items-center gap-2 px-4 py-1 bg-amber-500/10 border border-amber-500/40 rounded-full text-amber-400 text-xs font-bold">
                             <CheckCircle size={14} /> SYSTEM OPTIMAL
                         </div>

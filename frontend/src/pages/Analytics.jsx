@@ -11,9 +11,16 @@ const Analytics = ({ sensorData = [], predictions = [], isProMode = false }) => 
         const fetchAnalytics = async () => {
             try {
                 if (isProMode) {
-                    // GENERATE MOCK GRID DATA (Simulating 50 Sensor Nodes)
+                    // GENERATE MOCK GRID DATA (Simulating City Areas)
+                    const areas = [
+                        "Downtown Sector A", "Tech Corridor", "Industrial Zone 1", "Central Park",
+                        "North End", "South Bank", "Old City", "Harbor Front",
+                        "Metro Center", "Cyber Gateway", "Science Park", "Airport Zone",
+                        "West Side", "Financial District", "Stadium Area", "Riverfront"
+                    ];
+
                     const mockGrid = Array.from({ length: 50 }).map((_, i) => ({
-                        device_id: `NODE-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+                        device_id: `${areas[i % areas.length]} - Unit ${Math.floor(Math.random() * 99)}`,
                         timestamp: new Date(Date.now() - i * 60000).toLocaleString(),
                         temperature: 20 + Math.random() * 35, // Random temp 20-55
                         humidity: 30 + Math.random() * 50,
