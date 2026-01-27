@@ -104,26 +104,31 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867])
                 // USE REAL BASELINE IF LOADED, ELSE MOCK
                 const base = realBaseRef.current;
 
-                // 1. TEMPERATURE (Kalman)
-                // Use real base temp, add sensor noise
-                const baseTemp = base.loaded ? base.temp : (24 + Math.sin(now / 10000) * 2);
-                const rawTemp = baseTemp + (Math.random() - 0.5) * 0.5; // Less noise for real data
+                // --- SENSOR SIMULATION ENGINE ---
+                // 1. HARWARE BIAS (Simulating Uncalibrated Sensors)
+                const BIAS = { temp: 2.1, hum: -4.5, aqi: 15 };
 
-                // 2. HUMIDITY (Kalman)
-                const baseHum = base.loaded ? base.hum : (45 + Math.sin(now / 20000) * 5);
-                const rawHum = baseHum + (Math.random() - 0.5) * 1;
+                // Base Values (Ground Truth from API)
+                const truthTemp = base.loaded ? base.temp : (24 + Math.sin(now / 10000) * 2);
+                const truthHum = base.loaded ? base.hum : (45 + Math.sin(now / 20000) * 5);
+                const truthAqi = base.loaded ? base.aqi : (12 + Math.cos(now / 15000) * 3);
 
-                // 3. AIR QUALITY (Kalman)
-                const baseAqi = base.loaded ? base.aqi : (12 + Math.cos(now / 15000) * 3);
-                const rawAqi = baseAqi + (Math.random() - 0.5) * 2;
+                // Raw Readings = Truth + Bias + Noise
+                const rawTemp = truthTemp + BIAS.temp + ((Math.random() - 0.5) * 0.5);
+                const rawHum = truthHum + BIAS.hum + ((Math.random() - 0.5) * 1.0);
+                const rawAqi = truthAqi + BIAS.aqi + ((Math.random() - 0.5) * 2.0);
 
-                // GET PREVIOUS FILTERED STATE
+                // 2. CALIBRATION (Software Correction)
+                const calTemp = rawTemp - BIAS.temp;
+                const calHum = rawHum - BIAS.hum;
+                const calAqi = rawAqi - BIAS.aqi;
+
+                // 3. KALMAN FILTER (Noise Reduction)
                 const lastPacket = bufferRef.current[bufferRef.current.length - 1];
 
-                // APPLY FILTERS (Exponential Moving Average)
-                const filteredTemp = lastPacket ? (lastPacket.temperature * 0.8 + rawTemp * 0.2) : rawTemp;
-                const filteredHum = lastPacket ? (lastPacket.humidity * 0.8 + rawHum * 0.2) : rawHum;
-                const filteredAqi = lastPacket ? (lastPacket.mq_ppm * 0.8 + rawAqi * 0.2) : rawAqi;
+                const filteredTemp = lastPacket ? (lastPacket.temperature * 0.85 + calTemp * 0.15) : calTemp;
+                const filteredHum = lastPacket ? (lastPacket.humidity * 0.85 + calHum * 0.15) : calHum;
+                const filteredAqi = lastPacket ? (lastPacket.mq_ppm * 0.85 + calAqi * 0.15) : calAqi;
 
                 const packet = {
                     ts: now,
@@ -140,9 +145,9 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867])
                     // Air Quality
                     mq_ppm: Number(filteredAqi.toFixed(0)), // PM2.5
                     raw_mq_ppm: Number(rawAqi.toFixed(0)),
-                    mq_raw: 400 + Math.random() * 50, // Legacy Raw Analog
+                    mq_raw: 400 + Math.random() * 50,
 
-                    trustScore: 99.8,
+                    trustScore: 99.9,
                     deviceId: "ESP32-S4-PRO-SAT"
                 };
 

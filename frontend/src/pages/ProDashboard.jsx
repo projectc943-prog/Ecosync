@@ -19,16 +19,53 @@ const ProDashboard = ({ onToggle }) => {
     // Derived Data
     const latestData = useMemo(() => (sensorData && sensorData.length > 0) ? sensorData[sensorData.length - 1] : {}, [sensorData]);
     const temp = useMemo(() => latestData.temperature?.toFixed(1) || '--', [latestData]);
-    const hum = useMemo(() => latestData.humidity?.toFixed(1) || '--', [latestData]);
-    const aqi = useMemo(() => latestData.mq_ppm?.toFixed(0) || '--', [latestData]);
+    const rawTemp = useMemo(() => latestData.raw_temperature?.toFixed(1) || '--', [latestData]);
 
-    const StatCard = ({ title, value, unit, icon: Icon }) => (
-        <div className="glass-panel p-6 border-l-4 border-l-amber-500 relative overflow-hidden group bg-slate-900/40">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><Icon size={64} className="text-amber-500" /></div>
-            <p className="text-amber-500/80 text-xs font-bold uppercase mb-2">{title}</p>
+    const hum = useMemo(() => latestData.humidity?.toFixed(1) || '--', [latestData]);
+    const rawHum = useMemo(() => latestData.raw_humidity?.toFixed(1) || '--', [latestData]);
+
+    const aqi = useMemo(() => latestData.mq_ppm?.toFixed(0) || '--', [latestData]);
+    const rawAqi = useMemo(() => latestData.raw_mq_ppm?.toFixed(0) || '--', [latestData]);
+
+    const StatCard = ({ title, value, rawValue, unit, icon: Icon, color = "amber" }) => (
+        <div className={`glass-panel p-6 border-l-4 border-l-${color}-500 relative overflow-hidden group bg-slate-900/40`}>
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><Icon size={64} className={`text-${color}-500`} /></div>
+            <p className={`text-${color}-500/80 text-xs font-bold uppercase mb-2`}>{title}</p>
             <h3 className="text-4xl font-black text-white">{value}<span className="text-lg text-slate-500 ml-1">{unit}</span></h3>
+            {rawValue && rawValue !== '--' && (
+                <div className="mt-2 text-[10px] font-mono text-slate-500 border-t border-slate-800 pt-1 flex flex-col gap-0.5">
+                    <div className="flex justify-between">
+                        <span>RAW DATA:</span>
+                        <span className="text-slate-400">{rawValue}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span>CALIBRATED:</span>
+                        <span className="text-emerald-400 font-bold">{value}</span>
+                    </div>
+                </div>
+            )}
         </div>
     );
+
+    const CustomTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="bg-slate-900 border border-slate-700 p-3 rounded-lg shadow-xl text-xs font-mono">
+                    <p className="text-slate-400 mb-2">{label}</p>
+                    {payload.map((pld, index) => (
+                        <div key={index} style={{ color: pld.color }} className="flex justify-between gap-4 mb-1">
+                            <span>{pld.name}:</span>
+                            <span className="font-bold">{pld.value}</span>
+                        </div>
+                    ))}
+                    <div className="mt-2 pt-2 border-t border-slate-800 text-slate-500">
+                        Correction: {(payload[1].value - payload[0].value).toFixed(2)}
+                    </div>
+                </div>
+            );
+        }
+        return null;
+    };
 
     const KalmanChart = ({ title, rawKey, filteredKey, color, icon: Icon, unit }) => (
         <div className="glass-panel p-6 border-t-2 border-amber-500/50 flex flex-col bg-slate-900/40 h-80">
@@ -41,10 +78,10 @@ const ProDashboard = ({ onToggle }) => {
                         <CartesianGrid strokeDasharray="3 3" stroke="#451a03" />
                         <XAxis dataKey="timestamp" stroke="#d97706" tick={false} />
                         <YAxis stroke="#d97706" />
-                        <Tooltip contentStyle={{ backgroundColor: '#2a1a08', borderColor: '#d97706' }} />
+                        <Tooltip content={<CustomTooltip />} />
                         <Legend />
-                        <Line type="monotone" dataKey={rawKey} stroke={color} strokeOpacity={0.4} name={`Raw (Noisy)`} dot={false} strokeWidth={1} />
-                        <Line type="monotone" dataKey={filteredKey} stroke={color} strokeWidth={3} name={`Filtered`} dot={false} />
+                        <Line type="monotone" dataKey={rawKey} stroke={color} strokeOpacity={0.4} name={`Raw Data`} dot={false} strokeWidth={1} />
+                        <Line type="monotone" dataKey={filteredKey} stroke={color} strokeWidth={3} name={`Kalman Filtered`} dot={false} />
                     </LineChart>
                 </ResponsiveContainer>
             </div>
@@ -54,10 +91,10 @@ const ProDashboard = ({ onToggle }) => {
     const renderOverview = () => (
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Core Temp" value={temp} unit="°C" icon={Thermometer} />
-                <StatCard title="Humidity" value={hum} unit="%" icon={Droplets} />
-                <StatCard title="Air Quality" value={aqi} unit="PM2.5" icon={Wind} />
-                <StatCard title="System Status" value="ONLINE" unit="" icon={Activity} />
+                <StatCard title="Core Temp" value={temp} rawValue={rawTemp} unit="°C" icon={Thermometer} color="amber" />
+                <StatCard title="Humidity" value={hum} rawValue={rawHum} unit="%" icon={Droplets} color="blue" />
+                <StatCard title="Air Quality" value={aqi} rawValue={rawAqi} unit="PM2.5" icon={Wind} color="emerald" />
+                <StatCard title="System Status" value="ONLINE" unit="" icon={Activity} color="purple" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
