@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line, Legend } from 'recharts';
-import { Activity, Droplets, Thermometer, Zap, Shield, User, CheckCircle, Wind } from 'lucide-react';
+import { Activity, Droplets, Thermometer, Zap, Shield, User, CheckCircle, Wind, Cloud } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useEsp32Stream } from '../hooks/useEsp32Stream';
+import { supabase } from '../config/supabaseClient';
 import MapComponent from '../components/MapComponent';
 import Analytics from './Analytics';
 import Profile from './Profile';
@@ -153,6 +154,9 @@ const ProDashboard = ({ onToggle }) => {
                 <header className="flex justify-between items-center p-6 border-b border-amber-500/20 bg-black/80 backdrop-blur-md">
                     <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-600">S4 PRO // AI CORE</h1>
                     <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 px-4 py-1 bg-cyan-500/10 border border-cyan-500/40 rounded-full text-cyan-400 text-xs font-bold animate-pulse">
+                            <Cloud size={14} /> CLOUD SYNC
+                        </div>
                         <div className="flex items-center gap-2 px-4 py-1 bg-amber-500/10 border border-amber-500/40 rounded-full text-amber-400 text-xs font-bold">
                             <CheckCircle size={14} /> SYSTEM OPTIMAL
                         </div>
@@ -165,8 +169,8 @@ const ProDashboard = ({ onToggle }) => {
                     {activeView === 'map' && <div className="h-full rounded-xl border border-amber-500/30 overflow-hidden"><MapComponent isPro={true} sensorData={latestData} position={mapPosition} onPositionChange={setMapPosition} /></div>}
                     {activeView === 'profile' && <Profile />}
                 </main>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 

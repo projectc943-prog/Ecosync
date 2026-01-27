@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { supabase } from '../config/supabaseClient';
 
 // MODE: 'light' now fetches from our Proxy API (Blynk Bridge)
 // PRO MODE: Fetches real-time Satellite/Weather Data
@@ -150,6 +151,28 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867])
                     trustScore: 99.9,
                     deviceId: "ESP32-S4-PRO-SAT"
                 };
+
+                // --- CLOUD PERSISTENCE LAYER ---
+                // Sync to Supabase EVERY update (3 seconds) for real-time dynamic feeling
+                if (true) {
+                    const localTime = new Date(now - (new Date().getTimezoneOffset() * 60000)).toISOString();
+
+                    console.log("DEBUG: Cloud Sync >", localTime);
+                    supabase.from('sensor_readings').insert([
+                        {
+                            // device_id removed as requested
+                            temperature: packet.temperature,
+                            raw_temperature: packet.raw_temperature,
+                            humidity: packet.humidity,
+                            raw_humidity: packet.raw_humidity,
+                            air_quality: packet.mq_ppm,
+                            raw_air_quality: packet.raw_mq_ppm,
+                            created_at: localTime
+                        }
+                    ]).then(({ error }) => {
+                        if (error) console.error("❌ SYNC FAILED:", error.message);
+                    });
+                }
 
                 // Update Buffer
                 bufferRef.current = [...bufferRef.current, packet].slice(-50);
