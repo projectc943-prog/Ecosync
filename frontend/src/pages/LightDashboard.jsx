@@ -3,9 +3,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { Bell, Wifi, Activity, Droplets, Thermometer, Wind, Zap, Map as MapIcon, Newspaper, User, Menu, X, Leaf, Shield, Cpu, ExternalLink } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useEsp32Stream } from '../hooks/useEsp32Stream';
-import MapComponent from '../components/MapComponent';
 import NewsComponent from '../components/NewsComponent';
-import Analytics from './Analytics';
 
 const LightDashboard = ({ onToggle }) => {
     const { logout, userProfile, currentUser } = useAuth();
@@ -74,33 +72,47 @@ const LightDashboard = ({ onToggle }) => {
                 <StatCard title="Air Quality" value={gas} unit="PM2.5" icon={Activity} color="green" />
             </div>
 
-            {/* Live Chart */}
-            <div className="glass-panel p-6 border-t-2 border-t-emerald-500/20 h-96 flex flex-col">
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-slate-200 font-bold flex items-center gap-2">
-                        <Activity size={18} className="text-emerald-400" /> Live Sensor Feed
-                    </h3>
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <div className={`w-2 h-2 rounded-full ${connectionStatus ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
-                        {connectionStatus ? 'LIVE STREAM' : 'OFFLINE'}
+            {/* Analysis Charts Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <AnalysisCard
+                    title="Temperature"
+                    unit="°C"
+                    data={sensorData}
+                    dataKey="temperature"
+                    rawKey="temp_raw"
+                    color="amber"
+                    icon={Thermometer}
+                />
+                <AnalysisCard
+                    title="Humidity"
+                    unit="%"
+                    data={sensorData}
+                    dataKey="humidity"
+                    rawKey="hum_raw"
+                    color="blue"
+                    icon={Droplets}
+                />
+                <AnalysisCard
+                    title="Air Quality"
+                    unit="PM2.5"
+                    data={sensorData}
+                    dataKey="pm25"
+                    rawKey="pm25_raw"
+                    color="emerald"
+                    icon={Activity}
+                />
+            </div>
+
+            {/* Signal Processing Info */}
+            <div className="glass-panel p-6 border-l-4 border-l-emerald-500 bg-emerald-500/5">
+                <div className="flex gap-4 items-start">
+                    <Shield className="text-emerald-400 mt-1" size={24} />
+                    <div>
+                        <h4 className="text-white font-bold uppercase tracking-widest text-sm">Bio-Digital Signal Processing Active</h4>
+                        <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                            Incoming sensor signals are being processed through a real-time EMA (Exponential Moving Average) filter to ensure precision analysis and noise reduction from the hardware link.
+                        </p>
                     </div>
-                </div>
-                <div className="flex-1 min-h-0">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={sensorData}>
-                            <defs>
-                                <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.5} />
-                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#064e3b" />
-                            <XAxis dataKey="timestamp" stroke="#34d399" tick={false} />
-                            <YAxis stroke="#34d399" />
-                            <Tooltip contentStyle={{ backgroundColor: '#022c22', borderColor: '#065f46', borderRadius: '12px' }} itemStyle={{ color: '#34d399' }} />
-                            <Area type="monotone" dataKey="temperature" stroke="#10b981" fill="url(#colorTemp)" />
-                        </AreaChart>
-                    </ResponsiveContainer>
                 </div>
             </div>
         </div>
@@ -113,7 +125,6 @@ const LightDashboard = ({ onToggle }) => {
                 <div className="flex-1 w-full space-y-4 px-4">
                     {[
                         { id: 'overview', icon: Activity, label: 'Monitor' },
-                        // Map removed for Lite Mode
                         { id: 'news', icon: Newspaper, label: 'Eco-Intel' }
                     ].map(item => (
                         <button key={item.id} onClick={() => setActiveView(item.id)} className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all ${activeView === item.id ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-500 hover:text-emerald-200'}`}>
@@ -146,7 +157,6 @@ const LightDashboard = ({ onToggle }) => {
 
                 <main className="flex-1 overflow-y-auto p-6">
                     {activeView === 'overview' && renderOverview()}
-                    {/* Map Removed for Lite Mode */}
                     {activeView === 'news' && <div className="h-full"><NewsComponent /></div>}
                 </main>
 
@@ -158,6 +168,62 @@ const LightDashboard = ({ onToggle }) => {
                         connectionStatus={connectionStatus}
                     />
                 )}
+            </div>
+        </div>
+    );
+};
+
+const AnalysisCard = ({ title, data, dataKey, rawKey, color, icon: Icon, unit }) => {
+    return (
+        <div className="glass-panel p-6 border-t-2 border-t-emerald-500/20 h-80 flex flex-col relative overflow-hidden group">
+            <div className={`absolute top-0 right-0 p-8 bg-${color}-500/5 rounded-full -mr-4 -mt-4 blur-3xl`} />
+            <div className="flex justify-between items-center mb-6 relative z-10">
+                <h3 className="text-slate-200 text-sm font-bold flex items-center gap-2 uppercase tracking-widest">
+                    <Icon size={16} className={`text-${color}-400`} /> {title} Analysis
+                </h3>
+            </div>
+
+            <div className="flex-1 min-h-0 relative z-10">
+                <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={data}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#064e3b" vertical={false} opacity={0.5} />
+                        <XAxis dataKey="timestamp" hide />
+                        <YAxis stroke="#34d399" fontSize={10} tick={false} axisLine={false} domain={['auto', 'auto']} />
+                        <Tooltip
+                            contentStyle={{ backgroundColor: '#022c22', borderColor: '#065f46', borderRadius: '12px', border: '1px solid rgba(16,185,129,0.2)' }}
+                            itemStyle={{ fontSize: '10px', fontWeight: 'bold' }}
+                            labelStyle={{ display: 'none' }}
+                        />
+                        <Line
+                            type="monotone"
+                            dataKey={dataKey}
+                            stroke={color === 'amber' ? '#fbbf24' : color === 'blue' ? '#3b82f6' : '#10b981'}
+                            strokeWidth={3}
+                            dot={false}
+                            name="Filtered"
+                            isAnimationActive={false}
+                        />
+                        <Line
+                            type="monotone"
+                            dataKey={rawKey}
+                            stroke="#ffffff"
+                            strokeWidth={1}
+                            strokeOpacity={0.2}
+                            dot={false}
+                            name="Raw (Noisy)"
+                            isAnimationActive={false}
+                        />
+                    </LineChart>
+                </ResponsiveContainer>
+            </div>
+
+            <div className="flex justify-start gap-6 mt-6 pt-4 border-t border-slate-800 text-[9px] font-black tracking-[0.2em] uppercase relative z-10">
+                <span className="flex items-center gap-2 text-slate-200">
+                    <div className={`w-3 h-0.5 ${color === 'amber' ? 'bg-amber-400' : color === 'blue' ? 'bg-blue-500' : 'bg-emerald-500'}`} /> Filtered
+                </span>
+                <span className="flex items-center gap-2 text-slate-500">
+                    <div className="w-3 h-0.5 bg-slate-600" /> Raw (Noisy)
+                </span>
             </div>
         </div>
     );

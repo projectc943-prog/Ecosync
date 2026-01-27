@@ -216,6 +216,8 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867])
             setHealth({ status: 'STREAMING', lastPacketTime: new Date() });
 
             let lineBuffer = '';
+            let filtered = { t: 0, h: 0, p: 0 };
+            const alpha = 0.15; // Filter strength
 
             // Reading loop
             while (true) {
@@ -232,12 +234,29 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867])
 
                     try {
                         const json = JSON.parse(trimmed);
+
+                        // Simple EMA Filter
+                        const tRaw = json.temperature || json.temp || 0;
+                        const hRaw = json.humidity || json.hum || 0;
+                        const pRaw = json.pm25 || json.pm2_5 || json.aqi || 0;
+
+                        if (filtered.t === 0) {
+                            filtered = { t: tRaw, h: hRaw, p: pRaw };
+                        } else {
+                            filtered.t = alpha * tRaw + (1 - alpha) * filtered.t;
+                            filtered.h = alpha * hRaw + (1 - alpha) * filtered.h;
+                            filtered.p = alpha * pRaw + (1 - alpha) * filtered.p;
+                        }
+
                         const packet = {
                             ts: Date.now(),
                             timestamp: new Date().toLocaleTimeString(),
-                            temperature: json.temperature || json.temp || 0,
-                            humidity: json.humidity || json.hum || 0,
-                            pm25: json.pm25 || json.pm2_5 || json.aqi || 0,
+                            temperature: filtered.t,
+                            temp_raw: tRaw,
+                            humidity: filtered.h,
+                            hum_raw: hRaw,
+                            pm25: filtered.p,
+                            pm25_raw: pRaw,
                             pressure: json.pressure || 1013,
                             mq_raw: json.mq_raw || json.gas || 0,
                             trustScore: 100,
