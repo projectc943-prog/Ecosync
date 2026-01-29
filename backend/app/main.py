@@ -3,6 +3,9 @@ import logging
 import os
 from datetime import datetime as dt
 from typing import List
+import math
+print(f"LOADING MAIN FROM {__file__}")
+
 
 from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,7 +19,7 @@ from .connectors.waqi import WAQIConnector
 from .connectors.openaq import OpenAQConnector
 from .connectors.esp32_stub import ESP32StubConnector
 
-from .routers import assistant, auth, map as map_router, pro_api
+from .routers import assistant, auth_v2 as auth, map as map_router, pro_api
 from .services import kalman_filter, aqi_calculator, external_apis, fusion_engine
 from .services.websocket_manager import manager
 from .services.api_cache import refresh_map_cache, get_cached_markers
@@ -102,14 +105,28 @@ def get_connector(device: models.Device):
 async def poll_devices():
     """Background task to poll external APIs"""
     while True:
+        # Use a fresh session for the query, then close it
         try:
+             # Prefetch device IDs to avoid holding DB while making http requests
             db = database.SessionLocal()
-            devices = db.query(models.Device).filter(models.Device.connector_type == "public_api").all()
-            for dev in devices:
+            devices_idx = db.query(models.Device).filter(models.Device.connector_type == "public_api").all()
+            device_ids = [d.id for d in devices_idx]
+            db.close()
+            
+            for dev_id in device_ids:
+                # Re-open small session per device processing
+                db = database.SessionLocal()
+                dev = db.query(models.Device).get(dev_id)
+                if not dev: 
+                    db.close()
+                    continue
+
                 connector = get_connector(dev)
                 if connector:
                     try:
-                        data = connector.fetch_data()
+                        # Offload blocking I/O to thread
+                        data = await asyncio.to_thread(connector.fetch_data)
+                        
                         dev.last_seen = dt.utcnow()
                         dev.status = data.get("status", "offline")
                         
@@ -125,15 +142,36 @@ async def poll_devices():
                                 pm2_5=metrics.get("pm25")
                             )
                             db.add(measurement)
-                            check_alerts(db, dev, measurement)
+                            # Alerting could be slow (SMTP), offload it!
+                            # Pass IDs, not objects, if possible, but for now we pass the object 
+                            # and ensure it's bound. db.commit() first to save data.
+                            db.commit() 
+                            db.refresh(measurement)
+                            
+                            await asyncio.to_thread(check_alerts_wrapper, dev.id, measurement.id)
+                            
                     except Exception as e:
                         logger.error(f"Error polling device {dev.name}: {e}")
-            db.commit()
-            db.close()
+                else:
+                    db.close()
+                    
         except Exception as e:
             logger.error(f"Polling cycle error: {e}")
         
         await asyncio.sleep(60)
+
+def check_alerts_wrapper(dev_id, measurement_id):
+    """Wrapper to run check_alerts in a new thread with its own DB session"""
+    try:
+        db = database.SessionLocal()
+        dev = db.query(models.Device).get(dev_id)
+        meas = db.query(models.SensorData).get(measurement_id)
+        if dev and meas:
+             check_alerts(db, dev, meas)
+             db.commit() # Save alerts if any
+        db.close()
+    except Exception as e:
+        logger.error(f"Async Alert Error: {e}")
 
 import smtplib
 from email.mime.text import MIMEText
@@ -169,6 +207,26 @@ def send_email_alert(subject: str, body: str, recipient: str = None):
     except Exception as e:
         logger.error(f"Failed to send email alert: {e}")
 
+def calculate_distance(lat1, lon1, lat2, lon2):
+    """
+    Calculate the great circle distance between two points 
+    on the earth (specified in decimal degrees) using Haversine formula.
+    """
+    if not all([lat1, lon1, lat2, lon2]):
+        return float('inf') # Return infinite distance if coords missing
+
+    # Convert decimal degrees to radians 
+    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+
+    # Haversine formula 
+    dlon = lon2 - lon1 
+    dlat = lat2 - lat1 
+    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    c = 2 * math.asin(math.sqrt(a)) 
+    r = 6371 # Radius of earth in kilometers. Use 3956 for miles
+    return c * r
+
+
 def check_alerts(db: Session, device: models.Device, measurement: models.SensorData):
     """Rule-based alerting with Email Notification (Dynamic Thresholds)"""
     
@@ -181,7 +239,7 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
     HUM_MIN = settings.humidity_min if settings else 20.0
     HUM_MAX = settings.humidity_max if settings else 80.0
     PM25_THRESH = settings.pm25_threshold if settings else 150.0
-    EMAIL_RECIPIENT = settings.user_email if settings else os.getenv("ALERT_RECEIVER_EMAIL")
+    # Logic change: We will fetch ALL users below instead of just one recipient
     
     triggers = []
     
@@ -204,17 +262,39 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
         alert_msg = " | ".join(triggers)
         logger.warning(f"ALERT TRIGGERED: {alert_msg} on {device.name}")
         
-        # Save to DB
+        # Save to DB (One record for the system event)
         db.add(models.Alert(
             metric="multi",
             value=0.0,
             message=alert_msg,
-            recipient_email=EMAIL_RECIPIENT
+            recipient_email="BROADCAST_ALL" # Indicator that it went to everyone
         ))
         
-        # Send Email
-        if EMAIL_RECIPIENT:
-            # rich info
+        # Broadcast Email to NEARBY active users (Geofencing)
+        users = db.query(models.User).filter(models.User.is_active == True).all()
+        recipients = set()
+        
+        ALERT_RADIUS_KM = 50.0 # Users within this range get alerts (approx City size)
+        
+        # Add registered users if they are nearby
+        for user in users:
+            if user.email:
+                # Geofencing Disabled (Columns Removed)
+                # Alerting all verified users for now
+                recipients.add(user.email)
+                logger.info(f"Targeting User {user.email} (Geofencing Disabled)")
+        
+        # ALWAYS Add fallback/admin from settings (Safety Net)
+        if settings and settings.user_email:
+            recipients.add(settings.user_email)
+            
+        # Also check env var if no users? (Optional, but good for safety)
+        if not recipients:
+             env_email = os.getenv("ALERT_RECEIVER_EMAIL")
+             if env_email:
+                 recipients.add(env_email)
+
+        if recipients:
             timestamp_str = measurement.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC")
             dashboard_link = f"http://localhost:5173/dashboard?device={device.id}"
             
@@ -231,16 +311,19 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
                 f"- EcoSync Sentinel"
             )
             
-            send_email_alert(f"Alert: {device.name} - Action Required", body, recipient=EMAIL_RECIPIENT)
+            for email in recipients:
+                send_email_alert(f"Alert: {device.name} - Action Required", body, recipient=email)
         else:
-             logger.warning("Alert triggered but no email recipient found.")
+             logger.warning("Alert triggered but no email recipients found (No users in DB).")
 
 # --- Startup Events ---
 @app.on_event("startup")
 async def startup_event():
     logger.info("Starting background services...")
-    asyncio.create_task(poll_devices())
+    # redis = await aioredis.create_redis_pool("redis://localhost")
+    asyncio.create_task(poll_devices()) 
     asyncio.create_task(refresh_map_cache())
+    logger.info("Startup: Background tasks initiated (Polling Enabled)")
 
 
 # --- IoT Ingestion Endpoint ---

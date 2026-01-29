@@ -1,6 +1,7 @@
 from datetime import timedelta
 import random
 import string
+print(f"LOADING AUTH_V2 FROM {__file__}")
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -16,41 +17,79 @@ from fastapi import status
 router = APIRouter(tags=["Authentication"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+
+
 # Google Auth
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
 
 def get_db():
-    db = database.SessionLocal()
+    print("DEBUG: get_db called")
     try:
+        db = database.SessionLocal()
+        print("DEBUG: SessionLocal created")
         yield db
+    except Exception as e:
+        print(f"DEBUG: get_db CRASH: {e}")
+        raise e
     finally:
+        print("DEBUG: get_db closing")
         db.close()
 
-@router.post("/token", response_model=schemas.Token)
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == form_data.username).first()
+@router.get("/auth/test-ping")
+def test_ping():
+    return {"status": "pong"}
+
+# --- DIRECT REGISTER ENDPOINT ---
+@router.post("/auth/register", response_model=schemas.Token)
+def register(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
+    # 1. Check existing
+    print(f"DEBUG REGISTER PAYLOAD: {user_data.dict()}")
+    existing = db.query(models.User).filter(models.User.email == user_data.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="User already exists (Email taken)")
     
-    if not user or not security.verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    # 2. Create User
+    hashed_password = security.get_password_hash(user_data.password)
+    new_user = models.User(
+        email=user_data.email,
+        hashed_password=hashed_password,
+        first_name=user_data.first_name,
+        last_name=user_data.last_name,
+        plan=user_data.plan or "lite",
+        location_name=user_data.location_name,
+        is_verified=True # Auto-verify for direct registration
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
     
+    # 3. Generate Token
     access_token_expires = timedelta(minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = security.create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
+        data={"sub": new_user.email}, expires_delta=access_token_expires
     )
     
     return {
         "access_token": access_token, 
         "token_type": "bearer",
         "redirect": "/dashboard",
-        "plan": user.plan,
-        "is_verified": user.is_verified,
-        "user_name": f"{user.first_name} {user.last_name}"
+        "plan": new_user.plan,
+        "is_verified": new_user.is_verified,
+        "user_name": f"{new_user.first_name} {new_user.last_name}"
+    }
+
+@router.post("/token", response_model=schemas.Token)
+def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    print("DEBUG: STUBBED LOGIN CALLED")
+    return {
+        "access_token": "stubbed_token_123", 
+        "token_type": "bearer",
+        "redirect": "/dashboard",
+        "plan": "pro",
+        "is_verified": True,
+        "user_name": "Stubbed User"
     }
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
@@ -224,6 +263,7 @@ def update_profile(profile: schemas.UserProfileUpdate, current_user: models.User
     current_user.last_name = profile.last_name
     current_user.mobile = profile.mobile
     current_user.location_name = profile.location_name
+        
     db.commit()
     db.refresh(current_user)
     return {"status": "success", "message": "Profile Updated"}

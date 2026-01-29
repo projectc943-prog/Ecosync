@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import List, Optional, Any, Dict
 from pydantic import BaseModel, EmailStr
+print(f"LOADING SCHEMAS FROM {__file__}")
 
 class Location(BaseModel):
     lat: float
@@ -57,12 +58,13 @@ class UserCreate(UserBase):
     first_name: Optional[str] = "Operator"
     last_name: Optional[str] = "Null"
     plan: Optional[str] = "lite"
+    location_name: Optional[str] = None
 
 class UserProfileUpdate(BaseModel):
     first_name: str
     last_name: str
-    mobile: Optional[str] = None
     location_name: Optional[str] = None
+    mobile: Optional[str] = None
 
 class UserResponse(UserBase):
     id: int
@@ -81,6 +83,9 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     redirect: Optional[str] = "/dashboard"
+    plan: Optional[str] = "lite"
+    is_verified: Optional[bool] = False
+    user_name: Optional[str] = "User"
 
 class TokenData(BaseModel):
     username: Optional[str] = None

@@ -44,90 +44,147 @@ export const AuthProvider = ({ children }) => {
     };
 
     useEffect(() => {
-        // Check active session
         const initSession = async () => {
-            console.log("AuthContext: initSession started");
-            try {
-                // Attempt Supabase Session
-                const { data, error } = await supabase.auth.getSession();
+            console.log("AuthContext: Starting initSession");
+            const token = localStorage.getItem('access_token');
+            console.log("AuthContext: Token found?", !!token);
 
-                if (data?.session?.user) {
-                    setCurrentUser(data.session.user);
-                    // Fetch profile... (omitted for brevity, keep existing logic if possible or simplify)
-                    setUserProfile({ email: data.session.user.email, plan: 'pro', first_name: 'Demo', last_name: 'User' });
-                } else {
-                    // FALLBACK: Mock User for Demo/Dev when API keys are invalid
-                    console.warn("AuthContext: No session or Invalid Key. Switching to DEMO MODE.");
-                    const mockUser = { id: 'demo-user', email: 'demo@ecosync.io' };
-                    setCurrentUser(mockUser);
-                    setUserProfile({ plan: 'pro', first_name: 'Demo', last_name: 'Admin' });
+            if (token) {
+                try {
+                    console.log("AuthContext: Fetching /me from", import.meta.env.VITE_API_BASE_URL);
+
+                    // Timeout logic
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s Timeout
+
+                    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/me`, {
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeoutId);
+
+                    console.log("AuthContext: Response status", response.status);
+
+                    if (response.ok) {
+                        const userData = await response.json();
+                        console.log("AuthContext: Use data loaded", userData);
+                        setCurrentUser({ email: userData.email, name: `${userData.first_name} ${userData.last_name}` });
+                        setUserProfile(userData);
+                    } else {
+                        console.warn("AuthContext: Token invalid, clearing");
+                        localStorage.removeItem('access_token');
+                    }
+                } catch (e) {
+                    console.error("Session init error", e);
                 }
-            } catch (err) {
-                console.error("Auth Error", err);
-                // Force Mock on Error
-                const mockUser = { id: 'demo-user', email: 'demo@ecosync.io' };
-                setCurrentUser(mockUser);
-                setUserProfile({ plan: 'pro', first_name: 'Demo', last_name: 'Admin' });
-            } finally {
-                setLoading(false);
             }
+            console.log("AuthContext: Setting loading false");
+            setLoading(false);
         };
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            // Only react to meaningful auth changes to avoid loops
-            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
-                setCurrentUser(session?.user ?? null);
-                if (session?.user) {
-                    try {
-                        const { data } = await supabase.from('users').select('*').eq('email', session.user.email).maybeSingle();
-                        if (data) {
-                            setUserProfile(data);
-                            localStorage.setItem('plan', data.plan || 'lite');
-                        }
-                    } catch (err) {
-                        console.error("Profile fetch error on change:", err);
-                    }
-                } else {
-                    setUserProfile(null);
-                }
-                setLoading(false);
-            }
-        });
-
         initSession();
-
-        return () => subscription.unsubscribe();
     }, []);
 
-    // MOCK AUTHENTICATION (Bypass Supabase due to missing keys)
-    const login = async (email, password) => {
-        console.log("Mock Login:", email);
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 800));
+    // --- REAL AUTHENTICATION ---
 
-        const mockUser = { id: 'demo-user', email: email };
-        setCurrentUser(mockUser);
-        setUserProfile({ plan: 'pro', first_name: 'Demo', last_name: 'User' });
-        return { data: { user: mockUser }, error: null };
+    // Login
+    const login = async (email, password) => {
+        try {
+            const formData = new FormData();
+            formData.append('username', email); // OAuth2 expects 'username'
+            formData.append('password', password);
+
+            // Timeout logic
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s Timeout
+
+            console.log("AuthContext: Login POST to", `${import.meta.env.VITE_API_BASE_URL}/token`);
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/token`, {
+                method: 'POST',
+                body: formData,
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            console.log("AuthContext: Login Response status", response.status);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Login failed');
+            }
+
+            const data = await response.json();
+
+            // Success
+            localStorage.setItem('access_token', data.access_token);
+
+            const user = { email: email, name: data.user_name };
+            setCurrentUser(user);
+            setUserProfile({
+                plan: data.plan,
+                first_name: data.user_name.split(' ')[0],
+                last_name: data.user_name.split(' ')[1] || ''
+            });
+
+            return { data, error: null };
+
+        } catch (error) {
+            console.error("Login Error:", error);
+            if (error.name === 'AbortError') {
+                return { data: null, error: new Error("Server Timeout. Please check your internet or retry.") };
+            }
+            return { data: null, error };
+        }
     };
 
-    const signup = async (email, password, data) => {
-        console.log("Mock Signup:", email, data);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+    // Signup
+    const signup = async (email, password, extraData) => {
+        try {
+            const payload = {
+                email,
+                password,
+                first_name: extraData.first_name || 'User',
+                last_name: extraData.last_name || 'New',
+                plan: extraData.plan || 'lite',
+                location_name: extraData.location_name,
+                location_lat: extraData.location_lat,
+                location_lon: extraData.location_lon
+            };
 
-        const mockUser = { id: 'demo-user', email: email };
-        setCurrentUser(mockUser);
-        setUserProfile({
-            plan: 'lite',
-            first_name: data.first_name || 'Demo',
-            last_name: data.last_name || 'User'
-        });
-        return { data: { user: mockUser }, error: null };
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Registration failed');
+            }
+
+            const data = await response.json();
+
+            // Success
+            localStorage.setItem('access_token', data.access_token);
+
+            const user = { email: email, name: data.user_name };
+            setCurrentUser(user);
+            setUserProfile({
+                plan: data.plan,
+                first_name: extraData.first_name,
+                last_name: extraData.last_name
+            });
+
+            return { data, error: null };
+
+        } catch (error) {
+            console.error("Signup Error:", error);
+            return { data: null, error };
+        }
     };
 
     const logout = async () => {
-        // await supabase.auth.signOut(); // Skipped for Mock
-        localStorage.removeItem('plan');
+        localStorage.removeItem('access_token');
         setCurrentUser(null);
         setUserProfile(null);
     };

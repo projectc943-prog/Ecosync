@@ -34,12 +34,9 @@ class User(Base):
     first_name = Column(String, nullable=True)
     last_name = Column(String, nullable=True)
     plan = Column(String, default="lite") # lite, pro
-    plan = Column(String, default="lite") # lite, pro
     mobile = Column(String, nullable=True)
     
     # Persistent Dashboard Location
-    location_lat = Column(Float, nullable=True)
-    location_lon = Column(Float, nullable=True)
     location_name = Column(String, nullable=True)
     
     # Verification
@@ -102,7 +99,6 @@ class Alert(Base):
     target_lon = Column(Float, nullable=True)
     radius_km = Column(Float, default=1.0)
     
-    is_active = Column(Boolean, default=True)
     is_active = Column(Boolean, default=True)
     email_sent = Column(Boolean, default=False)
 

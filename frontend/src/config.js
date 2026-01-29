@@ -1,3 +1,3 @@
-const API_BASE_URL = ""; // Relative path for Vercel Serverless Functions
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8001";
 
 export default API_BASE_URL;

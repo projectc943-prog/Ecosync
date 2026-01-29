@@ -22,6 +22,11 @@ const LoginPage = () => {
     const [lastName, setLastName] = useState('');
     const [firstName, setFirstName] = useState('');
 
+    // --- LOCATION STATE ---
+    const [locationLat, setLocationLat] = useState(null);
+    const [locationLon, setLocationLon] = useState(null);
+    const [locationName, setLocationName] = useState('');
+
     // --- BIO-SCANNER STATE ---
     const [scannerState, setScannerState] = useState('idle'); // idle, scanning, success, error
 
@@ -71,7 +76,10 @@ const LoginPage = () => {
             const { error } = await signup(email, password, {
                 first_name: firstName,
                 last_name: lastName,
-                plan: 'lite'
+                plan: 'lite',
+                location_name: locationName,
+                location_lat: locationLat,
+                location_lon: locationLon
             });
 
             if (error) throw error;
@@ -243,10 +251,47 @@ const LoginPage = () => {
                 />
             </div>
 
+            <div className="group">
+                <button
+                    type="button"
+                    onClick={() => {
+                        if (navigator.geolocation) {
+                            navigator.geolocation.getCurrentPosition(
+                                async (pos) => {
+                                    const lat = pos.coords.latitude;
+                                    const lon = pos.coords.longitude;
+                                    setLocationLat(lat);
+                                    setLocationLon(lon);
+
+                                    // Reverse Geocoding for City Name
+                                    try {
+                                        const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
+                                        const data = await response.json();
+                                        const city = data.city || data.locality || data.principalSubdivision || "Unknown Sector";
+                                        setLocationName(city);
+                                        alert(`Location Locked: ${city}`);
+                                    } catch (e) {
+                                        console.error("Geocoding failed", e);
+                                        setLocationName("Unknown Sector");
+                                    }
+                                },
+                                (err) => alert("Location Access Denied")
+                            );
+                        } else {
+                            alert("Geolocation not supported");
+                        }
+                    }}
+                    className="w-full py-3 bg-[#022c22]/50 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs font-mono tracking-widest hover:bg-emerald-500/10 transition-colors uppercase flex items-center justify-center gap-2"
+                >
+                    <Scan size={14} />
+                    {locationName ? `LOC: ${locationName.toUpperCase()}` : 'ENABLE GEO-TAGGING'}
+                </button>
+            </div>
+
             <button disabled={loading} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 border border-emerald-400/20 btn-bio">
                 REGISTER BIOMETRICS
             </button>
-        </form>
+        </form >
     );
 
     return (

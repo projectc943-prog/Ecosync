@@ -7,12 +7,14 @@ const Profile = () => {
     const { currentUser } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
-        firstName: currentUser?.first_name || 'User',
-        lastName: currentUser?.last_name || 'Name',
+        firstName: currentUser?.name?.split(' ')[0] || 'User',
+        lastName: currentUser?.name?.split(' ')[1] || 'Name',
         role: currentUser?.role || 'Researcher',
         bio: 'Environmental enthusiast passionate about IoT and sustainable technology.',
         linkedin: '',
-        github: ''
+        github: '',
+        location_lat: null,
+        location_lon: null
     });
 
     // Mock "Active" Status Animation
@@ -21,9 +23,10 @@ const Profile = () => {
     // Load Profile from Backend
     useEffect(() => {
         const fetchProfile = async () => {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('access_token');
             try {
-                const res = await fetch(`${API_BASE_URL}/auth/me`, {
+                // FIX: Endpoint is /me, not /auth/me
+                const res = await fetch(`${API_BASE_URL}/me`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
@@ -35,21 +38,22 @@ const Profile = () => {
                         role: data.plan === 'pro' ? 'Lead Researcher' : 'Field Operative',
                         bio: data.bio || 'Environmental enthusiast passionate about IoT and sustainable technology.',
                         linkedin: data.linkedin || '',
-                        github: data.github || ''
+                        github: data.github || '',
+                        location_name: data.location_name || '',
+                        location_lat: data.location_lat,
+                        location_lon: data.location_lon
                     });
                 }
             } catch (e) {
                 console.error("Profile Fetch Error:", e);
                 // Fallback to Context if API fails
                 if (currentUser) {
-                    setFormData({
-                        firstName: currentUser.first_name || '',
-                        lastName: currentUser.last_name || '',
-                        role: 'Researcher',
-                        bio: 'Environmental enthusiast.',
-                        linkedin: '',
-                        github: ''
-                    });
+                    // Try to use userProfile from context if available, or just defaults
+                    setFormData(prev => ({
+                        ...prev,
+                        firstName: currentUser.name?.split(' ')[0] || '',
+                        lastName: currentUser.name?.split(' ')[1] || ''
+                    }));
                 }
             }
         };
@@ -69,7 +73,9 @@ const Profile = () => {
                     first_name: formData.firstName,
                     last_name: formData.lastName,
                     mobile: "0000000000", // Defaulting as not in form
-                    location_name: "Hyderabad" // Defaulting
+                    location_name: formData.location_name || "Hyderabad", // Defaulting
+                    location_lat: formData.location_lat,
+                    location_lon: formData.location_lon
                 })
             });
 
@@ -235,7 +241,44 @@ const Profile = () => {
                                         <div className="flex items-center gap-2 mb-1 text-slate-400 text-xs">
                                             <MapPin className="w-3 h-3" /> Location
                                         </div>
-                                        <div className="text-slate-200 font-medium">{formData.location_name || 'Hyderabad, IN'}</div>
+                                        <div className="text-slate-200 font-medium flex items-center gap-2">
+                                            {formData.location_name || 'Global'}
+                                            {isEditing && (
+                                                <button
+                                                    onClick={() => {
+                                                        if (navigator.geolocation) {
+                                                            navigator.geolocation.getCurrentPosition(
+                                                                async (pos) => {
+                                                                    const lat = pos.coords.latitude;
+                                                                    const lon = pos.coords.longitude;
+
+                                                                    let city = "Unknown Sector";
+                                                                    try {
+                                                                        const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
+                                                                        const data = await response.json();
+                                                                        city = data.city || data.locality || data.principalSubdivision || "Unknown Sector";
+                                                                    } catch (e) {
+                                                                        console.error("Geocoding failed", e);
+                                                                    }
+
+                                                                    setFormData({
+                                                                        ...formData,
+                                                                        location_name: city
+                                                                    });
+                                                                    alert(`Location Updated: ${city}! Click Save to apply.`);
+                                                                },
+                                                                (err) => alert("Location Access Denied")
+                                                            );
+                                                        } else {
+                                                            alert("Geolocation not supported");
+                                                        }
+                                                    }}
+                                                    className="bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-0.5 rounded hover:bg-emerald-500/30"
+                                                >
+                                                    {formData.location_name ? "Update Location" : "Set My Location"}
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {/* First Name */}
