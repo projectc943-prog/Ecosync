@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import os
-from datetime import datetime as dt
+from datetime import datetime as dt, timedelta
 from typing import List, Optional
 import math
 print(f"LOADING MAIN FROM {__file__}")
@@ -19,7 +19,8 @@ from .connectors.waqi import WAQIConnector
 from .connectors.openaq import OpenAQConnector
 from .connectors.esp32_stub import ESP32StubConnector
 
-from .routers import assistant, auth_v2 as auth, map as map_router, pro_api
+from .routers import assistant, auth_v2 as auth, map as map_router, pro_api, push_notifications
+from .routers.push_notifications import send_push_notification_to_user
 from .services import kalman_filter, aqi_calculator, external_apis, fusion_engine, weather_service
 
 from .services.websocket_manager import manager
@@ -92,6 +93,7 @@ app.include_router(assistant.router, tags=["AI Assistant"])
 app.include_router(auth.router, tags=["Authentication"])
 app.include_router(map_router.router, tags=["Map"])
 app.include_router(pro_api.router, tags=["Pro Mode"])
+app.include_router(push_notifications.router, tags=["Push Notifications"])
 
 # --- Helper Functions ---
 def get_connector(device: models.Device):
@@ -194,33 +196,66 @@ from email.mime.multipart import MIMEMultipart
 
 # --- Alerting Service ---
 def send_email_alert(subject: str, body: str, recipient: str = None):
-    """Sends an email alert using SMTP (e.g., Gmail)"""
+    """Sends an email alert using SMTP (e.g., Gmail) with enhanced error handling"""
     sender_email = os.getenv("EMAIL_USER")
     sender_password = os.getenv("EMAIL_PASS")
-    receiver_email = recipient or os.getenv("ALERT_RECEIVER_EMAIL", sender_email) # Use override or default
+    receiver_email = recipient or os.getenv("ALERT_RECEIVER_EMAIL", sender_email)
 
     if not sender_email or not sender_password:
-        logger.warning("Skipping Email Alert: EMAIL_USER or EMAIL_PASS not set.")
-        return
+        logger.warning("⚠️ Email Alert Skipped: EMAIL_USER or EMAIL_PASS not configured in .env")
+        return False
 
     try:
         msg = MIMEMultipart()
         msg['From'] = sender_email
         msg['To'] = receiver_email
-        msg['Subject'] = f"EcoSync Alert: {subject}"
+        msg['Subject'] = f"🚨 EcoSync Alert: {subject}"
 
         msg.attach(MIMEText(body, 'plain'))
 
-        # Standard Gmail SMTP port
-        server = smtplib.SMTP('smtp.gmail.com', 587)
+        # Connect to Gmail SMTP with timeout
+        logger.info(f"📧 Connecting to Gmail SMTP for {receiver_email}...")
+        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=15)
         server.starttls()
+        
+        # Login
+        logger.info(f"🔐 Authenticating as {sender_email}...")
         server.login(sender_email, sender_password)
+        
+        # Send email
+        logger.info(f"📤 Sending alert email...")
         text = msg.as_string()
         server.sendmail(sender_email, receiver_email, text)
         server.quit()
-        logger.info(f"Email Alert sent to {receiver_email}")
+        
+        logger.info(f"✅ Email Alert SENT successfully to {receiver_email}")
+        return True
+        
+    except smtplib.SMTPAuthenticationError as e:
+        logger.error(f"❌ SMTP Authentication Failed: {e}")
+        logger.error(f"💡 Solution: Generate new App Password at https://myaccount.google.com/apppasswords")
+        return False
+        
+    except smtplib.SMTPException as e:
+        error_msg = str(e)
+        logger.error(f"❌ SMTP Error: {error_msg}")
+        
+        # Specific error handling
+        if "550" in error_msg:
+            logger.error(f"💡 Gmail blocked the email. Possible reasons:")
+            logger.error(f"   - Daily sending quota exceeded")
+            logger.error(f"   - Suspicious activity detected")
+            logger.error(f"   - Recipient email invalid or blocked")
+            logger.error(f"   - Try again in a few hours or use a different Gmail account")
+        elif "535" in error_msg:
+            logger.error(f"💡 Invalid credentials. Check EMAIL_USER and EMAIL_PASS in .env")
+        
+        return False
+        
     except Exception as e:
-        logger.error(f"Failed to send email alert: {e}")
+        logger.error(f"❌ Unexpected error sending email: {type(e).__name__}: {e}")
+        return False
+
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     """
@@ -289,13 +324,23 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
         alert_msg = " | ".join(triggers)
         logger.warning(f"ALERT TRIGGERED: {alert_msg} on {device.name}")
         
-        # Save to DB (One record for the system event)
-        db.add(models.Alert(
-            metric="multi",
-            value=0.0,
-            message=alert_msg,
-            recipient_email="BROADCAST_ALL" # Indicator that it went to everyone
-        ))
+        # --- COOLDOWN CHECK ---
+        # Prevent spamming alerts every second. Check if an alert was sent in the last 15 minutes.
+        try:
+             cutoff_time = dt.utcnow() - timedelta(minutes=15)
+             recent_alert = db.query(models.Alert).filter(
+                 models.Alert.message == alert_msg, # Same alert type
+                 models.Alert.timestamp >= cutoff_time
+             ).first()
+             
+             if recent_alert:
+                 if recent_alert.timestamp: # Ensure timestamp exists
+                     time_diff = (dt.utcnow() - recent_alert.timestamp).total_seconds() / 60
+                     logger.info(f"⏳ Alert Cooldown Active: Last alert sent {time_diff:.1f} mins ago. Skipping.")
+                     return
+        except Exception as e:
+             logger.error(f"Error checking alert cooldown: {e}")
+             # Proceed safely if cooldown check fails
         
         # Targeted Email Logic
         recipients = set()
@@ -331,10 +376,28 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
                 pass
 
         if recipients:
-            logger.info(f"🚀 SECTOR ALERT: Broadcasting to {len(recipients)} total recipients...")
             timestamp_str = measurement.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC")
             dashboard_link = f"http://localhost:5173/dashboard?device={device.id}"
             
+            # ============================================
+            # PRIMARY ALERT: CONSOLE NOTIFICATION (Always Works)
+            # ============================================
+            print("\n" + "="*80)
+            print("🚨 CRITICAL ALERT - THRESHOLD VIOLATION DETECTED 🚨")
+            print("="*80)
+            print(f"Device: {device.name}")
+            print(f"Location: {device.lat}, {device.lon}")
+            print(f"Time: {timestamp_str}")
+            print(f"\nVIOLATIONS:")
+            for trigger in triggers:
+                print(f"  ⚠️  {trigger}")
+            print(f"\nRecipients: {', '.join(recipients)}")
+            print(f"Dashboard: {dashboard_link}")
+            print("="*80 + "\n")
+            
+            # ============================================
+            # SECONDARY ALERT: EMAIL (Optional - May Fail)
+            # ============================================
             body = (
                 f"🚨 EcoSync Alert System\n\n"
                 f"Source: {device.name}\n"
@@ -348,10 +411,62 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
                 f"- EcoSync Sentinel"
             )
             
+            # Track email sending success
+            emails_sent_successfully = 0
+            logger.info(f"📧 Attempting to send email alerts to {len(recipients)} recipients...")
+            
             for email in recipients:
-                send_email_alert(f"Alert: {device.name} - Action Required", body, recipient=email)
+                success = send_email_alert(f"Alert: {device.name} - Action Required", body, recipient=email)
+                if success:
+                    emails_sent_successfully += 1
+            
+            # ============================================
+            # TERTIARY ALERT: PUSH NOTIFICATION
+            # ============================================
+            try:
+                push_title = f"🚨 {device.name} Alert"
+                push_body = f"Threshold Violation: {alert_msg}"
+                push_payload = {
+                     "title": push_title,
+                     "body": push_body,
+                     "icon": "/warning.png",
+                     "tag": "ecosync-alert",
+                     "data": {"url": dashboard_link}
+                }
+                
+                # Send to all nearby users found in 'nearby_users' scope
+                # Note: 'nearby_users' var might not be available here if we didn't enter that block
+                # Better strategy: Get IDs of recipients
+                
+                # Fetch user objects for recipients to send push
+                target_users = db.query(models.User).filter(models.User.email.in_(recipients)).all()
+                for user in target_users:
+                     sent_push = send_push_notification_to_user(user.id, push_payload, db)
+                     if sent_push:
+                         logger.info(f"📲 Push notification sent to {user.email}")
+            except Exception as e:
+                logger.error(f"Failed to send push notifications: {e}")
+            
+            # Save to DB with email status
+            email_status = emails_sent_successfully > 0
+            db.add(models.Alert(
+                metric="multi",
+                value=0.0,
+                message=alert_msg,
+                recipient_email=f"BROADCAST_{len(recipients)}_RECIPIENTS",
+                email_sent=email_status
+            ))
+            
+            # Log final status
+            if email_status:
+                logger.info(f"✅ Alert emails sent successfully to {emails_sent_successfully}/{len(recipients)} recipients")
+            else:
+                logger.warning(f"⚠️ Email delivery failed, but CONSOLE ALERT was displayed above")
+                logger.warning(f"💡 Check the terminal output for alert details")
         else:
              logger.warning("Alert triggered but no email recipients found (No users in DB).")
+
+
 
 # --- Startup Events ---
 @app.on_event("startup")

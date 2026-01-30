@@ -8,6 +8,7 @@ import AIAssistant from './components/AIAssistant';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LocationProvider } from './contexts/LocationContext';
 
+
 // Lazy Load Pages
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const LiveMap = lazy(() => import('./pages/LiveMap'));
@@ -75,79 +76,83 @@ function AppContent() {
     };
   }, []);
 
+
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={
-        <Suspense fallback={<PageLoader />}>
-          <LandingPage />
-        </Suspense>
-      } />
+    <>
 
-      <Route path="/login" element={
-        <Suspense fallback={<PageLoader />}>
-          <LoginPage />
-        </Suspense>
-      } />
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={
+          <Suspense fallback={<PageLoader />}>
+            <LandingPage />
+          </Suspense>
+        } />
 
-      {/* Protected Routes */}
-      <Route path="/dashboard" element={
-        <ProtectedRoute>
-          <div className="flex h-screen w-full bg-[#030712] text-slate-200 overflow-hidden font-outfit relative">
-            <div className="mouse-glow" />
-            {/* <AIAssistant /> */}
-            <Dashboard />
-          </div>
-        </ProtectedRoute>
-      } />
+        <Route path="/login" element={
+          <Suspense fallback={<PageLoader />}>
+            <LoginPage />
+          </Suspense>
+        } />
 
-      {/* Map Route */}
-      <Route path="/map" element={
-        <ProtectedRoute>
-          <MainLayout>
-            <LiveMap />
-          </MainLayout>
-        </ProtectedRoute>
-      } />
+        {/* Protected Routes */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <div className="flex h-screen w-full bg-[#030712] text-slate-200 overflow-hidden font-outfit relative">
+              <div className="mouse-glow" />
+              {/* <AIAssistant /> */}
+              <Dashboard />
+            </div>
+          </ProtectedRoute>
+        } />
+
+        {/* Map Route */}
+        <Route path="/map" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <LiveMap />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
 
 
 
-      <Route path="/settings" element={
-        <ProtectedRoute>
-          <MainLayout>
-            <Settings />
-          </MainLayout>
-        </ProtectedRoute>
-      } />
+        <Route path="/settings" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Settings />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
 
-      <Route path="/analytics" element={
-        <ProtectedRoute>
-          <MainLayout>
-            <Analytics />
-          </MainLayout>
-        </ProtectedRoute>
-      } />
+        <Route path="/analytics" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Analytics />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
 
-      <Route path="/profile" element={
-        <ProtectedRoute>
-          <MainLayout>
-            <Profile />
-          </MainLayout>
-        </ProtectedRoute>
-      } />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Profile />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
 
-      {/* Global View Route */}
-      <Route path="/global" element={
-        <ProtectedRoute>
-          <MainLayout>
-            <GlobalView />
-          </MainLayout>
-        </ProtectedRoute>
-      } />
+        {/* Global View Route */}
+        <Route path="/global" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <GlobalView />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
 
-      {/* Catch-all redirect */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
+        {/* Catch-all redirect */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </>
   );
 }
 

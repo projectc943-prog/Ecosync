@@ -311,6 +311,45 @@ def read_users_me(current_user: models.User = Depends(get_current_user)):
     """
     return current_user
 
+class LocationUpdateRequest(schemas.BaseModel):
+    location_lat: float
+    location_lon: float
+    location_name: str
+
+@router.put("/api/user/location")
+def update_user_location(
+    location_data: LocationUpdateRequest,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update user's current location coordinates
+    This enables dynamic location tracking for geofencing alerts
+    """
+    print(f"📍 Updating location for {current_user.email}")
+    print(f"   New location: {location_data.location_name} ({location_data.location_lat}, {location_data.location_lon})")
+    
+    # Update user location
+    current_user.location_lat = location_data.location_lat
+    current_user.location_lon = location_data.location_lon
+    current_user.location_name = location_data.location_name
+    
+    db.commit()
+    db.refresh(current_user)
+    
+    print(f"✅ Location updated successfully for {current_user.email}")
+    
+    return {
+        "status": "success",
+        "message": "Location updated successfully",
+        "location": {
+            "name": current_user.location_name,
+            "lat": current_user.location_lat,
+            "lon": current_user.location_lon
+        }
+    }
+
+
 class GoogleLoginRequest(schemas.BaseModel):
     token: str
 

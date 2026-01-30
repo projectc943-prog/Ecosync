@@ -162,3 +162,20 @@ class UserLayout(Base):
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     owner = relationship("User", back_populates="layout")
+
+
+class PushSubscription(Base):
+    """Store web push notification subscriptions for users"""
+    __tablename__ = "push_subscriptions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    endpoint = Column(String, nullable=False, unique=True)
+    p256dh = Column(String, nullable=False)  # Public key
+    auth = Column(String, nullable=False)    # Auth secret
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_active = Column(Boolean, default=True)
+    
+    # Relationship
+    user = relationship("User")
