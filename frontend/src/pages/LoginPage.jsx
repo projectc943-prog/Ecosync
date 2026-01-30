@@ -98,7 +98,7 @@ const LoginPage = () => {
         } catch (err) {
             console.error(err);
             if (err.message && (err.message.includes("already registered") || err.message.includes("User already exists"))) {
-                setErrorMessage("WARNING: Node Identity Already Active (Email Taken)");
+                setErrorMessage("WARNING: Area Identity Already Active (Email Taken)");
             } else {
                 setErrorMessage(err.message || "Registration Failed");
             }
@@ -255,7 +255,7 @@ const LoginPage = () => {
 
             <div className="text-center pt-4 border-t border-white/5">
                 <button type="button" onClick={() => setAuthStage('signup_email')} className="text-xs text-slate-400 hover:text-emerald-400 transition-colors uppercase tracking-widest font-mono flex items-center justify-center gap-2">
-                    <Sprout size={12} /> Request Node Access
+                    <Sprout size={12} /> Request Area Access
                 </button>
             </div>
         </form>

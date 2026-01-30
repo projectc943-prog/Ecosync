@@ -12,10 +12,10 @@ const char *WIFI_SSID = "xanax";
 const char *WIFI_PASSWORD = "123456789";
 
 // Backend URL
-const char *SERVER_URL = "http://10.40.160.242:8009/iot/data";
+const char *SERVER_URL = "http://172.22.67.5:8009/iot/data";
 
 // --- MQTT Configuration ---
-const char *MQTT_SERVER = "10.40.160.242";
+const char *MQTT_SERVER = "172.22.67.5";
 const int MQTT_PORT = 1883;
 const char *MQTT_USER = "";
 const char *MQTT_PASSWORD = "";
@@ -33,6 +33,10 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 #define PIR_PIN 27
 #define IR_PIN 18 // Pin 18 for IR
 
+// I2C Pins for LCD (ESP32 defaults)
+#define SDA_PIN 21
+#define SCL_PIN 22
+
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -46,7 +50,13 @@ float h = 0.0;
 int mqValue = 0;
 int rainValue = 0;
 int pirValue = 0;
-int irValue = 0;
+// RPM / Speed Variables
+volatile unsigned long pulseCount = 0;
+float rpm = 0.0;
+unsigned long lastRpmTime = 0;
+
+// Interrupt Service Routine for IR Speed Sensor
+void IRAM_ATTR onIRPulse() { pulseCount++; }
 
 void reconnect() {
   static unsigned long lastMqttAttempt = 0;
@@ -60,21 +70,34 @@ void reconnect() {
 
 void setup() {
   Serial.begin(115200);
+  Serial.println("\n\n--- BOOT START ---");
+  Serial.println("1. Serial Initialized");
+
+  // Explicitly start I2C bus FIRST with defined pins
+  Serial.printf("2. Wire.begin(SDA=%d, SCL=%d)\n", SDA_PIN, SCL_PIN);
+  Wire.begin(SDA_PIN, SCL_PIN);
+  delay(500); // Give LCD time to power up
+
+  // Initialize LCD
+  Serial.println("3. lcd.init()");
+  lcd.init();
+  lcd.backlight();
+  lcd.setCursor(0, 0);
+  lcd.print("Booting System");
+  Serial.println("4. LCD Init Done");
+
+  // Serial.begin(115200); // Removed from here
 
   pinMode(MQ_ANALOG_PIN, INPUT);
   pinMode(RAIN_ANALOG_PIN, INPUT);
   pinMode(PIR_PIN, INPUT_PULLDOWN);
-  pinMode(IR_PIN, INPUT);
+
+  // IR Sensor Interrupt Setup
+  pinMode(IR_PIN, INPUT_PULLUP); // Use PULLUP for open-collector sensors
+  attachInterrupt(digitalPinToInterrupt(IR_PIN), onIRPulse, FALLING);
 
   dht.begin();
   client.setServer(MQTT_SERVER, MQTT_PORT);
-
-  // Initialize LCD
-  lcd.init();
-  lcd.backlight();
-  lcd.setCursor(0, 0);
-  lcd.print("EcoSync Pro");
-  delay(1000);
 
   // Connect to WiFi
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -84,15 +107,22 @@ void setup() {
     Serial.print(".");
     attempts++;
   }
+
+  lcd.clear();
+  lcd.print("EcoSync Ready");
+  delay(1000);
 }
 
 void loop() {
-  // WiFi Reconnect
+  // WiFi Reconnect (Non-blocking check)
   if (WiFi.status() != WL_CONNECTED) {
-    WiFi.disconnect();
-    WiFi.reconnect();
-    delay(500);
-    return;
+    static unsigned long lastWifiTry = 0;
+    if (millis() - lastWifiTry > 10000) { // Try reconnecting every 10s
+      WiFi.disconnect();
+      WiFi.reconnect();
+      lastWifiTry = millis();
+    }
+    // Do NOT return here, so sensors can still work offline
   }
 
   // MQTT Reconnect
@@ -107,9 +137,11 @@ void loop() {
   static int pageIndex = 0;
 
   // 1. Read Sensors (Every 2 Seconds)
-  // 1. Read Sensors (Every 2 Seconds)
   if (millis() - lastSensorRead > 2000) {
-    lastSensorRead = millis();
+    unsigned long currentTime = millis();
+    unsigned long timeDiff =
+        currentTime - lastSensorRead; // Actual time elapsed
+    lastSensorRead = currentTime;
 
     float newH = dht.readHumidity();
     float newT = dht.readTemperature();
@@ -121,41 +153,51 @@ void loop() {
     mqValue = analogRead(MQ_ANALOG_PIN);
     rainValue = analogRead(RAIN_ANALOG_PIN);
 
-    // Software Debounce for Motion (Check twice 50ms apart)
-    int p1 = digitalRead(PIR_PIN);
-    delay(50);
-    int p2 = digitalRead(PIR_PIN);
-    // Store exact read. If Active Low, IDLE=High, DETECT=Low.
-    pirValue = (p1 == p2)
-                   ? p1
-                   : p1; // Simple debounce, just take p1 if match, else p1.
-    // Actually, let's just read it.
-    pirValue = p2;
+    // Read Motion (PIR)
+    pirValue = digitalRead(PIR_PIN);
 
-    irValue = digitalRead(IR_PIN);
+    // Calculate RPM
+    // RPM = (Pulses / PulsesPerRev) * (60000 / TimeMs)
+    // Assuming 1 pulse = 1 rotation (adjust if using encoder disc)
+    // To be safe, let's just show "Pulses per Min" for now
+    rpm = (pulseCount * 60000.0) / timeDiff; // Gives CPM (Counts Per Minute)
+    pulseCount = 0;                          // Reset counter
+
+    // Detailed Gas Calculations (Estimates for MQ Sensor)
+    // MQ-135: 400ppm -> 50000ppm approx range
+    int co2_ppm = map(mqValue, 0, 4095, 400, 5000);
+    // Smoke/CO Estimate (0-100%)
+    int smoke_pct = map(mqValue, 0, 4095, 0, 100);
 
     // Serial Debug
-    Serial.printf("Temp:%.1f Hum:%.1f Gas:%d Rain:%d Motion:%d Speed:%d\n", t,
-                  h, mqValue, rainValue, pirValue, irValue);
+    Serial.printf(
+        "T:%.1f H:%.1f Gas:%d CO2:%d Smoke:%d%% Rain:%d Mot:%d RPM:%.0f\n", t,
+        h, mqValue, co2_ppm, smoke_pct, rainValue, pirValue, rpm);
 
-    // HTTP Post
-    HTTPClient http;
-    http.begin(SERVER_URL);
-    http.addHeader("Content-Type", "application/json");
-    StaticJsonDocument<300> doc;
-    doc["temperature"] = t;
-    doc["humidity"] = h;
-    doc["mq_value"] = mqValue;
-    doc["rain_value"] = rainValue;
-    // CALIBRATED: Active Low Motion (Idle=1)
-    doc["motion_detected"] = (pirValue == LOW);
-    doc["ir_detected"] = (irValue == LOW);
-    doc["pm25"] = map(mqValue, 0, 4095, 0, 500);
-    doc["pressure"] = 1013;
-    String jsonPayload;
-    serializeJson(doc, jsonPayload);
-    http.POST(jsonPayload);
-    http.end();
+    // HTTP Post (Only if Connected)
+    if (WiFi.status() == WL_CONNECTED) {
+      HTTPClient http;
+      http.begin(SERVER_URL);
+      http.addHeader("Content-Type", "application/json");
+      StaticJsonDocument<400> doc;
+      doc["temperature"] = t;
+      doc["humidity"] = h;
+      doc["mq_value"] = mqValue;
+      doc["rain_value"] = rainValue;
+      doc["motion_detected"] = (pirValue == LOW); // PIR Is Active Low
+      doc["ir_detected"] = (rpm > 0);
+      doc["pm25"] = co2_ppm / 10;
+      doc["pressure"] = 1013;
+
+      // Add extra fields for debug if backend accepts them
+      doc["extended_co2"] = co2_ppm;
+      doc["extended_rpm"] = rpm;
+
+      String jsonPayload;
+      serializeJson(doc, jsonPayload);
+      http.POST(jsonPayload);
+      http.end();
+    }
 
     // MQTT Publish
     if (client.connected()) {
@@ -163,55 +205,45 @@ void loop() {
       client.publish("ecosync/humidity", String(h, 2).c_str());
       client.publish("ecosync/gas", String(mqValue).c_str());
       client.publish("ecosync/rain", String(rainValue).c_str());
-      // CALIBRATED: 1 if LOW
       client.publish("ecosync/motion", (pirValue == LOW) ? "1" : "0");
-      client.publish("ecosync/ir", irValue == LOW ? "1" : "0");
+      client.publish("ecosync/rpm", String(rpm).c_str());
     }
   }
 
-  // 2. Dynamic LCD Logic (Every 2.5s)
-  if (millis() - lastPageSwitch > 2500) {
+  // 2. Dynamic LCD Logic (Every 3s)
+  if (millis() - lastPageSwitch > 3000) {
     lastPageSwitch = millis();
     lcd.clear();
 
     // Identify Counts/Status
-    bool gasAlert = (mqValue > GAS_THRESHOLD);
-    // CALIBRATED RAIN: High Value = Wet (> 1500) (Dry was ~600)
-    bool rainAlert = (rainValue > RAIN_THRESHOLD);
-    // CALIBRATED MOTION: Low = Detected (Idle was 1/HIGH)
-    bool motionDetected = (pirValue == LOW);
-    bool speedDetected = (irValue == LOW);
+    int co2_ppm = map(mqValue, 0, 4095, 400, 5000);
+    int smoke_pct = map(mqValue, 0, 4095, 0, 100);
+    bool rainAlert = (rainValue < 1000); // Analog: Low = Wet usually
 
-    // Cycle 3 screens
-    pageIndex = (pageIndex + 1) % 3;
-
+    // Cycle 4 screens now
+    pageIndex = (pageIndex + 1) % 4;
     char line1[17];
     char line2[17];
 
     if (pageIndex == 0) {
-      // Screen 0: Temperature & Humidity
+      // Screen 0: Environment
       snprintf(line1, 17, "Temp: %.1f C    ", t);
       snprintf(line2, 17, "Hum : %.0f %%      ", h);
     } else if (pageIndex == 1) {
-      // Screen 1: Gas & Rain
-      // Format: "Gas : Safe (1234)" -> 16 Chars?
-      // "Gas : " (6) + "Safe" (4) + " (" (2) + "1234" (4) + ")" (1) = 17 chars
-      // (Too long by 1 for 4 digits) Use: "G:Safe (1234)" or "Gas:Safe (1234)"
-      // Let's try: "Gas: Safe 1234 "
-
-      const char *gasStatus = gasAlert ? "Alert" : "Safe ";
-      const char *rainStatus = rainAlert ? "Rain " : "Clear";
-
-      // "Gas: Safe  1234"
-      snprintf(line1, 17, "Gas : %s %-4d", gasStatus, mqValue);
-      snprintf(line2, 17, "Water: %s %-4d", rainStatus, rainValue);
+      // Screen 1: Gas Advanced
+      snprintf(line1, 17, "Air: %d AQI    ", mqValue / 10);
+      snprintf(line2, 17, "CO2: %d PPM   ", co2_ppm);
     } else if (pageIndex == 2) {
-      // Screen 2: Motion & Speed
-      const char *motStatus = motionDetected ? "Yes" : "No ";
-      const char *spdStatus = speedDetected ? "Yes" : "No ";
-
-      snprintf(line1, 17, "Motion: %s     ", motStatus);
-      snprintf(line2, 17, "Speed : %s     ", spdStatus);
+      // Screen 2: Safety
+      const char *rStatus = rainAlert ? "WET " : "DRY ";
+      const char *mStatus = (pirValue == LOW) ? "YES" : "NO ";
+      snprintf(line1, 17, "Rain  : %-4s %-4d", rStatus, rainValue);
+      snprintf(line2, 17, "Smoke : %d%%      ", smoke_pct);
+    } else if (pageIndex == 3) {
+      // Screen 3: Motion & Speed
+      const char *mStatus = (pirValue == LOW) ? "Active" : "Quiet ";
+      snprintf(line1, 17, "Motion: %s  ", mStatus);
+      snprintf(line2, 17, "Speed : %.0f RPM ", rpm);
     }
 
     lcd.setCursor(0, 0);

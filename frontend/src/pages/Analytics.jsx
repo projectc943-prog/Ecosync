@@ -175,7 +175,7 @@ const Analytics = ({ sensorData = [], predictions = [], isProMode = false }) => 
                             <div key={i} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-colors">
                                 <div className="flex items-center gap-3">
                                     <span className="text-[10px] font-bold text-red-500/40 font-mono">#{i + 1}</span>
-                                    <span className="text-sm font-medium text-slate-300">Node: {item.device_id.slice(0, 8)}...</span>
+                                    <span className="text-sm font-medium text-slate-300">Area: {item.device_id.slice(0, 8)}...</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="text-lg font-bold text-white">{item.temperature}°C</span>
@@ -224,7 +224,7 @@ const Analytics = ({ sensorData = [], predictions = [], isProMode = false }) => 
                             <div key={i} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-colors">
                                 <div className="flex items-center gap-3">
                                     <span className="text-[10px] font-bold text-teal-500/40 font-mono">#{i + 1}</span>
-                                    <span className="text-sm font-medium text-slate-300">Node: {item.device_id.slice(0, 8)}...</span>
+                                    <span className="text-sm font-medium text-slate-300">Area: {item.device_id.slice(0, 8)}...</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="text-lg font-bold text-white">{item.temperature}°C</span>
@@ -255,7 +255,7 @@ const Analytics = ({ sensorData = [], predictions = [], isProMode = false }) => 
                                 <span className="px-3 py-1 bg-red-500/20 text-red-400 text-[10px] font-bold rounded-full uppercase">Critical</span>
                                 <span className="text-[10px] text-slate-500 font-mono">{new Date(item.timestamp).toLocaleTimeString()}</span>
                             </div>
-                            <h3 className="text-lg font-bold text-white leading-tight">Extreme Metrics Detected at Node {item.device_id.slice(0, 6)}</h3>
+                            <h3 className="text-lg font-bold text-white leading-tight">Extreme Metrics Detected at Sector {item.device_id.slice(0, 6)}</h3>
                             <div className="flex gap-4">
                                 <div className="text-center bg-black/20 p-2 rounded-xl flex-1">
                                     <div className="text-[9px] text-slate-500 font-bold uppercase mb-1">Temp</div>

@@ -283,7 +283,7 @@ const LiveMap = () => {
 
     const handleSaveSource = useCallback(async () => {
         if (!pointData) return;
-        const name = prompt("Enter Node Identifier:", `Node-${pointData.location.lat.toFixed(2)}`);
+        const name = prompt("Enter Area Identifier:", `Area-${pointData.location.lat.toFixed(2)}`);
         // ... rest of logic
     }, [pointData]);
 

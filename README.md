@@ -19,10 +19,8 @@
 - **Backend (API)**: [https://capstone-backend-djdd.onrender.com/docs](https://capstone-backend-djdd.onrender.com/docs)
 - **Database (Supabase)**: Connected via Secure RPC
 
-### 🔐 Test Credentials
-- **Email**: `duppala@gitam.in`
-- **Password**: `Asdf7890`
-- *(Or use the "Register" button to create a new bio-profile)*
+### 🔐 Access
+- Please use the "Register" button to create a new bio-profile.
 
 ---
 

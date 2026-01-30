@@ -152,7 +152,7 @@ const LandingPage = () => {
                                 <div className="w-12 h-12 bg-lime-950/30 border border-lime-500/30 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-lime-500/20 transition-all duration-500">
                                     <Network className="text-lime-400 w-6 h-6" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-lime-400 transition-colors tracking-tight">Register New Node</h3>
+                                <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-lime-400 transition-colors tracking-tight">Register New Area</h3>
                                 <p className="text-slate-400 text-sm mb-6 leading-relaxed">
                                     Register new hardware endpoints to the global mesh network for localized monitoring.
                                 </p>

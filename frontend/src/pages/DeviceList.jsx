@@ -88,12 +88,12 @@ const DeviceList = () => {
                     <h1 className="text-4xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2 font-black tracking-tighter uppercase">
                         Active Fleet
                     </h1>
-                    <p className="text-slate-400 text-xs tracking-widest uppercase">Node Management Console</p>
+                    <p className="text-slate-400 text-xs tracking-widest uppercase">Area Management Console</p>
                 </div>
                 <button
                     onClick={() => setShowModal(true)}
                     className="bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-3 rounded text-sm font-bold flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(6,182,212,0.3)] uppercase tracking-wide">
-                    <Plus size={16} /> Deploy Node
+                    <Plus size={16} /> Deploy Area
                 </button>
             </header>
 
@@ -171,7 +171,7 @@ const DeviceList = () => {
                             {step === 2 && (
                                 <div className="space-y-6 max-w-md mx-auto">
                                     <div className="space-y-2">
-                                        <label className="text-xs text-cyan-500 uppercase font-bold tracking-wider">Node Identifier</label>
+                                        <label className="text-xs text-cyan-500 uppercase font-bold tracking-wider">Area Identifier</label>
                                         <input
                                             autoFocus
                                             className="w-full bg-slate-950 border border-slate-700 rounded p-4 text-white focus:border-cyan-500 outline-none font-mono text-lg"
