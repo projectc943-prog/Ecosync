@@ -1,7 +1,7 @@
 #include <Wire.h>
 
 void setup() {
-  Wire.begin();
+  Wire.begin(21, 22);
   Serial.begin(115200);
   while (!Serial)
     ;

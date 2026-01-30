@@ -8,8 +8,8 @@
 #include <Wire.h>
 
 // --- WiFi Configuration ---
-const char *WIFI_SSID = "xanax";
-const char *WIFI_PASSWORD = "123456789";
+const char *WIFI_SSID = "POCO M4 5G";
+const char *WIFI_PASSWORD = "sreeya13";
 
 // Backend URL
 const char *SERVER_URL = "http://172.22.67.5:8009/iot/data";
