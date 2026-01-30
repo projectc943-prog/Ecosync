@@ -144,8 +144,8 @@ const LightDashboard = ({ onToggle }) => {
                     <div className="flex items-center gap-4">
                         <button className="lg:hidden text-white" onClick={() => setIsSidebarOpen(!isSidebarOpen)}><Menu /></button>
                         <div>
-                            <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500">S4 LITE</h1>
-                            <p className="text-[10px] text-emerald-500/60 font-bold">DIRECT LINK // INDIA</p>
+                            <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500"> 🌥️ S4 LITE</h1>
+                            <p className="text-[10px] text-emerald-500/60 font-bold"></p>
                         </div>
                     </div>
                     <div className="flex items-center gap-4">

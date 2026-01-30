@@ -75,7 +75,7 @@ const Analytics = ({ sensorData = [], predictions = [], isProMode = false }) => 
                 <div>
                     <h1 className="text-4xl font-black text-white tracking-tighter">PREDICTIVE BIOMETRICS</h1>
                     <p className="text-emerald-400/60 font-mono text-xs tracking-widest uppercase mt-1">
-                        Advanced Node Ranking // Global Eco System
+                        Advanced Area Ranking // Global Eco System
                     </p>
                 </div>
                 <div className="flex items-center gap-3 bg-emerald-950/30 border border-emerald-500/20 p-3 rounded-2xl backdrop-blur-xl">

@@ -141,7 +141,7 @@ const LandingPage = () => {
                             </div>
                         </div>
 
-                        {/* New Node Request */}
+                        {/* New Area Request */}
                         <div
                             onClick={() => navigate('/login?mode=signup')}
                             className="group relative cursor-pointer overflow-hidden rounded-[2rem] bg-[#022c22]/50 border border-white/5 p-1 hover:border-lime-500/50 transition-all duration-500 hover:shadow-[0_0_40px_-10px_rgba(132,204,22,0.5)]"
