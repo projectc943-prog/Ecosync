@@ -70,23 +70,41 @@ void reconnect() {
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("\n\n--- BOOT START ---");
-  Serial.println("1. Serial Initialized");
+  Serial.println("\n--- BOOT ---");
 
   // Explicitly start I2C bus FIRST with defined pins
-  Serial.printf("2. Wire.begin(SDA=%d, SCL=%d)\n", SDA_PIN, SCL_PIN);
   Wire.begin(SDA_PIN, SCL_PIN);
-  delay(500); // Give LCD time to power up
+  delay(100);
 
-  // Initialize LCD
-  Serial.println("3. lcd.init()");
+  // --- AUTO I2C SCANNER ---
+  byte count = 0;
+  byte lcdAddr = 0x27; // Default
+  for (byte i = 1; i < 127; i++) {
+    Wire.beginTransmission(i);
+    if (Wire.endTransmission() == 0) {
+      Serial.print("Found I2C Device: 0x");
+      Serial.println(i, HEX);
+      if (i == 0x27 || i == 0x3F) {
+        lcdAddr = i;
+        count++;
+      }
+    }
+  }
+
+  if (count == 0)
+    Serial.println("NO I2C DEVICES FOUND! CHECK WIRING!");
+  else
+    Serial.printf("Using LCD Address: 0x%X\n", lcdAddr);
+
+  // Initialize LCD with detected address
+  lcd = LiquidCrystal_I2C(lcdAddr, 16, 2);
   lcd.init();
   lcd.backlight();
   lcd.setCursor(0, 0);
-  lcd.print("Booting System");
-  Serial.println("4. LCD Init Done");
-
-  // Serial.begin(115200); // Removed from here
+  lcd.print("System Booting");
+  lcd.setCursor(0, 1);
+  lcd.print("Addr: 0x");
+  lcd.print(lcdAddr, HEX);
 
   pinMode(MQ_ANALOG_PIN, INPUT);
   pinMode(RAIN_ANALOG_PIN, INPUT);
@@ -100,13 +118,11 @@ void setup() {
   client.setServer(MQTT_SERVER, MQTT_PORT);
 
   // Connect to WiFi
+  Serial.println("\n>>> ECOSYNC FIRMWARE V2.0 - FAST BOOT <<<");
+
+  // Connect to WiFi (Async - don't wait)
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
-    delay(500);
-    Serial.print(".");
-    attempts++;
-  }
+  Serial.println("WiFi Authentication started... proceeding to sensors!");
 
   lcd.clear();
   lcd.print("EcoSync Ready");
@@ -169,10 +185,9 @@ void loop() {
     // Smoke/CO Estimate (0-100%)
     int smoke_pct = map(mqValue, 0, 4095, 0, 100);
 
-    // Serial Debug
-    Serial.printf(
-        "T:%.1f H:%.1f Gas:%d CO2:%d Smoke:%d%% Rain:%d Mot:%d RPM:%.0f\n", t,
-        h, mqValue, co2_ppm, smoke_pct, rainValue, pirValue, rpm);
+    // Serial Debug - User Requested Format
+    Serial.printf("Temp:%.1f Hum:%.1f Gas:%d Rain:%d Motion:%d Speed:%.0f\n", t,
+                  h, mqValue, rainValue, (pirValue == LOW) ? 1 : 0, rpm);
 
     // HTTP Post (Only if Connected)
     if (WiFi.status() == WL_CONNECTED) {
