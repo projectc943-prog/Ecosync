@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line } from 'recharts';
-import { Bell, Wifi, Activity, Droplets, Thermometer, Wind, Zap, Map as MapIcon, Newspaper, User, Menu, X, Leaf, Shield, Cpu, ExternalLink } from 'lucide-react';
+import { Bell, Wifi, Activity, Droplets, Thermometer, Wind, Zap, Map as MapIcon, Newspaper, User, Menu, X, Leaf, Shield, Cpu, ExternalLink, CloudRain } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useEsp32Stream } from '../hooks/useEsp32Stream';
 import NewsComponent from '../components/NewsComponent';
@@ -14,22 +14,67 @@ const LightDashboard = ({ onToggle }) => {
     const [isDeviceConfigOpen, setIsDeviceConfigOpen] = useState(false);
 
     // Memoized Data
+    // Memoized Data
     const latestData = useMemo(() => (sensorData && sensorData.length > 0) ? sensorData[sensorData.length - 1] : {}, [sensorData]);
     const temp = useMemo(() => latestData.temperature?.toFixed(1) || '0', [latestData]);
+    const tempRaw = useMemo(() => latestData.temp_raw?.toFixed(1) || '0', [latestData]);
+
     const hum = useMemo(() => latestData.humidity?.toFixed(1) || '0', [latestData]);
+    const humRaw = useMemo(() => latestData.hum_raw?.toFixed(1) || '0', [latestData]);
+
     const press = useMemo(() => latestData.pressure?.toFixed(0) || '0', [latestData]);
-    const gas = useMemo(() => latestData.pm25?.toFixed(0) || '0', [latestData]);
+    const pressRaw = useMemo(() => latestData.pressure?.toFixed(0) || '0', [latestData]); // Assuming raw=calibrated for pressure currently
+
+    const gas = useMemo(() => latestData.gas?.toFixed(0) || '0', [latestData]);
+    const gasRaw = useMemo(() => latestData.mq_raw?.toFixed(0) || '0', [latestData]); // mq_raw maps to gasRaw
+
+    const motion = useMemo(() => latestData.motion === 1 ? 'DETECTED' : 'CLEAR', [latestData]);
+    const rainPrediction = useMemo(() => {
+        const p = parseFloat(press);
+        if (p < 1000) return 'RAINY';
+        if (p > 1020) return 'CLEAR';
+        return 'CLOUDY';
+    }, [press]);
 
     // Stat Card
-    const StatCard = ({ title, value, unit, icon: Icon, color }) => (
-        <div className={`p-6 rounded-xl border border-slate-800 bg-slate-900/50 flex flex-col items-center text-center hover:border-${color}-500/50 transition-colors`}>
-            <div className={`p-3 rounded-full mb-3 bg-${color}-500/10 text-${color}-400`}>
-                <Icon size={24} />
+    // Stat Card - Redesigned to match reference (Left aligned, watermark icon, footer)
+    const StatCard = ({ title, value, rawValue, unit, icon: Icon, color }) => (
+        <div className={`relative p-5 rounded-xl border border-slate-800 bg-slate-900/50 flex flex-col justify-between overflow-hidden group hover:border-${color}-500/50 transition-all`}>
+
+            {/* Watermark Icon */}
+            <div className={`absolute top-2 right-2 p-2 opacity-20 text-${color}-500 transition-transform group-hover:scale-110 group-hover:opacity-30`}>
+                <Icon size={48} strokeWidth={1.5} />
             </div>
-            <p className="text-slate-400 text-xs uppercase tracking-widest font-bold mb-1">{title}</p>
-            <h3 className="text-3xl font-black text-white font-mono tracking-tighter">
-                {value} <span className="text-sm text-slate-500 font-normal">{unit}</span>
-            </h3>
+
+            {/* Header & Main Value */}
+            <div className="z-10">
+                <div className={`flex items-center gap-2 mb-1`}>
+                    <div className={`w-1 h-3 rounded-full bg-${color}-500`}></div>
+                    <p className="text-slate-400 text-[10px] uppercase tracking-widest font-bold">{title}</p>
+                </div>
+                <h3 className="text-4xl font-black text-white font-mono tracking-tighter mt-1 mb-1">
+                    {value} <span className="text-lg text-slate-500 font-normal">{unit}</span>
+                </h3>
+            </div>
+
+            {/* Footer: Raw vs Calibrated */}
+            {/* Footer: Raw vs Calibrated */}
+            {rawValue ? (
+                <div className="mt-4 pt-3 border-t border-slate-800/80 flex flex-col gap-1 text-[10px] uppercase tracking-wider font-medium z-10 w-full">
+                    <div className="flex justify-between text-slate-500">
+                        <span>RAW DATA:</span>
+                        <span className="font-mono">{rawValue}</span>
+                    </div>
+                    <div className="flex justify-between text-emerald-400">
+                        <span>CALIBRATED:</span>
+                        <span className="font-mono">{value}</span>
+                    </div>
+                </div>
+            ) : (
+                <div className="mt-4 pt-3 border-t border-slate-800/80 text-[10px] text-slate-600 uppercase tracking-wider w-full">
+                    REAL-TIME METRIC
+                </div>
+            )}
         </div>
     );
 
@@ -65,11 +110,13 @@ const LightDashboard = ({ onToggle }) => {
             )}
 
             {/* Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Temperature" value={temp} unit="°C" icon={Thermometer} color="emerald" />
-                <StatCard title="Humidity" value={hum} unit="%" icon={Droplets} color="teal" />
-                <StatCard title="Pressure" value={press} unit="hPa" icon={Wind} color="cyan" />
-                <StatCard title="Air Quality" value={gas} unit="PM2.5" icon={Activity} color="green" />
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
+                <StatCard title="Temperature" value={temp} rawValue={tempRaw} unit="°C" icon={Thermometer} color="emerald" />
+                <StatCard title="Humidity" value={hum} rawValue={humRaw} unit="%" icon={Droplets} color="teal" />
+                <StatCard title="Pressure" value={press} rawValue={pressRaw} unit="hPa" icon={Wind} color="cyan" />
+                <StatCard title="Gas Level" value={gas} rawValue={gasRaw} unit="PPM" icon={Activity} color="green" />
+                <StatCard title="Motion" value={motion} unit="" icon={Zap} color="amber" />
+                <StatCard title="Rain Forecast" value={rainPrediction} unit="" icon={CloudRain} color="blue" />
             </div>
 
             {/* Analysis Charts Grid */}
@@ -93,11 +140,11 @@ const LightDashboard = ({ onToggle }) => {
                     icon={Droplets}
                 />
                 <AnalysisCard
-                    title="Air Quality"
-                    unit="PM2.5"
+                    title="Gas"
+                    unit="PPM"
                     data={sensorData}
-                    dataKey="pm25"
-                    rawKey="pm25_raw"
+                    dataKey="gas"
+                    rawKey="mq_raw"
                     color="emerald"
                     icon={Activity}
                 />
@@ -144,8 +191,8 @@ const LightDashboard = ({ onToggle }) => {
                     <div className="flex items-center gap-4">
                         <button className="lg:hidden text-white" onClick={() => setIsSidebarOpen(!isSidebarOpen)}><Menu /></button>
                         <div>
-                            <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500">S4 LITE</h1>
-                            <p className="text-[10px] text-emerald-500/60 font-bold">DIRECT LINK // INDIA</p>
+                            <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500"> 🌥️ S4 LITE</h1>
+                            <p className="text-[10px] text-emerald-500/60 font-bold"></p>
                         </div>
                     </div>
                     <div className="flex items-center gap-4">

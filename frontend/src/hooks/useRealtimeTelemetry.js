@@ -57,8 +57,8 @@ export const useRealtimeTelemetry = (isProMode) => {
             const newPoint = {
                 ...latestData,
                 recvTime: now,
-                // Add simulated Kalman filtered value for demo if missing
-                kalman_temp: latestData.temperature ? latestData.temperature * 0.98 + 0.5 : null
+                // Use real Kalman data from backend if available, else simulate (or null)
+                kalman_temp: latestData.kalman_temp ?? (latestData.temperature ? latestData.temperature * 0.98 + 0.5 : null)
             };
 
             bufferRef.current = [...bufferRef.current, newPoint].slice(-MAX_BUFFER_SIZE);

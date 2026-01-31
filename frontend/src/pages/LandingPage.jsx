@@ -141,7 +141,7 @@ const LandingPage = () => {
                             </div>
                         </div>
 
-                        {/* New Node Request */}
+                        {/* New Area Request */}
                         <div
                             onClick={() => navigate('/login?mode=signup')}
                             className="group relative cursor-pointer overflow-hidden rounded-[2rem] bg-[#022c22]/50 border border-white/5 p-1 hover:border-lime-500/50 transition-all duration-500 hover:shadow-[0_0_40px_-10px_rgba(132,204,22,0.5)]"
@@ -152,7 +152,7 @@ const LandingPage = () => {
                                 <div className="w-12 h-12 bg-lime-950/30 border border-lime-500/30 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-lime-500/20 transition-all duration-500">
                                     <Network className="text-lime-400 w-6 h-6" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-lime-400 transition-colors tracking-tight">Register New Node</h3>
+                                <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-lime-400 transition-colors tracking-tight">Register New Area</h3>
                                 <p className="text-slate-400 text-sm mb-6 leading-relaxed">
                                     Register new hardware endpoints to the global mesh network for localized monitoring.
                                 </p>
