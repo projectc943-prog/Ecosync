@@ -1,6 +1,44 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../config/supabaseClient';
 
+
+// --- UTILITIES: KALMAN FILTER & CALIBRATION ---
+const CALIBRATION = {
+    temp: -2.5,   // Offset in °C
+    hum: 4.0,     // Offset in %
+    gas: -20,     // Offset in raw units
+    press: 0      // Offset in hPa
+};
+
+class KalmanFilter {
+    constructor(R = 1, Q = 0.1) {
+        this.R = R; // Measurement Noise (Sensor Jitter)
+        this.Q = Q; // Process Noise (System Dynamics)
+        this.A = 1; // State Vector
+        this.C = 1; // Measurement Vector
+        this.cov = NaN;
+        this.x = NaN; // Estimated Value
+    }
+
+    filter(measurement) {
+        if (isNaN(this.x)) {
+            // Initialization
+            this.x = (1 / this.C) * measurement;
+            this.cov = (1 / this.C) * this.R * (1 / this.C);
+        } else {
+            // 1. Prediction
+            const predX = this.A * this.x;
+            const predCov = this.A * this.cov * this.A + this.Q;
+
+            // 2. Correction
+            const K = predCov * this.C * (1 / (this.C * predCov * this.C + this.R));
+            this.x = predX + K * (measurement - this.C * predX);
+            this.cov = predCov - K * this.C * predCov;
+        }
+        return this.x;
+    }
+}
+
 // PRO MODE: Fetches real-time Satellite/Weather Data
 export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867], userEmail = null) => {
     // State
@@ -81,6 +119,10 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                             humidity: data.humidity || 0,
                             mq_ppm: data.aqi || 0,
                             trustScore: 90,
+                            mq_ppm: data.aqi || 0,
+                            gas: data.gas || 0,
+                            motion: data.motion || 0,
+                            trustScore: 90,
                             deviceId: "ESP32-LITE"
                         };
 
@@ -93,7 +135,8 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                         console.log("Lite Mode: Using fallback data");
                         const packet = {
                             ts: Date.now(), timestamp: new Date().toLocaleTimeString(),
-                            temperature: 25, humidity: 50, mq_ppm: 10, trustScore: 80, deviceId: "ESP32-LITE-OFFLINE"
+                            ts: Date.now(), timestamp: new Date().toLocaleTimeString(),
+                            temperature: 25, humidity: 50, mq_ppm: 10, gas: 120, motion: 0, trustScore: 80, deviceId: "ESP32-LITE-OFFLINE"
                         };
                         setStream({ connected: false, lastSeen: Date.now(), data: packet, history: [], alerts: [] });
                         setHealth({ status: 'OFFLINE', lastPacketTime: null });
@@ -287,8 +330,12 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
             setHealth({ status: 'STREAMING', lastPacketTime: new Date() });
 
             let lineBuffer = '';
-            let filtered = { t: 0, h: 0, p: 0 };
-            const alpha = 0.15; // Filter strength
+
+            // Initialize Filters
+            const kfTemp = new KalmanFilter(2.0, 0.5); // Higher R = smooth but slow
+            const kfHum = new KalmanFilter(5.0, 1.0);
+            const kfGas = new KalmanFilter(10.0, 2.0);
+            // const kfPress = new KalmanFilter(1.0, 0.1); 
 
             // Reading loop
             while (true) {
@@ -306,32 +353,51 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                     try {
                         const json = JSON.parse(trimmed);
 
-                        // Simple EMA Filter
+                        // 1. RAW EXTRACTION
                         const tRaw = json.temperature || json.temp || 0;
                         const hRaw = json.humidity || json.hum || 0;
-                        const pRaw = json.pm25 || json.pm2_5 || json.aqi || 0;
+                        // const pRaw = json.pressure || 1013;
+                        const gasRaw = json.gas || json.mq_raw || 0;
+                        const motionRaw = json.motion || 0;
+                        const pm25Raw = json.pm25 || json.pm2_5 || 0;
 
-                        if (filtered.t === 0) {
-                            filtered = { t: tRaw, h: hRaw, p: pRaw };
-                        } else {
-                            filtered.t = alpha * tRaw + (1 - alpha) * filtered.t;
-                            filtered.h = alpha * hRaw + (1 - alpha) * filtered.h;
-                            filtered.p = alpha * pRaw + (1 - alpha) * filtered.p;
-                        }
+                        // 2. CALIBRATION (Apply Offsets)
+                        const tCal = tRaw + CALIBRATION.temp;
+                        const hCal = hRaw + CALIBRATION.hum;
+                        const gasCal = gasRaw + CALIBRATION.gas;
+
+                        // 3. KALMAN FILTERING
+                        const tFilt = kfTemp.filter(tCal);
+                        const hFilt = kfHum.filter(hCal);
+                        const gasFilt = kfGas.filter(gasCal);
+                        // const pFilt = kfPress.filter(pRaw);
+
+                        // Reusing simple pass-through for uncalibrated metrics or if no filter needed
+                        const pVal = json.pressure || 1013;
+                        const pm25Val = pm25Raw; // Add Kalman here if needed for PM2.5
 
                         const packet = {
                             ts: Date.now(),
                             timestamp: new Date().toLocaleTimeString(),
-                            temperature: filtered.t,
+
+                            temperature: Number(tFilt.toFixed(1)),
                             temp_raw: tRaw,
-                            humidity: filtered.h,
+
+                            humidity: Number(hFilt.toFixed(1)),
                             hum_raw: hRaw,
-                            pm25: filtered.p,
-                            pm25_raw: pRaw,
-                            pressure: json.pressure || 1013,
-                            mq_raw: json.mq_raw || json.gas || 0,
+
+                            mq_ppm: 0, // Not used in Lite anymore? Or map gasFilt?
+                            pm25: pm25Val,
+                            pm25_raw: pm25Raw,
+
+                            pressure: pVal,
+
+                            mq_raw: gasRaw,
+                            gas: Number(gasFilt.toFixed(0)), // Filtered Gas
+
+                            motion: motionRaw,
                             trustScore: 100,
-                            deviceId: "ESP32-SERIAL"
+                            deviceId: "ESP32-SERIAL-KF"
                         };
 
                         // --- PERSISTENCE & ALERTS FOR SERIAL ---
@@ -341,11 +407,11 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                                 await supabase.from('sensor_data').insert([{
                                     device_id: "ESP32-SERIAL",
                                     timestamp: new Date().toISOString(),
-                                    temperature: Number(filtered.t.toFixed(2)),
-                                    humidity: Number(filtered.h.toFixed(2)),
-                                    pressure: Number(json.pressure || 1013),
-                                    pm2_5: Number(filtered.p.toFixed(2)),
-                                    vibration: Number(json.mq_raw || json.gas || 0)
+                                    temperature: packet.temperature,
+                                    humidity: packet.humidity,
+                                    pressure: packet.pressure,
+                                    pm2_5: packet.pm25,
+                                    vibration: packet.gas // Mapping Gas to existing column or new? Using 'vibration' as legacy/placeholder
                                 }]);
                             } catch (err) {
                                 console.error("Serial Supabase Sync Error:", err);
@@ -359,11 +425,11 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({
-                                        temperature: Number(filtered.t.toFixed(2)),
-                                        humidity: Number(filtered.h.toFixed(2)),
-                                        pm25: Number(filtered.p.toFixed(2)),
-                                        pressure: Number(json.pressure || 1013),
-                                        mq_raw: Number(json.mq_raw || json.gas || 0),
+                                        temperature: packet.temperature,
+                                        humidity: packet.humidity,
+                                        pm25: packet.pm25,
+                                        pressure: packet.pressure,
+                                        mq_raw: packet.gas,
                                         user_email: userEmail,
                                         lat: coordinates[0],
                                         lon: coordinates[1]
