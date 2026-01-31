@@ -69,6 +69,8 @@ async def startup_event():
 # --- CORS Configuration ---
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
     "*"
 ]
 

@@ -2,10 +2,11 @@
 #include <ArduinoJson.h>
 #include <DHT.h>
 #include <HTTPClient.h>
-#include <LiquidCrystal_I2C.h>
 #include <PubSubClient.h>
 #include <WiFi.h>
 #include <Wire.h>
+#include <hd44780.h>
+#include <hd44780ioClass/hd44780_I2Cexp.h>
 
 // --- WiFi Configuration ---
 const char *WIFI_SSID = "POCO M4 5G";
@@ -24,7 +25,7 @@ WiFiClient espClient;
 PubSubClient client(espClient);
 
 // --- Hardware Configuration ---
-LiquidCrystal_I2C lcd(0x27, 16, 2);
+hd44780_I2Cexp lcd; // Auto-detects backpack
 
 // --- PIN DEFINITIONS ---
 #define DHTPIN 4
@@ -72,39 +73,23 @@ void setup() {
   Serial.begin(115200);
   Serial.println("\n--- BOOT ---");
 
-  // Explicitly start I2C bus FIRST with defined pins
-  Wire.begin(SDA_PIN, SCL_PIN);
-  delay(100);
+  // Wait for ESP32 boot stability
+  delay(2000);
 
-  // --- AUTO I2C SCANNER ---
-  byte count = 0;
-  byte lcdAddr = 0x27; // Default
-  for (byte i = 1; i < 127; i++) {
-    Wire.beginTransmission(i);
-    if (Wire.endTransmission() == 0) {
-      Serial.print("Found I2C Device: 0x");
-      Serial.println(i, HEX);
-      if (i == 0x27 || i == 0x3F) {
-        lcdAddr = i;
-        count++;
-      }
-    }
+  // Initialize LCD (Auto-detect)
+  int lcdStatus = lcd.begin(16, 2);
+  if (lcdStatus) {
+    Serial.print("LCD Init Failed! Status: ");
+    Serial.println(lcdStatus);
+    // Continue anyway to allow sensors to work
+  } else {
+    lcd.backlight();
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Ecosync Ready");
+    lcd.setCursor(0, 1);
+    lcd.print("Sensors Starting");
   }
-
-  if (count == 0)
-    Serial.println("NO I2C DEVICES FOUND! CHECK WIRING!");
-  else
-    Serial.printf("Using LCD Address: 0x%X\n", lcdAddr);
-
-  // Initialize LCD with detected address
-  lcd = LiquidCrystal_I2C(lcdAddr, 16, 2);
-  lcd.init();
-  lcd.backlight();
-  lcd.setCursor(0, 0);
-  lcd.print("System Booting");
-  lcd.setCursor(0, 1);
-  lcd.print("Addr: 0x");
-  lcd.print(lcdAddr, HEX);
 
   pinMode(MQ_ANALOG_PIN, INPUT);
   pinMode(RAIN_ANALOG_PIN, INPUT);
@@ -124,8 +109,11 @@ void setup() {
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.println("WiFi Authentication started... proceeding to sensors!");
 
-  lcd.clear();
-  lcd.print("EcoSync Ready");
+  // Use setCursor instead of clear to avoid flicker
+  if (lcdStatus == 0) {
+    lcd.setCursor(0, 1);
+    lcd.print("WiFi Connecting ");
+  }
   delay(1000);
 }
 
