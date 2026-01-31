@@ -6,7 +6,7 @@
   **Next-Gen IoT Dashboard for Real-Time & Predictive Climate Analysis**
   
   [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen?style=flat-square)](https://github.com/projectc943-prog/Ecosync)
-  [![Live Demo](https://img.shields.io/badge/Live-Demo-orange?style=flat-square&logo=netlify)](https://ecosync-s4-demo-final-2026.netlify.app)
+  [![Live Demo](https://img.shields.io/badge/Live-Demo-black?style=flat-square&logo=vercel)](https://ecosync-s4-demo.vercel.app)
   [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 </div>
 
@@ -15,8 +15,8 @@
 ## 🚀 Live Access
 > **Academic Project Disclaimer**: This application is a prototype developed for the "Symbiotic Eco-Intelligence Network" capstone project. Data shown may be simulated if hardware nodes are offline.
 
-- **Frontend (Dashboard)**: [https://ecosync-s4-demo-final-2026.netlify.app](https://ecosync-s4-demo-final-2026.netlify.app)
-- **Backend (API)**: [https://capstone-backend-djdd.onrender.com/docs](https://capstone-backend-djdd.onrender.com/docs)
+- **Frontend (Dashboard)**: [https://ecosync-s4-demo.vercel.app](https://ecosync-s4-demo.vercel.app)
+- **Backend (API)**: [https://ecosync-s4-demo.vercel.app/api/docs](https://ecosync-s4-demo.vercel.app/api/docs)
 - **Database (Supabase)**: Connected via Secure RPC
 
 ### 🔐 Test Credentials
@@ -55,7 +55,7 @@ graph TD
 | **Styling** | **TailwindCSS** | Custom "Bio-Tech" theme with glassmorphism |
 | **Backend** | **Supabase** | Auth, Database, and Realtime subscriptions |
 | **Hardware** | **ESP32** | Dual-Core MCU for handling sensors |
-| **Deployment** | **Netlify** | CI/CD pipeline and Edge hosting |
+| **Deployment** | **Vercel** | CI/CD pipeline and Edge hosting |
 
 ---
 

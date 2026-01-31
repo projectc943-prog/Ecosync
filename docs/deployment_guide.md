@@ -4,7 +4,7 @@
 - **Node.js** (v18+)
 - **NPM** (v9+)
 - **Supabase Account**
-- **Netlify Account** (optional, but recommended for hosting)
+- **Vercel Account** (for hosting)
 
 ## 2. Infrastructure Setup (Supabase)
 
@@ -19,15 +19,14 @@
     -   Go to Project Settings -> API.
     -   Copy `Project URL` and `anon public` key.
 
-## 3. Frontend Deployment (Netlify)
+## 3. Frontend & Backend Deployment (Vercel)
 
-1.  **Connect Repo**: Link this GitHub repository to Netlify.
+1.  **Connect Repo**: Link this GitHub repository to Vercel.
 2.  **Build Settings**:
-    -   **Base directory**: `frontend`
-    -   **Build command**: `npm run build`
-    -   **Publish directory**: `dist`
+    -   Vercel automatically detects Vite (Frontend) and Python (Backend).
+    -   Ensure `vercel.json` is present in the root.
 3.  **Environment Variables**:
-    -   Add the following variables in Netlify Site Settings:
+    -   Add the following variables in Vercel Project Settings:
         -   `VITE_SUPABASE_URL`: (Your Project URL)
         -   `VITE_SUPABASE_ANON_KEY`: (Your Safe Anon Key)
 
@@ -40,7 +39,7 @@
 
 ## 5. Verification
 
--   Open the Netlify URL.
+-   Open the Vercel URL.
 -   **Login**: Create a new account.
 -   **Dashboard**: You should see the Bio-Auth animation and then the Dashboard.
 -   **Data**: As your ESP32 runs, data will appear in the "Live Metrics" charts.
