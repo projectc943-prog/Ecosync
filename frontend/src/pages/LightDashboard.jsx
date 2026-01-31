@@ -58,7 +58,8 @@ const LightDashboard = ({ onToggle }) => {
             </div>
 
             {/* Footer: Raw vs Calibrated */}
-            {rawValue && rawValue !== '0' && (
+            {/* Footer: Raw vs Calibrated */}
+            {rawValue ? (
                 <div className="mt-4 pt-3 border-t border-slate-800/80 flex flex-col gap-1 text-[10px] uppercase tracking-wider font-medium z-10 w-full">
                     <div className="flex justify-between text-slate-500">
                         <span>RAW DATA:</span>
@@ -69,10 +70,7 @@ const LightDashboard = ({ onToggle }) => {
                         <span className="font-mono">{value}</span>
                     </div>
                 </div>
-            )}
-
-            {/* Show simple footer if no raw data */}
-            {(!rawValue || rawValue === '0') && (
+            ) : (
                 <div className="mt-4 pt-3 border-t border-slate-800/80 text-[10px] text-slate-600 uppercase tracking-wider w-full">
                     REAL-TIME METRIC
                 </div>
