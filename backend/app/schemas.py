@@ -1,17 +1,40 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, EmailStr
+from typing import Optional, List
 from datetime import datetime
-from typing import List, Optional, Any, Dict
-from pydantic import BaseModel, EmailStr
-print(f"LOADING SCHEMAS FROM {__file__}")
 
-class Location(BaseModel):
-    lat: float
-    lon: float
+# Authentication Schemas
+class Token(BaseModel):
+    access_token: str
+    token_type: str
 
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=6)
+    full_name: Optional[str] = None
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    full_name: Optional[str] = None
+    is_active: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# Device Schema
 class DeviceCreate(BaseModel):
-    deviceName: str
-    connectorType: str = "public_api"
-    location: Location
+    deviceName: str = Field(..., min_length=1, max_length=100)
+    connectorType: str = Field(..., min_length=1, max_length=50)
+    location: dict = Field(..., description="Location object with lat and lon")
+
+class DeviceUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    connector_type: Optional[str] = Field(None, min_length=1, max_length=50)
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    status: Optional[str] = Field(None, min_length=1, max_length=50)
 
 class DeviceResponse(BaseModel):
     id: str
@@ -19,66 +42,78 @@ class DeviceResponse(BaseModel):
     connector_type: str
     lat: float
     lon: float
-    last_seen: Optional[datetime] = None
     status: str
-    
+    last_seen: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
     class Config:
         from_attributes = True
 
-class UnifiedSensorMetrics(BaseModel):
-    temperatureC: Optional[float] = None
-    humidityPct: Optional[float] = None
-    pressureHPa: Optional[float] = None
-    windMS: Optional[float] = None
-    pm25: Optional[float] = None
+# Sensor Data Schema
+class SensorDataCreate(BaseModel):
+    device_id: str
+    temperature: float
+    humidity: float
+    pm25: float = 0.0
+    pressure: float = 1013.0
+    mq_raw: float = 0.0
+    wind_speed: float = 0.0
+    user_email: Optional[str] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
 
-class UnifiedSensorData(BaseModel):
-    deviceId: str
-    deviceName: str
-    status: str
-    source: str
-    ts: int
-    metrics: UnifiedSensorMetrics
-
-class HistoryPoint(BaseModel):
-    ts: int
-    temperatureC: Optional[float] = None
-    humidityPct: Optional[float] = None
-    pressureHPa: Optional[float] = None
-
-class UnifiedHistory(BaseModel):
-    deviceId: str
-    range: str
-    points: List[HistoryPoint]
-class UserBase(BaseModel):
-    email: EmailStr
-
-class UserCreate(UserBase):
-    password: str
-    first_name: Optional[str] = "Operator"
-    last_name: Optional[str] = "Null"
-    plan: Optional[str] = "lite"
-    location_name: Optional[str] = None
-    location_lat: Optional[float] = None
-    location_lon: Optional[float] = None
-
-class UserProfileUpdate(BaseModel):
-    first_name: str
-    last_name: str
-    location_name: Optional[str] = None
-    mobile: Optional[str] = None
-
-class UserResponse(UserBase):
+class SensorDataResponse(BaseModel):
     id: int
+    device_id: str
+    timestamp: datetime
+    temperature: float
+    humidity: float
+    pm25: float
+    pressure: float
+    mq_raw: float
+    wind_speed: float
+    user_email: Optional[str] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+
+    class Config:
+        from_attributes = True
+
+# Alert Settings Schema
+class AlertSettingsCreate(BaseModel):
+    user_email: Optional[str] = None
+    temp_threshold: float = 45.0
+    humidity_min: float = 20.0
+    humidity_max: float = 80.0
+    pm25_threshold: float = 150.0
+    wind_threshold: float = 30.0
+    is_active: bool = True
+
+class AlertSettingsResponse(BaseModel):
+    id: int
+    user_email: Optional[str]
+    temp_threshold: float
+    humidity_min: float
+    humidity_max: float
+    pm25_threshold: float
+    wind_threshold: float
     is_active: bool
-    first_name: Optional[str]
-    last_name: Optional[str]
-    mobile: Optional[str]
-    location_name: Optional[str] = None
-    location_lat: Optional[float] = None
-    location_lon: Optional[float] = None
-    plan: str
-    is_verified: bool
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# Alert Schema
+class AlertResponse(BaseModel):
+    id: int
+    metric: str
+    value: float
+    message: str
+    recipient_email: str
+    email_sent: bool
+    created_at: datetime
 
     class Config:
         from_attributes = True
@@ -86,98 +121,40 @@ class UserResponse(UserBase):
 class Token(BaseModel):
     access_token: str
     token_type: str
-    redirect: Optional[str] = "/dashboard"
-    plan: Optional[str] = "lite"
-    is_verified: Optional[bool] = False
-    user_name: Optional[str] = "User"
+    redirect: str
+    plan: str
+    is_verified: bool
+    user_name: str
 
-class TokenData(BaseModel):
-    username: Optional[str] = None
+class UserProfileUpdate(BaseModel):
+    first_name: str
+    last_name: str
+    mobile: Optional[str] = None
+    location_name: Optional[str] = None
 
-class SensorDataBase(BaseModel):
-    temperature: float
-    humidity: float
-    pressure: float
-    vibration: float
-    wind_speed: Optional[float] = 0.0
-    uv_index: Optional[float] = 0.0
-    soil_temp: Optional[float] = 0.0
-    soil_moisture: Optional[float] = 0.0
-    pm2_5: Optional[float] = 0.0
-    pm10: Optional[float] = 0.0
-    no2: Optional[float] = 0.0
-    solar_radiation: Optional[float] = 0.0
-
-class SensorDataCreate(SensorDataBase):
-    pass
-
-class SensorDataResponse(SensorDataBase):
-    id: int
-    timestamp: datetime
-    kalman_temp: Optional[float] = None
-    kalman_press: Optional[float] = None
-    kalman_hum: Optional[float] = None
-    anomaly_score: Optional[float] = None
-    is_anomaly: bool
-    precautions: List[str] = []
-
-    device_id: Optional[str] = None
-
-    class Config:
-        from_attributes = True
-
-class CalibrationUpdate(BaseModel):
-    TEMP_MAX: Optional[float] = None
-    VIBRATION_MAX: Optional[float] = None
-    PRESSURE_MIN: Optional[float] = None
-
-class AlertResponse(BaseModel):
-    id: int
-    timestamp: datetime
-    metric: str
-    value: float
-    message: str
-    email_sent: bool
-
-    class Config:
-        from_attributes = True
-
-# --- NEW SCHEMAS FOR PRO FEATURES ---
 class DiaryEntryCreate(BaseModel):
     note: str
     location: Optional[str] = None
 
 class DiaryEntryResponse(BaseModel):
     id: int
-    timestamp: datetime
+    user_id: int
     note: str
-    location: Optional[str]
-    
+    location: Optional[str] = None
+    timestamp: datetime
+
     class Config:
         from_attributes = True
 
 class UserLayoutUpdate(BaseModel):
-    layout_json: str # JSON String
-
-class UserLayoutResponse(BaseModel):
     layout_json: str
 
-    class Config:
-        from_attributes = True
-    class Config:
-        from_attributes = True
-
-class AlertSettingsCreate(BaseModel):
-    user_email: EmailStr
-    temp_threshold: float
-    humidity_min: float
-    humidity_max: float
-    pm25_threshold: float
-    wind_threshold: Optional[float] = 30.0
-    is_active: bool = True
-
-class AlertSettingsResponse(AlertSettingsCreate):
+class UserLayoutResponse(BaseModel):
     id: int
-    
+    user_id: int
+    layout_json: str
+    created_at: datetime
+    updated_at: datetime
+
     class Config:
         from_attributes = True

@@ -7,18 +7,24 @@
 #include <WiFi.h>
 #include <Wire.h>
 
+#include "config.h"
+
 // --- WiFi Configuration ---
-const char *WIFI_SSID = "xanax";
-const char *WIFI_PASSWORD = "123456789";
+// Note: We use unique names to avoid conflicts with config.h macros
+const char *my_ssid = "xanax";
+const char *my_pass = "123456789";
+
+// Powerbank "Stay-Alive"
+#define STAYALIVE_PIN 2 // Build-in LED or any unused pin
 
 // Backend URL
-const char *SERVER_URL = "http://10.40.160.225:8009/iot/data";
+const char *SERVER_URL = "https://ecosync-phi.vercel.app/api/iot/data";
 
 // --- MQTT Configuration ---
-const char *MQTT_SERVER = "10.40.160.225";
-const int MQTT_PORT = 1883;
-const char *MQTT_USER = "";
-const char *MQTT_PASSWORD = "";
+const char *MQTT_SERVER = MQTT_SERVER;
+const int MQTT_PORT = MQTT_PORT;
+const char *MQTT_USER = MQTT_USER;
+const char *MQTT_PASSWORD = MQTT_PASSWORD;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -40,6 +46,28 @@ DHT dht(DHTPIN, DHTTYPE);
 #define GAS_THRESHOLD 2000
 #define RAIN_THRESHOLD 1500
 
+// --- Kalman Filter Variables ---
+float temp_kalman = 0.0;
+float hum_kalman = 0.0;
+float pm25_kalman = 0.0;
+
+// Kalman Filter Function
+float kalman_filter(float prev_estimate, float measurement) {
+  // Simple Kalman filter implementation
+  float Q = 0.01; // Process noise covariance
+  float R = 0.1;  // Measurement noise covariance
+  float K = 0.0;  // Kalman gain
+
+  // Prediction step
+  float prediction = prev_estimate;
+
+  // Update step
+  K = Q / (Q + R);
+  float estimate = prediction + K * (measurement - prediction);
+
+  return estimate;
+}
+
 // --- Global Variables ---
 float t = 0.0;
 float h = 0.0;
@@ -60,26 +88,65 @@ void reconnect() {
 
 void setup() {
   Serial.begin(115200);
+  Serial.println("EcoSync Pro - Starting up...");
+
+  // Print system information
+  Serial.printf("ESP32 Chip ID: %08X\n", (uint32_t)ESP.getEfuseMac());
+  Serial.printf("Flash Size: %u bytes\n", ESP.getFlashChipSize());
+  Serial.printf("Free Heap: %u bytes\n", ESP.getFreeHeap());
 
   pinMode(MQ_ANALOG_PIN, INPUT);
   pinMode(RAIN_ANALOG_PIN, INPUT);
   pinMode(PIR_PIN, INPUT_PULLDOWN);
   pinMode(IR_PIN, INPUT);
+  pinMode(STAYALIVE_PIN, OUTPUT); // For Powerbank Stay-Alive
 
   dht.begin();
   client.setServer(MQTT_SERVER, MQTT_PORT);
 
-  // Initialize LCD
-  lcd.init();
-  lcd.backlight();
-  lcd.setCursor(0, 0);
-  lcd.print("EcoSync Pro");
-  delay(1000);
+  // Initialize LCD with error handling
+  bool lcdInitialized = false;
+  int lcdInitAttempts = 0;
+  const int maxLcdAttempts = 3;
+
+  while (!lcdInitialized && lcdInitAttempts < maxLcdAttempts) {
+    lcdInitAttempts++;
+
+    // Try different I2C addresses
+    uint8_t addresses[] = {0x27, 0x3F, 0x20};
+    for (int i = 0; i < 3; i++) {
+      Wire.beginTransmission(addresses[i]);
+      if (Wire.endTransmission() == 0) {
+        lcd = LiquidCrystal_I2C(addresses[i], 16, 2);
+        lcd.init(); // Most LiquidCrystal_I2C libraries use init() instead of
+                    // begin() returning bool
+        lcdInitialized = true;
+        Serial.printf("LCD initialized at address 0x%02X\n", addresses[i]);
+        break;
+      }
+    }
+
+    if (!lcdInitialized) {
+      Serial.println("LCD initialization failed, retrying...");
+      delay(500);
+    }
+  }
+
+  if (lcdInitialized) {
+    Wire.setClock(10000); // Lower I2C speed to 10kHz for stability
+    lcd.backlight();
+    lcd.setCursor(0, 0);
+    lcd.print("EcoSync Pro");
+    delay(1000);
+  } else {
+    Serial.println("ERROR: LCD initialization failed after 3 attempts");
+    // Continue without LCD
+  }
 
   // Connect to WiFi
   lcd.setCursor(0, 1);
   lcd.print("Connecting...");
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  WiFi.begin(my_ssid, my_pass);
   int attempts = 0;
   while (WiFi.status() != WL_CONNECTED && attempts < 20) {
     delay(500);
@@ -104,12 +171,45 @@ void loop() {
   static int pageIndex = 0;
   static unsigned long lastWiFiCheck = 0;
 
+  // Debug information
+  static unsigned long loopCounter = 0;
+  loopCounter++;
+  if (loopCounter % 100 == 0) {
+    Serial.printf("Loop iteration: %lu, Free Heap: %u bytes\n", loopCounter,
+                  ESP.getFreeHeap());
+  }
+
   // 1. WiFi & MQTT Handling (Non-Blocking)
   if (millis() - lastWiFiCheck > 5000) {
     lastWiFiCheck = millis();
+
+    // Pulse LED/Pin to keep high-capacity powerbanks from sleeping
+    digitalWrite(STAYALIVE_PIN, HIGH);
+    delay(50); // Short pulse
+    digitalWrite(STAYALIVE_PIN, LOW);
+
     if (WiFi.status() != WL_CONNECTED) {
+      Serial.println("WiFi disconnected, attempting to reconnect...");
       WiFi.disconnect();
       WiFi.reconnect();
+
+      // Try to reconnect with timeout
+      int wifiAttempts = 0;
+      while (WiFi.status() != WL_CONNECTED && wifiAttempts < 10) {
+        delay(500);
+        wifiAttempts++;
+        Serial.print(".");
+      }
+
+      if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("WiFi reconnected successfully");
+        lcd.setCursor(0, 1);
+        lcd.print("WiFi Connected ");
+      } else {
+        Serial.println("WiFi reconnection failed");
+        lcd.setCursor(0, 1);
+        lcd.print("Offline Mode   ");
+      }
     } else {
       if (!client.connected()) {
         reconnect();
@@ -119,19 +219,47 @@ void loop() {
   }
 
   // 2. Read Sensors (Every 2 Seconds)
-  // 1. Read Sensors (Every 2 Seconds)
   if (millis() - lastSensorRead > 2000) {
     lastSensorRead = millis();
 
+    // Read DHT sensor with error handling
     float newH = dht.readHumidity();
     float newT = dht.readTemperature();
     if (!isnan(newH) && !isnan(newT)) {
       h = newH;
       t = newT;
+    } else {
+      Serial.println("DHT sensor read error, using previous values");
     }
 
-    mqValue = analogRead(MQ_ANALOG_PIN);
-    rainValue = analogRead(RAIN_ANALOG_PIN);
+    // Read analog sensors with validation
+    int mqRaw = analogRead(MQ_ANALOG_PIN);
+    int rainRaw = analogRead(RAIN_ANALOG_PIN);
+
+    // Validate sensor readings
+    if (mqRaw >= 0 && mqRaw <= 4095) {
+      mqValue = mqRaw;
+    } else {
+      Serial.println("MQ sensor read error, using previous value");
+    }
+
+    if (rainRaw >= 0 && rainRaw <= 4095) {
+      rainValue = rainRaw;
+    } else {
+      Serial.println("Rain sensor read error, using previous value");
+    }
+
+    // Read digital sensors with debouncing
+    int newPir = digitalRead(PIR_PIN);
+    delay(10); // Short debounce delay
+    int newPir2 = digitalRead(PIR_PIN);
+    if (newPir == newPir2) {
+      pirValue = newPir;
+    } else {
+      Serial.println("PIR sensor debounce error, using previous value");
+    }
+
+    irValue = digitalRead(IR_PIN);
 
     // Software Debounce for Motion (Check twice 50ms apart)
     int p1 = digitalRead(PIR_PIN);
@@ -145,6 +273,11 @@ void loop() {
     pirValue = p2;
 
     irValue = digitalRead(IR_PIN);
+
+    // Apply Kalman Filter to sensor data
+    temp_kalman = kalman_filter(temp_kalman, t);
+    hum_kalman = kalman_filter(hum_kalman, h);
+    pm25_kalman = kalman_filter(pm25_kalman, map(mqValue, 0, 4095, 0, 500));
 
     // Determine Status for Serial Match
     const char *gasStatus = (mqValue > GAS_THRESHOLD) ? "Alert" : "Safe";
@@ -163,14 +296,14 @@ void loop() {
       http.begin(SERVER_URL);
       http.addHeader("Content-Type", "application/json");
       JsonDocument doc;
-      doc["temperature"] = t;
-      doc["humidity"] = h;
+      doc["temperature"] = temp_kalman;
+      doc["humidity"] = hum_kalman;
       doc["mq_value"] = mqValue;
       doc["rain_value"] = rainValue;
       // CALIBRATED: Active Low Motion (Idle=1)
       doc["motion_detected"] = (pirValue == LOW);
       doc["ir_detected"] = (irValue == LOW);
-      doc["pm25"] = map(mqValue, 0, 4095, 0, 500);
+      doc["pm25"] = pm25_kalman;
       doc["pressure"] = 1013;
       String jsonPayload;
       serializeJson(doc, jsonPayload);
@@ -179,8 +312,8 @@ void loop() {
 
       // MQTT Publish
       if (client.connected()) {
-        client.publish("ecosync/temperature", String(t, 2).c_str());
-        client.publish("ecosync/humidity", String(h, 2).c_str());
+        client.publish("ecosync/temperature", String(temp_kalman, 2).c_str());
+        client.publish("ecosync/humidity", String(hum_kalman, 2).c_str());
         client.publish("ecosync/gas", String(mqValue).c_str());
         client.publish("ecosync/rain", String(rainValue).c_str());
         // CALIBRATED: 1 if LOW
@@ -193,6 +326,16 @@ void loop() {
   // 2. Dynamic LCD Logic (Every 2.0s as requested)
   if (millis() - lastPageSwitch > 2000) {
     lastPageSwitch = millis();
+
+    // SOFT RESET LCD occasionally to clear "random characters"
+    static int reInitCounter = 0;
+    reInitCounter++;
+    if (reInitCounter >= 30) { // Every ~60 seconds
+      lcd.init();
+      lcd.backlight();
+      reInitCounter = 0;
+    }
+
     lcd.clear();
 
     // Identify Counts/Status
@@ -211,19 +354,13 @@ void loop() {
 
     if (pageIndex == 0) {
       // Screen 0: Temperature & Humidity
-      snprintf(line1, 17, "Temp: %.1f C    ", t);
-      snprintf(line2, 17, "Hum : %.0f %%      ", h);
+      snprintf(line1, 17, "Temp: %.1f C    ", temp_kalman);
+      snprintf(line2, 17, "Hum : %.0f %%      ", hum_kalman);
     } else if (pageIndex == 1) {
       // Screen 1: Gas & Rain
-      // Format: "Gas : Safe (1234)" -> 16 Chars?
-      // "Gas : " (6) + "Safe" (4) + " (" (2) + "1234" (4) + ")" (1) = 17 chars
-      // (Too long by 1 for 4 digits) Use: "G:Safe (1234)" or "Gas:Safe (1234)"
-      // Let's try: "Gas: Safe 1234 "
-
       const char *gasStatus = gasAlert ? "Alert" : "Safe ";
       const char *rainStatus = rainAlert ? "Rain " : "Clear";
 
-      // "Gas: Safe  1234"
       snprintf(line1, 17, "Gas : %s %-4d", gasStatus, mqValue);
       snprintf(line2, 17, "Water: %s %-4d", rainStatus, rainValue);
     } else if (pageIndex == 2) {

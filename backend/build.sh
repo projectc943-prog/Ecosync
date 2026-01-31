@@ -1,12 +1,15 @@
-#!/usr/bin/env bash
-# Exit on error
-set -e
+#!/bin/bash
 
-echo "Build script started..."
-echo "Upgrading pip..."
-python -m pip install --upgrade pip
-
-echo "Installing dependencies..."
+# Install dependencies
+echo "Installing backend dependencies..."
 pip install -r requirements.txt
 
-echo "Build script finished."
+# Create database
+echo "Creating database..."
+python -c "from app.database import Base; from app.database import engine; Base.metadata.create_all(bind=engine)"
+
+# Run migrations
+echo "Running migrations..."
+python -c "from app.database import Base; from app.database import engine; Base.metadata.create_all(bind=engine)"
+
+echo "Backend setup completed successfully!"

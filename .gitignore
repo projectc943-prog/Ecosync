@@ -9,3 +9,5 @@ iot_system.db
 
 # Local Netlify folder
 .netlify
+.vercel
+.env*.local

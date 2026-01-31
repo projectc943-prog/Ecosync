@@ -1,38 +1,24 @@
-import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from dotenv import load_dotenv
+from sqlalchemy.pool import StaticPool
+import os
 
-load_dotenv() # Load from .env file for local dev
+# Database configuration
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///iot_system.db")
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_PATH = os.path.join(BASE_DIR, "iot_system.db")
+# Create engine
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={
+        "check_same_thread": False
+    } if "sqlite" in DATABASE_URL else {}
+)
 
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DB_PATH}")
-
-# Fix for some PaaS (like Heroku/Render) that provide "postgres://" instead of "postgresql://"
-if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
-    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-# SQLite needs "check_same_thread: False", PostgreSQL does not.
-if "sqlite" in SQLALCHEMY_DATABASE_URL:
-    engine = create_engine(
-        SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-    )
-else:
-    # Optimized for Supabase/Remote Postgres
-    engine = create_engine(
-        SQLALCHEMY_DATABASE_URL,
-        pool_size=5,
-        max_overflow=10,
-        pool_timeout=30,
-        pool_recycle=1800,
-        pool_pre_ping=True
-    )
-
+# Create session
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+# Base model
 Base = declarative_base()
 
 def get_db():
@@ -41,3 +27,14 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# Import models to make them available
+from .models import User, Device, SensorData, Alert, AlertSettings
+
+# Expose models for external use
+Base = Base
+User = User
+Device = Device
+SensorData = SensorData
+Alert = Alert
+AlertSettings = AlertSettings
