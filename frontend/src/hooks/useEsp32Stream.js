@@ -4,9 +4,9 @@ import { supabase } from '../config/supabaseClient';
 
 // --- UTILITIES: KALMAN FILTER & CALIBRATION ---
 const CALIBRATION = {
-    temp: -2.5,   // Offset in °C
-    hum: 4.0,     // Offset in %
-    gas: -20,     // Offset in raw units
+    temp: 0,      // Offset in °C
+    hum: 0,       // Offset in %
+    gas: 0,       // Offset in raw units
     press: 0      // Offset in hPa
 };
 
@@ -349,6 +349,8 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                 for (const line of lines) {
                     const trimmed = line.trim();
                     if (!trimmed) continue;
+
+                    console.log("Serial RX:", trimmed); // DEBUG LOG
 
                     try {
                         const json = JSON.parse(trimmed);

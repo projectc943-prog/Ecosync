@@ -1,257 +1,114 @@
-#include <Arduino.h>
-#include <ArduinoJson.h>
 #include <DHT.h>
-#include <HTTPClient.h>
-#include <PubSubClient.h>
-#include <WiFi.h>
+#include <LiquidCrystal_I2C.h>
 #include <Wire.h>
-#include <hd44780.h>
-#include <hd44780ioClass/hd44780_I2Cexp.h>
 
-// --- WiFi Configuration ---
-const char *WIFI_SSID = "POCO M4 5G";
-const char *WIFI_PASSWORD = "sreeya13";
+// --- Configuration ---
+#define DHTPIN 4      // Digital pin connected to the DHT sensor
+#define DHTTYPE DHT11 // DHT 11
+#define MQ_PIN 34     // Analog pin connected to the MQ sensor (AO)
 
-// Backend URL
-const char *SERVER_URL = "http://172.22.67.5:8009/iot/data";
-
-// --- MQTT Configuration ---
-const char *MQTT_SERVER = "172.22.67.5";
-const int MQTT_PORT = 1883;
-const char *MQTT_USER = "";
-const char *MQTT_PASSWORD = "";
-
-WiFiClient espClient;
-PubSubClient client(espClient);
-
-// --- Hardware Configuration ---
-hd44780_I2Cexp lcd; // Auto-detects backpack
-
-// --- PIN DEFINITIONS ---
-#define DHTPIN 4
-#define MQ_ANALOG_PIN 34
-#define RAIN_ANALOG_PIN 35
-#define PIR_PIN 27
-#define IR_PIN 18 // Pin 18 for IR
-
-// I2C Pins for LCD (ESP32 defaults)
-#define SDA_PIN 21
-#define SCL_PIN 22
-
-#define DHTTYPE DHT11
+// Initialize DHT sensor
 DHT dht(DHTPIN, DHTTYPE);
 
-// Thresholds
-#define GAS_THRESHOLD 2000
-#define RAIN_THRESHOLD 1500
-
-// --- Global Variables ---
-float t = 0.0;
-float h = 0.0;
-int mqValue = 0;
-int rainValue = 0;
-int pirValue = 0;
-// RPM / Speed Variables
-volatile unsigned long pulseCount = 0;
-float rpm = 0.0;
-unsigned long lastRpmTime = 0;
-
-// Interrupt Service Routine for IR Speed Sensor
-void IRAM_ATTR onIRPulse() { pulseCount++; }
-
-void reconnect() {
-  static unsigned long lastMqttAttempt = 0;
-  if (millis() - lastMqttAttempt > 5000) {
-    lastMqttAttempt = millis();
-    if (client.connect("ESP32EcoSync", MQTT_USER, MQTT_PASSWORD)) {
-      Serial.println("MQTT Connected");
-    }
-  }
-}
+// LCD Object Pointer (initialized in setup)
+LiquidCrystal_I2C *lcd = nullptr;
 
 void setup() {
-  Serial.begin(115200);
-  Serial.println("\n--- BOOT ---");
-
-  // Wait for ESP32 boot stability
-  delay(2000);
-
-  // Initialize LCD (Auto-detect)
-  int lcdStatus = lcd.begin(16, 2);
-  if (lcdStatus) {
-    Serial.print("LCD Init Failed! Status: ");
-    Serial.println(lcdStatus);
-    // Continue anyway to allow sensors to work
-  } else {
-    lcd.backlight();
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Ecosync Ready");
-    lcd.setCursor(0, 1);
-    lcd.print("Sensors Starting");
-  }
-
-  pinMode(MQ_ANALOG_PIN, INPUT);
-  pinMode(RAIN_ANALOG_PIN, INPUT);
-  pinMode(PIR_PIN, INPUT_PULLDOWN);
-
-  // IR Sensor Interrupt Setup
-  pinMode(IR_PIN, INPUT_PULLUP); // Use PULLUP for open-collector sensors
-  attachInterrupt(digitalPinToInterrupt(IR_PIN), onIRPulse, FALLING);
-
-  dht.begin();
-  client.setServer(MQTT_SERVER, MQTT_PORT);
-
-  // Connect to WiFi
-  Serial.println("\n>>> ECOSYNC FIRMWARE V2.0 - FAST BOOT <<<");
-
-  // Connect to WiFi (Async - don't wait)
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.println("WiFi Authentication started... proceeding to sensors!");
-
-  // Use setCursor instead of clear to avoid flicker
-  if (lcdStatus == 0) {
-    lcd.setCursor(0, 1);
-    lcd.print("WiFi Connecting ");
-  }
+  // 1. Initialize Serial and Power
   delay(1000);
+  Serial.begin(115200);
+  Serial.println("\n\n--- Ecosync Booting ---");
+
+  // 2. Scan for I2C Address (Must be in setup!)
+  Wire.begin(21, 22); // SDA=21, SCL=22
+  byte count = 0;
+  byte foundAddr = 0;
+
+  Serial.println("Scanning I2C bus...");
+  for (byte i = 1; i < 127; i++) {
+    Wire.beginTransmission(i);
+    if (Wire.endTransmission() == 0) {
+      Serial.print("Found Device at: 0x");
+      Serial.println(i, HEX);
+
+      // Check for common LCD addresses
+      if (i == 0x27 || i == 0x3F) {
+        foundAddr = i;
+        count++;
+      }
+    }
+  }
+
+  // 3. Initialize LCD if found
+  if (foundAddr != 0) {
+    Serial.printf("LCD Found at 0x%X. Initializing...\n", foundAddr);
+    lcd = new LiquidCrystal_I2C(foundAddr, 16, 2);
+    lcd->init();
+    lcd->backlight();
+    lcd->clear();
+    lcd->print("EcoSync Init...");
+    lcd->setCursor(0, 1);
+    lcd->print("Address: 0x");
+    lcd->print(foundAddr, HEX);
+    delay(2000);
+  } else {
+    Serial.println("CRITICAL: No LCD found.");
+  }
+
+  // 4. Initialize Sensors
+  dht.begin();
+  pinMode(MQ_PIN, INPUT);
+
+  if (lcd)
+    lcd->clear();
 }
 
 void loop() {
-  // WiFi Reconnect (Non-blocking check)
-  if (WiFi.status() != WL_CONNECTED) {
-    static unsigned long lastWifiTry = 0;
-    if (millis() - lastWifiTry > 10000) { // Try reconnecting every 10s
-      WiFi.disconnect();
-      WiFi.reconnect();
-      lastWifiTry = millis();
+  unsigned long currentMillis = millis();
+
+  // --- Read Sensors ---
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
+  int mqValues = analogRead(MQ_PIN);
+
+  // Check for read failure
+  if (isnan(h) || isnan(t)) {
+    Serial.println(F("{\"error\": \"Failed to read from DHT sensor!\"}"));
+    if (lcd) {
+      lcd->setCursor(0, 0);
+      lcd->print("Sensor Error!   ");
     }
-    // Do NOT return here, so sensors can still work offline
+    delay(2000);
+    return;
   }
 
-  // MQTT Reconnect
-  if (!client.connected()) {
-    reconnect();
-  }
-  client.loop();
+  // --- Serial Output (JSON for Frontend) ---
+  // Matches useEsp32Stream.js keys: temperature, humidity, gas
+  Serial.print(F("{\"temperature\": "));
+  Serial.print(t, 1);
+  Serial.print(F(", \"humidity\": "));
+  Serial.print(h, 1);
+  Serial.print(F(", \"gas\": "));
+  Serial.print(mqValues);
+  Serial.println(F("}"));
 
-  // --- TIMERS ---
-  static unsigned long lastSensorRead = 0;
-  static unsigned long lastPageSwitch = 0;
-  static int pageIndex = 0;
+  // --- LCD Update ---
+  if (lcd) {
+    // Row 0: T: 25C  G: 123
+    lcd->setCursor(0, 0);
+    lcd->print("T:");
+    lcd->print((int)t);
+    lcd->print("C  G:");
+    lcd->print(mqValues);
+    lcd->print("    "); // Clear trailing chars
 
-  // 1. Read Sensors (Every 2 Seconds)
-  if (millis() - lastSensorRead > 2000) {
-    unsigned long currentTime = millis();
-    unsigned long timeDiff =
-        currentTime - lastSensorRead; // Actual time elapsed
-    lastSensorRead = currentTime;
-
-    float newH = dht.readHumidity();
-    float newT = dht.readTemperature();
-    if (!isnan(newH) && !isnan(newT)) {
-      h = newH;
-      t = newT;
-    }
-
-    mqValue = analogRead(MQ_ANALOG_PIN);
-    rainValue = analogRead(RAIN_ANALOG_PIN);
-
-    // Read Motion (PIR)
-    pirValue = digitalRead(PIR_PIN);
-
-    // Calculate RPM
-    // RPM = (Pulses / PulsesPerRev) * (60000 / TimeMs)
-    // Assuming 1 pulse = 1 rotation (adjust if using encoder disc)
-    // To be safe, let's just show "Pulses per Min" for now
-    rpm = (pulseCount * 60000.0) / timeDiff; // Gives CPM (Counts Per Minute)
-    pulseCount = 0;                          // Reset counter
-
-    // Detailed Gas Calculations (Estimates for MQ Sensor)
-    // MQ-135: 400ppm -> 50000ppm approx range
-    int co2_ppm = map(mqValue, 0, 4095, 400, 5000);
-    // Smoke/CO Estimate (0-100%)
-    int smoke_pct = map(mqValue, 0, 4095, 0, 100);
-
-    // Serial Debug - User Requested Format
-    Serial.printf("Temp:%.1f Hum:%.1f Gas:%d Rain:%d Motion:%d Speed:%.0f\n", t,
-                  h, mqValue, rainValue, (pirValue == LOW) ? 1 : 0, rpm);
-
-    // HTTP Post (Only if Connected)
-    if (WiFi.status() == WL_CONNECTED) {
-      HTTPClient http;
-      http.begin(SERVER_URL);
-      http.addHeader("Content-Type", "application/json");
-      StaticJsonDocument<400> doc;
-      doc["temperature"] = t;
-      doc["humidity"] = h;
-      doc["mq_value"] = mqValue;
-      doc["rain_value"] = rainValue;
-      doc["motion_detected"] = (pirValue == LOW); // PIR Is Active Low
-      doc["ir_detected"] = (rpm > 0);
-      doc["pm25"] = co2_ppm / 10;
-      doc["pressure"] = 1013;
-
-      // Add extra fields for debug if backend accepts them
-      doc["extended_co2"] = co2_ppm;
-      doc["extended_rpm"] = rpm;
-
-      String jsonPayload;
-      serializeJson(doc, jsonPayload);
-      http.POST(jsonPayload);
-      http.end();
-    }
-
-    // MQTT Publish
-    if (client.connected()) {
-      client.publish("ecosync/temperature", String(t, 2).c_str());
-      client.publish("ecosync/humidity", String(h, 2).c_str());
-      client.publish("ecosync/gas", String(mqValue).c_str());
-      client.publish("ecosync/rain", String(rainValue).c_str());
-      client.publish("ecosync/motion", (pirValue == LOW) ? "1" : "0");
-      client.publish("ecosync/rpm", String(rpm).c_str());
-    }
+    // Row 1: H: 60%
+    lcd->setCursor(0, 1);
+    lcd->print("H:");
+    lcd->print((int)h);
+    lcd->print("%");
+    lcd->print("            "); // Clear trailing chars
   }
 
-  // 2. Dynamic LCD Logic (Every 3s)
-  if (millis() - lastPageSwitch > 3000) {
-    lastPageSwitch = millis();
-    lcd.clear();
-
-    // Identify Counts/Status
-    int co2_ppm = map(mqValue, 0, 4095, 400, 5000);
-    int smoke_pct = map(mqValue, 0, 4095, 0, 100);
-    bool rainAlert = (rainValue < 1000); // Analog: Low = Wet usually
-
-    // Cycle 4 screens now
-    pageIndex = (pageIndex + 1) % 4;
-    char line1[17];
-    char line2[17];
-
-    if (pageIndex == 0) {
-      // Screen 0: Environment
-      snprintf(line1, 17, "Temp: %.1f C    ", t);
-      snprintf(line2, 17, "Hum : %.0f %%      ", h);
-    } else if (pageIndex == 1) {
-      // Screen 1: Gas Advanced
-      snprintf(line1, 17, "Air: %d AQI    ", mqValue / 10);
-      snprintf(line2, 17, "CO2: %d PPM   ", co2_ppm);
-    } else if (pageIndex == 2) {
-      // Screen 2: Safety
-      const char *rStatus = rainAlert ? "WET " : "DRY ";
-      const char *mStatus = (pirValue == LOW) ? "YES" : "NO ";
-      snprintf(line1, 17, "Rain  : %-4s %-4d", rStatus, rainValue);
-      snprintf(line2, 17, "Smoke : %d%%      ", smoke_pct);
-    } else if (pageIndex == 3) {
-      // Screen 3: Motion & Speed
-      const char *mStatus = (pirValue == LOW) ? "Active" : "Quiet ";
-      snprintf(line1, 17, "Motion: %s  ", mStatus);
-      snprintf(line2, 17, "Speed : %.0f RPM ", rpm);
-    }
-
-    lcd.setCursor(0, 0);
-    lcd.print(line1);
-    lcd.setCursor(0, 1);
-    lcd.print(line2);
-  }
+  delay(2000); // 2 second refresh rate
 }

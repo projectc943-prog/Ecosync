@@ -1,0 +1,38 @@
+Hardware Setup Complete Guide:
+
+1. Connect ESP32 to Computer
+   - Connect the ESP32 board to your computer using a USB cable
+   - Ensure the board has power and is recognized by the computer
+
+2. Open Arduino IDE
+   - Manually open the Arduino IDE application
+   - If you don't have it installed, download from arduino.cc
+
+3. Open Firmware File
+   - In Arduino IDE: File > Open
+   - Navigate to: hardware/arduino_code/ecosync_firmware/ecosync_firmware.ino
+   - Open the file
+
+4. Configure Board Settings
+   - Tools > Board: Select 'ESP32 Dev Module'
+   - Tools > Port: Select 'COM14 (Silicon Labs CP210x USB to UART Bridge)'
+
+5. Upload Firmware
+   - Click the Upload button (right arrow icon)
+   - Wait for the upload to complete (may take 1-2 minutes)
+
+6. Monitor Output
+   - After upload, open Serial Monitor: Tools > Serial Monitor
+   - Set baud rate to 115200
+   - You should see sensor data and LCD initialization messages
+
+7. Verify LCD Display
+   - The LCD should display:
+     Row 1: T: XX°C  G: XXX
+     Row 2: H: XX%
+   - If no LCD is found, check I2C connections
+
+8. Troubleshooting
+   - If upload fails: Check USB connection and try different COM port
+   - If LCD not found: Check I2C wiring (SDA=21, SCL=22)
+   - If sensors not working: Check sensor connections
