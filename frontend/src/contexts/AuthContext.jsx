@@ -111,7 +111,15 @@ export const AuthProvider = ({ children }) => {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.detail || 'Login failed');
+                let msg = errorData.detail || 'Login failed';
+                if (typeof msg === 'object') {
+                    if (Array.isArray(msg)) {
+                        msg = msg.map(e => e.msg || JSON.stringify(e)).join(', ');
+                    } else {
+                        msg = JSON.stringify(msg);
+                    }
+                }
+                throw new Error(msg);
             }
 
             const data = await response.json();
@@ -162,8 +170,24 @@ export const AuthProvider = ({ children }) => {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.detail || 'Registration failed');
+                let errorData;
+                try {
+                    errorData = await response.json();
+                } catch (jsonError) {
+                    console.error("Failed to parse error response JSON:", jsonError);
+                    // If parsing fails, it's likely an HTML 500 or 404 page
+                    throw new Error(`Server Error (${response.status}): The server encountered an issue.`);
+                }
+
+                let msg = errorData.detail || 'Registration failed';
+                if (typeof msg === 'object') {
+                    if (Array.isArray(msg)) {
+                        msg = msg.map(e => e.msg || JSON.stringify(e)).join(', ');
+                    } else {
+                        msg = JSON.stringify(msg);
+                    }
+                }
+                throw new Error(msg);
             }
 
             const data = await response.json();

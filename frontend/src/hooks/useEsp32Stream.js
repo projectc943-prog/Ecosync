@@ -413,7 +413,7 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                                     humidity: packet.humidity,
                                     pressure: packet.pressure,
                                     pm2_5: packet.pm25,
-                                    vibration: packet.gas // Mapping Gas to existing column or new? Using 'vibration' as legacy/placeholder
+                                    vibration: packet.gas
                                 }]);
                             } catch (err) {
                                 console.error("Serial Supabase Sync Error:", err);
@@ -453,7 +453,7 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                         setHealth({ status: 'ONLINE', lastPacketTime: new Date() });
 
                     } catch (e) {
-                        console.log("Serial Parse Error on line:", trimmed);
+                        console.warn("Serial JSON Parse Error:", e.message, "Raw:", trimmed);
                     }
                 }
             }

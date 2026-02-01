@@ -74,10 +74,10 @@ async def startup_event():
 # --- CORS Configuration ---
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Frontend dev server
-    "http://localhost:3000",  # Frontend dev server
-    "https://your-production-domain.com",  # Production domain
-    "https://www.your-production-domain.com"  # Production domain
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:8009",
+    "http://127.0.0.1:8009"
 ]
 
 app.add_middleware(

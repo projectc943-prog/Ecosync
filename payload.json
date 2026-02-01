@@ -1,0 +1,8 @@
+{
+    "email": "trace_debug_500_v2@example.com",
+    "password": "password123",
+    "first_name": "Trace",
+    "last_name": "Debug",
+    "plan": "lite",
+    "location_name": "Test Location"
+}

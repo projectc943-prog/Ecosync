@@ -10,7 +10,13 @@ class Token(BaseModel):
 class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=6)
-    full_name: Optional[str] = None
+
+    first_name: str
+    last_name: Optional[str] = None
+    plan: Optional[str] = "lite"
+    location_name: Optional[str] = None
+    location_lat: Optional[float] = None
+    location_lon: Optional[float] = None
 
 class UserResponse(BaseModel):
     id: int
