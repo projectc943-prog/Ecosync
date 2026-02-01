@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from .. import schemas, models, database
+from .. import schemas, database
+from ..models import User
 from ..core import security
 from ..services.email_service import send_email_notification
 from fastapi.security import OAuth2PasswordBearer
@@ -44,13 +45,13 @@ def test_ping():
 def register(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
     # 1. Check existing
     print(f"DEBUG REGISTER PAYLOAD: {user_data.dict()}")
-    existing = db.query(models.User).filter(models.User.email == user_data.email).first()
+    existing = db.query(User).filter(User.email == user_data.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="User already exists (Email taken)")
     
     # 2. Create User
     hashed_password = security.get_password_hash(user_data.password)
-    new_user = models.User(
+    new_user = User(
         email=user_data.email,
         hashed_password=hashed_password,
         first_name=user_data.first_name,
@@ -84,7 +85,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     print(f">>> TRACE: Login attempt for {form_data.username} at {t0.isoformat()}")
     
     # 1. Fetch User
-    user = db.query(models.User).filter(models.User.email == form_data.username).first()
+    user = db.query(User).filter(User.email == form_data.username).first()
     t1 = dt.now()
     print(f">>> TRACE: User lookup took {(t1-t0).total_seconds()}s")
     
@@ -142,7 +143,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     except JWTError:
         raise credentials_exception
         
-    user = db.query(models.User).filter(models.User.email == username).first()
+    user = db.query(User).filter(User.email == username).first()
     
     if user is None:
         raise credentials_exception
@@ -153,7 +154,7 @@ class SignupInitRequest(schemas.BaseModel):
 @router.post("/auth/signup-init")
 def signup_init(request: SignupInitRequest, db: Session = Depends(get_db)):
     # 1. Check existing
-    user = db.query(models.User).filter(models.User.email == request.email).first()
+    user = db.query(User).filter(User.email == request.email).first()
     if user and user.is_verified:
         raise HTTPException(status_code=400, detail="Identity Hash already registered. Please Login.")
     
@@ -167,7 +168,7 @@ def signup_init(request: SignupInitRequest, db: Session = Depends(get_db)):
     else:
         # Create new placeholder
         hashed_password = security.get_password_hash("PENDING-SETUP")
-        new_user = models.User(
+        new_user = User(
             email=request.email,
             hashed_password=hashed_password,
             is_verified=False,
@@ -210,7 +211,7 @@ class SignupCompleteRequest(schemas.BaseModel):
 
 @router.post("/auth/signup-complete", response_model=schemas.Token)
 def signup_complete(request: SignupCompleteRequest, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == request.email).first()
+    user = db.query(User).filter(User.email == request.email).first()
     
     if not user:
         raise HTTPException(status_code=404, detail="User Identity Not Found")
@@ -251,7 +252,7 @@ class VerifyRequest(schemas.BaseModel):
 
 @router.post("/verify-email")
 def verify_email(req: VerifyRequest, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == req.email).first()
+    user = db.query(User).filter(User.email == req.email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
@@ -281,7 +282,7 @@ class CredentialsSetup(schemas.BaseModel):
     last_name: str
 
 @router.post("/me/setup-credentials")
-def setup_credentials(creds: CredentialsSetup, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+def setup_credentials(creds: CredentialsSetup, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     # Update Password
     current_user.hashed_password = security.get_password_hash(creds.password)
     # Update Profile
@@ -294,7 +295,7 @@ def setup_credentials(creds: CredentialsSetup, current_user: models.User = Depen
     return {"status": "success", "message": "Credentials Secured. System Access Granted."}
 
 @router.put("/me/profile")
-def update_profile(profile: schemas.UserProfileUpdate, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+def update_profile(profile: schemas.UserProfileUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     current_user.first_name = profile.first_name
     current_user.last_name = profile.last_name
     current_user.mobile = profile.mobile
@@ -305,7 +306,7 @@ def update_profile(profile: schemas.UserProfileUpdate, current_user: models.User
     return {"status": "success", "message": "Profile Updated"}
 
 @router.get("/me", response_model=schemas.UserResponse)
-def read_users_me(current_user: models.User = Depends(get_current_user)):
+def read_users_me(current_user: User = Depends(get_current_user)):
     """
     Get current user profile
     """
@@ -319,7 +320,7 @@ class LocationUpdateRequest(schemas.BaseModel):
 @router.put("/api/user/location")
 def update_user_location(
     location_data: LocationUpdateRequest,
-    current_user: models.User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -364,12 +365,12 @@ def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
             raise HTTPException(status_code=400, detail="Invalid Google Token: No Email")
             
         # Check User
-        user = db.query(models.User).filter(models.User.email == email).first()
+        user = db.query(User).filter(User.email == email).first()
         
         if not user:
             # Auto-Register
             hashed_password = security.get_password_hash("google_oauth_auto_generated")
-            user = models.User(email=email, hashed_password=hashed_password)
+            user = User(email=email, hashed_password=hashed_password)
             db.add(user)
             db.commit()
             db.refresh(user)

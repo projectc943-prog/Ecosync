@@ -17,12 +17,18 @@ const Dashboard = () => {
     const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
 
 
-    // Notification Prompt Trigger
+    // Notification Prompt Trigger with cleanup
     useEffect(() => {
+        let timeoutId;
         if (locationPermissionGranted && 'Notification' in window) {
             // Let the component decide if it needs to show the prompt based on user consent
-            setTimeout(() => setShowNotificationPrompt(true), 1500);
+            timeoutId = setTimeout(() => setShowNotificationPrompt(true), 1500);
         }
+        return () => {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+        };
     }, [locationPermissionGranted]);
 
 
@@ -69,11 +75,14 @@ const Dashboard = () => {
         setShowNotificationPrompt(false);
     };
 
-    // Sync with User Profile
+    // Sync with User Profile with cleanup
     useEffect(() => {
         if (userProfile?.plan === 'pro') {
             setIsProMode(true);
         }
+        return () => {
+            // Cleanup any subscriptions or timers if needed
+        };
     }, [userProfile]);
 
     const handleToggle = () => {

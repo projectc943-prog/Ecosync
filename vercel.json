@@ -1,26 +1,33 @@
 {
     "version": 2,
-    "rewrites": [
-        {
-            "source": "/api/(.*)",
-            "destination": "/backend/api/index.py"
-        },
-        {
-            "source": "/(.*)",
-            "destination": "/frontend/dist/$1"
-        }
-    ],
     "builds": [
         {
-            "src": "backend/api/index.py",
-            "use": "@vercel/python"
-        },
-        {
-            "src": "frontend/package.json",
-            "use": "@vercel/static-build",
+            "src": "backend/start.py",
+            "use": "@vercel/python",
             "config": {
-                "distDir": "dist"
+                "maxDuration": "60s"
             }
         }
-    ]
+    ],
+    "routes": [
+        {
+            "src": "/api/(.*)",
+            "dest": "/backend/start.py"
+        },
+        {
+            "src": "/ws/(.*)",
+            "dest": "/backend/start.py"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/frontend/index.html"
+        }
+    ],
+    "env": {
+        "DATABASE_URL": "@database-url",
+        "EMAIL_USER": "@email-user",
+        "EMAIL_PASS": "@email-pass",
+        "SECRET_KEY": "@secret-key",
+        "ENVIRONMENT": "production"
+    }
 }

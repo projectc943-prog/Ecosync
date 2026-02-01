@@ -741,6 +741,8 @@ const ProView = () => {
                     <Settings size={18} />
                 </button>
             </div>
+
+
             <SettingsDialog isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
             {/* Life Support Monitor (Temp & Humidity Focus) */}

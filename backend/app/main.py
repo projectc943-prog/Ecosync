@@ -9,17 +9,19 @@ print(f"LOADING MAIN FROM {__file__}")
 
 from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
-from . import models, schemas, database, admin_setup
+from . import schemas, database, admin_setup, models
 from .connectors.open_meteo import OpenMeteoConnector
 from .connectors.thingspeak import ThingSpeakConnector
 from .connectors.waqi import WAQIConnector
 from .connectors.openaq import OpenAQConnector
 from .connectors.esp32_stub import ESP32StubConnector
 
-from .routers import assistant, auth_v2 as auth, map as map_router, pro_api, push_notifications
+from .routers import assistant, auth_v2 as auth, map as map_router, pro_api, push_notifications, devices
 from .routers.push_notifications import send_push_notification_to_user
 from .services import kalman_filter, aqi_calculator, external_apis, fusion_engine, weather_service
 
@@ -44,10 +46,10 @@ app = FastAPI(
 def health_check():
     return {"status": "active", "service": "IoT Backend", "timestamp": dt.utcnow()}
 
-# --- Database Initialization (Legacy Trigger) ---
-# Moved to startup_event for better error handling in FastAPI
+# --- Database Initialization & Startup Tasks ---
 @app.on_event("startup")
 async def startup_event():
+    """Unified startup handler for database initialization and background services"""
     try:
         # 1. Database Schema
         models.Base.metadata.create_all(bind=database.engine)
@@ -55,10 +57,13 @@ async def startup_event():
         # 2. Admin Seeding
         admin_setup.create_admin_user()
         
-        # 3. Map Cache
+        # 3. Start Background Tasks
+        logger.info("Starting background services...")
+        asyncio.create_task(poll_devices()) 
         asyncio.create_task(refresh_map_cache())
         
         logger.info("EcoSync Backend Initialized Successfully.")
+        logger.info("Startup: Background tasks initiated (Polling Enabled)")
     except Exception as e:
         logger.error(f"Startup execution failed: {e}")
 
@@ -69,18 +74,29 @@ async def startup_event():
 # --- CORS Configuration ---
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "*"
+    "http://localhost:5173",  # Frontend dev server
+    "http://localhost:3000",  # Frontend dev server
+    "https://your-production-domain.com",  # Production domain
+    "https://www.your-production-domain.com"  # Production domain
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+# --- Security Headers ---
+app.add_middleware(
+    TrustedHostMiddleware, 
+    allowed_hosts=["localhost", "127.0.0.1", "your-production-domain.com"]
+)
+
+# Redirect to HTTPS in production
+if ENVIRONMENT == "production":
+    app.add_middleware(HTTPSRedirectMiddleware)
 
 # --- Dependency Injection ---
 def get_db():
@@ -96,6 +112,7 @@ app.include_router(auth.router, tags=["Authentication"])
 app.include_router(map_router.router, tags=["Map"])
 app.include_router(pro_api.router, tags=["Pro Mode"])
 app.include_router(push_notifications.router, tags=["Push Notifications"])
+app.include_router(devices.router, tags=["Devices"])
 
 # --- Helper Functions ---
 def get_connector(device: models.Device):
@@ -470,15 +487,6 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
 
 
 
-# --- Startup Events ---
-@app.on_event("startup")
-async def startup_event():
-    logger.info("Starting background services...")
-    # redis = await aioredis.create_redis_pool("redis://localhost")
-    asyncio.create_task(poll_devices()) 
-    asyncio.create_task(refresh_map_cache())
-    logger.info("Startup: Background tasks initiated (Polling Enabled)")
-
 
 # --- IoT Ingestion Endpoint ---
 class IoTSensorData(BaseModel):
@@ -533,66 +541,80 @@ async def receive_iot_data(data: IoTSensorData, background_tasks: BackgroundTask
                 device.lon = data.lon
             db.commit()
 
-        # 3. Store Filtered Data
-        mq_norm = min(100, max(0, (mq_cleaned["smoothed"] - 200) / 6))
-        measurement = models.SensorData(
-            device_id=device.id,
-            timestamp=current_ts,
-            temperature=filtered_temp,
-            humidity=filtered_hum,
-            pressure=data.pressure,
-            wind_speed=0.0,
-            pm2_5=filtered_pm25,
-            pm10=mq_cleaned["smoothed"] # Storing smoothed MQ here
-        )
-        db.add(measurement)
-        db.commit()
-        
-        # 5. Alert Check (OFFLOADED TO BACKGROUND TO PREVENT EVENT LOOP BLOCKING)
-        # Using a wrapper that creates its own session as 'db' here will be closed when request ends
-        background_tasks.add_task(check_alerts_wrapper, device.id, measurement.id, data.user_email)
-        
-        # 4. WebSocket Broadcast
-        payload = {
-            "deviceId": device_id,
-            "timestamp": current_ts.isoformat(),
-            "raw": {
-                "temperature": data.temperature,
-                "humidity": data.humidity,
-                "pm25": data.pm25,
-                "mq_raw": data.mq_raw
-            },
-            "filtered": {
-                "temperature": round(filtered_temp, 2),
-                "humidity": round(filtered_hum, 2),
-                "pm25": round(filtered_pm25, 2),
-                "mq_smoothed": mq_cleaned["smoothed"]
-            },
-            "confidence": {
-                "temperature": round(temp_conf, 3),
-                "humidity": round(hum_conf, 3),
-                "pm25": round(pm25_conf, 3)
-            },
-            "mq_quality": {
-                "is_outlier": mq_cleaned["is_outlier"],
-                "z_score": mq_cleaned["z_score"]
-            },
-            "mq_index": mq_norm,
-            "pressure": data.pressure,
-            "wind_speed": data.wind_speed
-        }
-        await manager.broadcast(payload, "ESP32_MAIN")
-        
-        # Save wind speed to DB
-        measurement.wind_speed = data.wind_speed
-        db.commit()
-        
-        return {"status": "ok", "message": "Data processed successfully"}
+        # 3. Store Filtered Data with proper transaction handling
+        try:
+            mq_norm = min(100, max(0, (mq_cleaned["smoothed"] - 200) / 6))
+            measurement = models.SensorData(
+                device_id=device.id,
+                timestamp=current_ts,
+                temperature=filtered_temp,
+                humidity=filtered_hum,
+                pressure=data.pressure,
+                wind_speed=0.0,
+                pm2_5=filtered_pm25,
+                pm10=mq_cleaned["smoothed"] # Storing smoothed MQ here
+            )
+            db.add(measurement)
+            db.commit()
 
-        
+            # 4. Alert Check with proper session management
+            # Use the same session to avoid race conditions
+            try:
+                check_alerts(db, device, measurement, data.user_email)
+                db.commit()
+            except Exception as alert_error:
+                logger.error(f"Alert check failed: {alert_error}")
+                # Don't fail the entire request due to alert issues
+
+            # 5. WebSocket Broadcast with error handling
+            try:
+                payload = {
+                    "deviceId": device_id,
+                    "timestamp": current_ts.isoformat(),
+                    "raw": {
+                        "temperature": data.temperature,
+                        "humidity": data.humidity,
+                        "pm25": data.pm25,
+                        "mq_raw": data.mq_raw
+                    },
+                    "filtered": {
+                        "temperature": round(filtered_temp, 2),
+                        "humidity": round(filtered_hum, 2),
+                        "pm25": round(filtered_pm25, 2),
+                        "mq_smoothed": mq_cleaned["smoothed"]
+                    },
+                    "confidence": {
+                        "temperature": round(temp_conf, 3),
+                        "humidity": round(hum_conf, 3),
+                        "pm25": round(pm25_conf, 3)
+                    },
+                    "mq_quality": {
+                        "is_outlier": mq_cleaned["is_outlier"],
+                        "z_score": mq_cleaned["z_score"]
+                    },
+                    "mq_index": mq_norm,
+                    "pressure": data.pressure,
+                    "wind_speed": data.wind_speed
+                }
+                await manager.broadcast(payload, "ESP32_MAIN")
+            except Exception as ws_error:
+                logger.error(f"WebSocket broadcast failed: {ws_error}")
+                # Don't fail the entire request due to WebSocket issues
+
+            # Save wind speed to DB
+            measurement.wind_speed = data.wind_speed
+            db.commit()
+
+            return {"status": "ok", "message": "Data processed successfully"}
+
+        except Exception as e:
+            logger.error(f"IoT Data Error: {e}")
+            return {"status": "error", "detail": str(e)}
+            
     except Exception as e:
         logger.error(f"IoT Data Error: {e}")
         return {"status": "error", "detail": str(e)}
+
 
 @app.get("/api/data", tags=["Analytics"])
 def get_historical_data(limit: int = 100, db: Session = Depends(get_db)):
@@ -648,15 +670,54 @@ async def get_filtered_iot_data(db: Session = Depends(get_db)):
     }
 
 
-# --- WebSocket Endpoint ---
+# --- WebSocket Endpoint with proper error handling and cleanup ---
 @app.websocket("/ws/stream/{device_id}")
 async def websocket_endpoint(websocket: WebSocket, device_id: str):
-    await manager.connect(websocket, device_id)
+    # Validate device_id
+    if not device_id or not isinstance(device_id, str):
+        await websocket.close(code=4000, reason="Invalid device_id")
+        return
+
+    # Authenticate the connection
     try:
-        while True:
-            await websocket.receive_text() # Keep connection alive
-    except WebSocketDisconnect:
-        manager.disconnect(websocket, device_id)
+        user = await get_current_user(websocket=websocket)
+        if not user:
+            await websocket.close(code=4001, reason="Authentication required")
+            return
+    except Exception as auth_error:
+        logger.error(f"WebSocket auth failed: {auth_error}")
+        await websocket.close(code=4001, reason="Authentication failed")
+        return
+
+    # Connect to WebSocket manager
+    try:
+        await manager.connect(websocket, device_id)
+        logger.info(f"WebSocket connected for device {device_id} (user: {user.email})")
+
+        try:
+            while True:
+                try:
+                    # Receive and process messages
+                    data = await websocket.receive_text()
+                    # Process incoming data if needed
+                    logger.debug(f"WebSocket message from {device_id}: {data}")
+                except WebSocketDisconnect:
+                    logger.info(f"WebSocket disconnected for device {device_id}")
+                    break
+                except Exception as receive_error:
+                    logger.error(f"WebSocket receive error: {receive_error}")
+                    break
+        finally:
+            # Always clean up the connection
+            try:
+                await manager.disconnect(websocket, device_id)
+                logger.info(f"WebSocket cleanup complete for device {device_id}")
+            except Exception as cleanup_error:
+                logger.error(f"WebSocket cleanup error: {cleanup_error}")
+
+    except Exception as connect_error:
+        logger.error(f"WebSocket connection failed: {connect_error}")
+        await websocket.close(code=4002, reason="Connection failed")
 
 # --- Standard Device Endpoints ---
 @app.post("/api/devices", response_model=schemas.DeviceResponse, tags=["Devices"])
@@ -706,7 +767,6 @@ async def get_pro_data(lat: float = 17.3850, lon: float = 78.4867, city: str = N
     external_data["fusion"] = fusion_engine.fuse_environmental_data(local_data, ext_simple)
     
     return external_data
-    return external_data
 
 # --- Alert Settings API ---
 @app.get("/api/settings/alerts", response_model=schemas.AlertSettingsResponse, tags=["Settings"])
@@ -748,5 +808,3 @@ def update_alert_settings(settings: schemas.AlertSettingsCreate, db: Session = D
 async def get_realtime_map_data():
     markers = get_cached_markers()
     return {"count": len(markers), "markers": markers, "cache_status": "active"}
-
-

@@ -1,178 +1,380 @@
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <DHT.h>
-#include <Wire.h>
-#include <WiFi.h>
 #include <HTTPClient.h>
+#include <LiquidCrystal_I2C.h>
+#include <PubSubClient.h>
+#include <WiFi.h>
+#include <Wire.h>
 
-// --- WiFi Configuration (USER: Set your WiFi credentials here) ---
-const char* WIFI_SSID = "YourWiFiSSID";        // Change to your WiFi SSID
-const char* WIFI_PASSWORD = "YourWiFiPassword"; // Change to your WiFi Password
-const char* SERVER_URL = "http://192.168.1.100:8000/iot/data"; // Change to your backend IP:PORT
+#include "config.h"
+
+// --- WiFi Configuration ---
+// Note: We use unique names to avoid conflicts with config.h macros
+const char *my_ssid = "xanax";
+const char *my_pass = "123456789";
+
+// Powerbank "Stay-Alive"
+#define STAYALIVE_PIN 2 // Build-in LED or any unused pin
+
+// Backend URL
+const char *SERVER_URL = "https://ecosync-phi.vercel.app/api/iot/data";
+
+// --- MQTT Configuration ---
+const char *MQTT_SERVER = MQTT_SERVER;
+const int MQTT_PORT = MQTT_PORT;
+const char *MQTT_USER = MQTT_USER;
+const char *MQTT_PASSWORD = MQTT_PASSWORD;
+
+WiFiClient espClient;
+PubSubClient client(espClient);
 
 // --- Hardware Configuration ---
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
-#define OLED_RESET -1
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-#ifdef ESP32
+// --- PIN DEFINITIONS ---
 #define DHTPIN 4
-#define VIB_PIN 34
-#define PRESS_PIN 35
-#define WATER_PIN 32
-#define MQ_DO 27
-#define BUZZER_PIN 13
-#define LED_RED 23
-#define LED_GREEN 18
-#else
-#define DHTPIN 2
-#define VIB_PIN A0
-#define PRESS_PIN A1
-#define WATER_PIN A2
-#define MQ_DO 7
-#define BUZZER_PIN 8
-#define LED_RED 9
-#define LED_GREEN 10
-#endif
+#define MQ_ANALOG_PIN 34
+#define RAIN_ANALOG_PIN 35
+#define PIR_PIN 27
+#define IR_PIN 18 // Pin 18 for IR
 
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
+// Thresholds
+#define GAS_THRESHOLD 2000
+#define RAIN_THRESHOLD 1500
+
+// --- Kalman Filter Variables ---
+float temp_kalman = 0.0;
+float hum_kalman = 0.0;
+float pm25_kalman = 0.0;
+
+// Kalman Filter Function
+float kalman_filter(float prev_estimate, float measurement) {
+  // Simple Kalman filter implementation
+  float Q = 0.01; // Process noise covariance
+  float R = 0.1;  // Measurement noise covariance
+  float K = 0.0;  // Kalman gain
+
+  // Prediction step
+  float prediction = prev_estimate;
+
+  // Update step
+  K = Q / (Q + R);
+  float estimate = prediction + K * (measurement - prediction);
+
+  return estimate;
+}
+
+// --- Global Variables ---
+float t = 0.0;
+float h = 0.0;
+int mqValue = 0;
+int rainValue = 0;
+int pirValue = 0;
+int irValue = 0;
+
+void reconnect() {
+  static unsigned long lastMqttAttempt = 0;
+  if (millis() - lastMqttAttempt > 5000) {
+    lastMqttAttempt = millis();
+    if (client.connect("ESP32EcoSync", MQTT_USER, MQTT_PASSWORD)) {
+      Serial.println("MQTT Connected");
+    }
+  }
+}
+
 void setup() {
   Serial.begin(115200);
+  Serial.println("EcoSync Pro - Starting up...");
+
+  // Print system information
+  Serial.printf("ESP32 Chip ID: %08X\n", (uint32_t)ESP.getEfuseMac());
+  Serial.printf("Flash Size: %u bytes\n", ESP.getFlashChipSize());
+  Serial.printf("Free Heap: %u bytes\n", ESP.getFreeHeap());
+
+  pinMode(MQ_ANALOG_PIN, INPUT);
+  pinMode(RAIN_ANALOG_PIN, INPUT);
+  pinMode(PIR_PIN, INPUT_PULLDOWN);
+  pinMode(IR_PIN, INPUT);
+  pinMode(STAYALIVE_PIN, OUTPUT); // For Powerbank Stay-Alive
+
   dht.begin();
+  client.setServer(MQTT_SERVER, MQTT_PORT);
 
-  pinMode(MQ_DO, INPUT);
-  pinMode(BUZZER_PIN, OUTPUT);
-  pinMode(LED_RED, OUTPUT);
-  pinMode(LED_GREEN, OUTPUT);
+  // Initialize LCD with error handling
+  bool lcdInitialized = false;
+  int lcdInitAttempts = 0;
+  const int maxLcdAttempts = 3;
 
-  digitalWrite(BUZZER_PIN, LOW);
-  digitalWrite(LED_RED, LOW);
-  digitalWrite(LED_GREEN, HIGH); // Default to Good
+  while (!lcdInitialized && lcdInitAttempts < maxLcdAttempts) {
+    lcdInitAttempts++;
 
-  // OLED Init
-  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-    Serial.println(F("SSD1306 allocation failed"));
+    // Try different I2C addresses
+    uint8_t addresses[] = {0x27, 0x3F, 0x20};
+    for (int i = 0; i < 3; i++) {
+      Wire.beginTransmission(addresses[i]);
+      if (Wire.endTransmission() == 0) {
+        lcd = LiquidCrystal_I2C(addresses[i], 16, 2);
+        lcd.init(); // Most LiquidCrystal_I2C libraries use init() instead of
+                    // begin() returning bool
+        lcdInitialized = true;
+        Serial.printf("LCD initialized at address 0x%02X\n", addresses[i]);
+        break;
+      }
+    }
+
+    if (!lcdInitialized) {
+      Serial.println("LCD initialization failed, retrying...");
+      delay(500);
+    }
   }
-  display.display();
-  delay(1000);
-  display.clearDisplay();
 
-  // WiFi Connection
-  Serial.println("Connecting to WiFi...");
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0, 0);
-  display.println("Connecting WiFi...");
-  display.display();
+  if (lcdInitialized) {
+    Wire.setClock(10000); // Lower I2C speed to 10kHz for stability
+    lcd.backlight();
+    lcd.setCursor(0, 0);
+    lcd.print("EcoSync Pro");
+    delay(1000);
+  } else {
+    Serial.println("ERROR: LCD initialization failed after 3 attempts");
+    // Continue without LCD
+  }
 
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  
+  // Connect to WiFi
+  lcd.setCursor(0, 1);
+  lcd.print("Connecting...");
+  WiFi.begin(my_ssid, my_pass);
   int attempts = 0;
   while (WiFi.status() != WL_CONNECTED && attempts < 20) {
     delay(500);
     Serial.print(".");
     attempts++;
   }
-
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\nWiFi Connected!");
-    Serial.print("IP Address: ");
-    Serial.println(WiFi.localIP());
-    
-    display.clearDisplay();
-    display.setCursor(0, 0);
-    display.println("WiFi Connected!");
-    display.print("IP: ");
-    display.println(WiFi.localIP());
-    display.display();
-    delay(2000);
+    lcd.setCursor(0, 1);
+    lcd.print("WiFi Connected ");
   } else {
-    Serial.println("\nWiFi Connection Failed!");
-    display.clearDisplay();
-    display.setCursor(0, 0);
-    display.println("WiFi Failed!");
-    display.println("Check credentials");
-    display.display();
+    lcd.setCursor(0, 1);
+    lcd.print("Offline Mode   ");
   }
+  delay(1000);
+  lcd.clear();
 }
 
 void loop() {
-  // 1. Read Sensors
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();
+  // --- TIMERS ---
+  static unsigned long lastSensorRead = 0;
+  static unsigned long lastPageSwitch = 0;
+  static int pageIndex = 0;
+  static unsigned long lastWiFiCheck = 0;
 
-  if (isnan(h) || isnan(t)) {
-    Serial.println("Failed to read from DHT sensor!");
-    t = 25.0; h = 50.0; // Fallback defaults
+  // Debug information
+  static unsigned long loopCounter = 0;
+  loopCounter++;
+  if (loopCounter % 100 == 0) {
+    Serial.printf("Loop iteration: %lu, Free Heap: %u bytes\n", loopCounter,
+                  ESP.getFreeHeap());
   }
 
-  int rawVib = analogRead(VIB_PIN);
-  int rawPress = analogRead(PRESS_PIN);
-  int mq_raw = analogRead(34); // MQ-135 on Pin 34
-  int gasState = digitalRead(MQ_DO);
+  // 1. WiFi & MQTT Handling (Non-Blocking)
+  if (millis() - lastWiFiCheck > 5000) {
+    lastWiFiCheck = millis();
 
-  // Map values for better readability
-  float pressure = map(rawPress, 0, 4095, 900, 1100);
-  float pm25 = (gasState == 0) ? 150.0 : 15.0; // Simple logic: 0 = Gas Detected
+    // Pulse LED/Pin to keep high-capacity powerbanks from sleeping
+    digitalWrite(STAYALIVE_PIN, HIGH);
+    delay(50); // Short pulse
+    digitalWrite(STAYALIVE_PIN, LOW);
 
-  // 2. Prepare JSON Payload
-  StaticJsonDocument<256> doc;
-  doc["temperature"] = t;
-  doc["humidity"] = h;
-  doc["pressure"] = pressure;
-  doc["pm25"] = pm25;
-  doc["mq_raw"] = mq_raw;
+    if (WiFi.status() != WL_CONNECTED) {
+      Serial.println("WiFi disconnected, attempting to reconnect...");
+      WiFi.disconnect();
+      WiFi.reconnect();
 
-  String jsonPayload;
-  serializeJson(doc, jsonPayload);
+      // Try to reconnect with timeout
+      int wifiAttempts = 0;
+      while (WiFi.status() != WL_CONNECTED && wifiAttempts < 10) {
+        delay(500);
+        wifiAttempts++;
+        Serial.print(".");
+      }
 
-  // 3. User Requested "Handshake" - Send Data & Verify
-  if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    http.begin(SERVER_URL);
-    http.addHeader("Content-Type", "application/json");
-
-    Serial.print("Sending Data to Backend... ");
-    int httpResponseCode = http.POST(jsonPayload);
-
-    if (httpResponseCode > 0) {
-      Serial.print("Response Code: ");
-      Serial.println(httpResponseCode); // Should be 200
-
-      if (httpResponseCode == 200) {
-        Serial.println("✅ Handshake Success: Data Received by Server!");
-        // Blink Green LED rapidly to indicate success
-        for(int i=0; i<3; i++) {
-          digitalWrite(LED_GREEN, LOW); delay(50); digitalWrite(LED_GREEN, HIGH); delay(50);
-        }
+      if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("WiFi reconnected successfully");
+        lcd.setCursor(0, 1);
+        lcd.print("WiFi Connected ");
       } else {
-        Serial.print("⚠️ Server Error: ");
-        Serial.println(http.getString());
+        Serial.println("WiFi reconnection failed");
+        lcd.setCursor(0, 1);
+        lcd.print("Offline Mode   ");
       }
     } else {
-      Serial.print("❌ Connection Failed. Error: ");
-      Serial.println(httpResponseCode);
-      digitalWrite(LED_RED, HIGH); delay(200); digitalWrite(LED_RED, LOW);
+      if (!client.connected()) {
+        reconnect();
+      }
+      client.loop();
     }
-    http.end();
-  } else {
-    Serial.println("WiFi Disconnected");
   }
 
-  // 4. Local Display Update
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  display.print("T:"); display.print(t, 1); display.print("C H:"); display.print(h, 0); display.println("%");
-  display.print("AQI:"); display.println(mq_raw);
-  if(WiFi.status() == WL_CONNECTED) display.println("WiFi: OK");
-  else display.println("WiFi: --");
-  display.display();
+  // 2. Read Sensors (Every 2 Seconds)
+  if (millis() - lastSensorRead > 2000) {
+    lastSensorRead = millis();
 
-  delay(2000); 
+    // Read DHT sensor with error handling
+    float newH = dht.readHumidity();
+    float newT = dht.readTemperature();
+    if (!isnan(newH) && !isnan(newT)) {
+      h = newH;
+      t = newT;
+    } else {
+      Serial.println("DHT sensor read error, using previous values");
+    }
+
+    // Read analog sensors with validation
+    int mqRaw = analogRead(MQ_ANALOG_PIN);
+    int rainRaw = analogRead(RAIN_ANALOG_PIN);
+
+    // Validate sensor readings
+    if (mqRaw >= 0 && mqRaw <= 4095) {
+      mqValue = mqRaw;
+    } else {
+      Serial.println("MQ sensor read error, using previous value");
+    }
+
+    if (rainRaw >= 0 && rainRaw <= 4095) {
+      rainValue = rainRaw;
+    } else {
+      Serial.println("Rain sensor read error, using previous value");
+    }
+
+    // Read digital sensors with debouncing
+    int newPir = digitalRead(PIR_PIN);
+    delay(10); // Short debounce delay
+    int newPir2 = digitalRead(PIR_PIN);
+    if (newPir == newPir2) {
+      pirValue = newPir;
+    } else {
+      Serial.println("PIR sensor debounce error, using previous value");
+    }
+
+    irValue = digitalRead(IR_PIN);
+
+    // Software Debounce for Motion (Check twice 50ms apart)
+    int p1 = digitalRead(PIR_PIN);
+    delay(50);
+    int p2 = digitalRead(PIR_PIN);
+    // Store exact read. If Active Low, IDLE=High, DETECT=Low.
+    pirValue = (p1 == p2)
+                   ? p1
+                   : p1; // Simple debounce, just take p1 if match, else p1.
+    // Actually, let's just read it.
+    pirValue = p2;
+
+    irValue = digitalRead(IR_PIN);
+
+    // Apply Kalman Filter to sensor data
+    temp_kalman = kalman_filter(temp_kalman, t);
+    hum_kalman = kalman_filter(hum_kalman, h);
+    pm25_kalman = kalman_filter(pm25_kalman, map(mqValue, 0, 4095, 0, 500));
+
+    // Determine Status for Serial Match
+    const char *gasStatus = (mqValue > GAS_THRESHOLD) ? "Alert" : "Safe";
+    const char *rainStatus = (rainValue > RAIN_THRESHOLD) ? "Rain" : "Clear";
+    const char *motStatus = (pirValue == LOW) ? "Detected" : "Clear";
+    const char *spdStatus = (irValue == LOW) ? "Detected" : "Clear";
+
+    // Serial Debug (Synced with LCD)
+    Serial.printf(
+        "Temp:%.1f Hum:%.1f Gas:%s(%d) Water:%s(%d) Motion:%s Speed:%s\n", t, h,
+        gasStatus, mqValue, rainStatus, rainValue, motStatus, spdStatus);
+
+    // HTTP Post (Only if Connected)
+    if (WiFi.status() == WL_CONNECTED) {
+      HTTPClient http;
+      http.begin(SERVER_URL);
+      http.addHeader("Content-Type", "application/json");
+      JsonDocument doc;
+      doc["temperature"] = temp_kalman;
+      doc["humidity"] = hum_kalman;
+      doc["mq_value"] = mqValue;
+      doc["rain_value"] = rainValue;
+      // CALIBRATED: Active Low Motion (Idle=1)
+      doc["motion_detected"] = (pirValue == LOW);
+      doc["ir_detected"] = (irValue == LOW);
+      doc["pm25"] = pm25_kalman;
+      doc["pressure"] = 1013;
+      String jsonPayload;
+      serializeJson(doc, jsonPayload);
+      http.POST(jsonPayload);
+      http.end();
+
+      // MQTT Publish
+      if (client.connected()) {
+        client.publish("ecosync/temperature", String(temp_kalman, 2).c_str());
+        client.publish("ecosync/humidity", String(hum_kalman, 2).c_str());
+        client.publish("ecosync/gas", String(mqValue).c_str());
+        client.publish("ecosync/rain", String(rainValue).c_str());
+        // CALIBRATED: 1 if LOW
+        client.publish("ecosync/motion", (pirValue == LOW) ? "1" : "0");
+        client.publish("ecosync/ir", irValue == LOW ? "1" : "0");
+      }
+    }
+  }
+
+  // 2. Dynamic LCD Logic (Every 2.0s as requested)
+  if (millis() - lastPageSwitch > 2000) {
+    lastPageSwitch = millis();
+
+    // SOFT RESET LCD occasionally to clear "random characters"
+    static int reInitCounter = 0;
+    reInitCounter++;
+    if (reInitCounter >= 30) { // Every ~60 seconds
+      lcd.init();
+      lcd.backlight();
+      reInitCounter = 0;
+    }
+
+    lcd.clear();
+
+    // Identify Counts/Status
+    bool gasAlert = (mqValue > GAS_THRESHOLD);
+    // CALIBRATED RAIN: High Value = Wet (> 1500) (Dry was ~600)
+    bool rainAlert = (rainValue > RAIN_THRESHOLD);
+    // CALIBRATED MOTION: Low = Detected (Idle was 1/HIGH)
+    bool motionDetected = (pirValue == LOW);
+    bool speedDetected = (irValue == LOW);
+
+    // Cycle 3 screens
+    pageIndex = (pageIndex + 1) % 3;
+
+    char line1[17];
+    char line2[17];
+
+    if (pageIndex == 0) {
+      // Screen 0: Temperature & Humidity
+      snprintf(line1, 17, "Temp: %.1f C    ", temp_kalman);
+      snprintf(line2, 17, "Hum : %.0f %%      ", hum_kalman);
+    } else if (pageIndex == 1) {
+      // Screen 1: Gas & Rain
+      const char *gasStatus = gasAlert ? "Alert" : "Safe ";
+      const char *rainStatus = rainAlert ? "Rain " : "Clear";
+
+      snprintf(line1, 17, "Gas : %s %-4d", gasStatus, mqValue);
+      snprintf(line2, 17, "Water: %s %-4d", rainStatus, rainValue);
+    } else if (pageIndex == 2) {
+      // Screen 2: Motion & Speed
+      const char *motStatus = motionDetected ? "Detected" : "Clear   ";
+      const char *spdStatus = speedDetected ? "Detected" : "Clear   ";
+
+      snprintf(line1, 17, "Motion: %s", motStatus);
+      snprintf(line2, 17, "Speed : %s", spdStatus);
+    }
+
+    lcd.setCursor(0, 0);
+    lcd.print(line1);
+    lcd.setCursor(0, 1);
+    lcd.print(line2);
+  }
 }

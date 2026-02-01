@@ -1,307 +1,124 @@
-"""
-US EPA AQI (Air Quality Index) Calculator.
-Implements the official EPA sub-index method for calculating AQI from pollutant concentrations.
-"""
-
-from typing import Dict, Optional, Tuple
 import math
 
+class AQICalculator:
+    def __init__(self):
+        # AQI breakpoints for PM2.5
+        self.pm25_breakpoints = [
+            (0, 12, 0, 50),
+            (12.1, 35.4, 51, 100),
+            (35.5, 55.4, 101, 150),
+            (55.5, 150.4, 151, 200),
+            (150.5, 250.4, 201, 300),
+            (250.5, 500.4, 301, 500)
+        ]
 
-# EPA AQI Breakpoints for each pollutant
-# Format: [(C_low, C_high, I_low, I_high), ...]
+        # AQI categories
+        self.aqi_categories = [
+            (0, 50, "Good", "#00e400", "Air quality is satisfactory, and air pollution poses little or no risk."),
+            (51, 100, "Moderate", "#ffff00", "Air quality is acceptable. However, there may be a risk for some people, particularly those who are unusually sensitive to air pollution."),
+            (101, 150, "Unhealthy for Sensitive Groups", "#ff7e00", "Members of sensitive groups may experience health effects. The general public is less likely to be affected."),
+            (151, 200, "Unhealthy", "#ff0000", "Some members of the general public may experience health effects; members of sensitive groups may experience more serious health effects."),
+            (201, 300, "Very Unhealthy", "#99004c", "Health alert: The risk of health effects is increased for everyone."),
+            (301, 500, "Hazardous", "#7e0023", "Health warning of emergency conditions: everyone is more likely to be affected.")
+        ]
 
-AQI_BREAKPOINTS = {
-    # PM2.5 (µg/m³, 24-hour average)
-    "pm25": [
-        (0.0, 12.0, 0, 50),
-        (12.1, 35.4, 51, 100),
-        (35.5, 55.4, 101, 150),
-        (55.5, 150.4, 151, 200),
-        (150.5, 250.4, 201, 300),
-        (250.5, 350.4, 301, 400),
-        (350.5, 500.4, 401, 500),
-    ],
-    # PM10 (µg/m³, 24-hour average)
-    "pm10": [
-        (0, 54, 0, 50),
-        (55, 154, 51, 100),
-        (155, 254, 101, 150),
-        (255, 354, 151, 200),
-        (355, 424, 201, 300),
-        (425, 504, 301, 400),
-        (505, 604, 401, 500),
-    ],
-    # O3 (ppb, 8-hour average)
-    "o3": [
-        (0, 54, 0, 50),
-        (55, 70, 51, 100),
-        (71, 85, 101, 150),
-        (86, 105, 151, 200),
-        (106, 200, 201, 300),
-    ],
-    # NO2 (ppb, 1-hour average)
-    "no2": [
-        (0, 53, 0, 50),
-        (54, 100, 51, 100),
-        (101, 360, 101, 150),
-        (361, 649, 151, 200),
-        (650, 1249, 201, 300),
-        (1250, 1649, 301, 400),
-        (1650, 2049, 401, 500),
-    ],
-    # SO2 (ppb, 1-hour average)
-    "so2": [
-        (0, 35, 0, 50),
-        (36, 75, 51, 100),
-        (76, 185, 101, 150),
-        (186, 304, 151, 200),
-        (305, 604, 201, 300),
-        (605, 804, 301, 400),
-        (805, 1004, 401, 500),
-    ],
-    # CO (ppm, 8-hour average)
-    "co": [
-        (0.0, 4.4, 0, 50),
-        (4.5, 9.4, 51, 100),
-        (9.5, 12.4, 101, 150),
-        (12.5, 15.4, 151, 200),
-        (15.5, 30.4, 201, 300),
-        (30.5, 40.4, 301, 400),
-        (40.5, 50.4, 401, 500),
-    ],
-}
+    def calculate_aqi(self, concentration, breakpoints):
+        """Calculate AQI using EPA formula"""
+        for (c_low, c_high, i_low, i_high) in breakpoints:
+            if c_low <= concentration <= c_high:
+                aqi = ((i_high - i_low) / (c_high - c_low)) * (concentration - c_low) + i_low
+                return round(aqi)
+        return 0
 
+    def calculate_overall_aqi(self, pollutants):
+        """Calculate overall AQI from multiple pollutants"""
+        aqi_values = []
+        dominant_pollutant = None
+        max_aqi = 0
 
-# AQI Categories
-AQI_CATEGORIES = [
-    (0, 50, "Good", "#00E400", "Air quality is satisfactory"),
-    (51, 100, "Moderate", "#FFFF00", "Acceptable for most people"),
-    (101, 150, "Unhealthy for Sensitive Groups", "#FF7E00", "Sensitive groups may experience health effects"),
-    (151, 200, "Unhealthy", "#FF0000", "Everyone may experience health effects"),
-    (201, 300, "Very Unhealthy", "#8F3F97", "Health alert: everyone may experience serious effects"),
-    (301, 500, "Hazardous", "#7E0023", "Health warnings of emergency conditions"),
-]
+        # Calculate AQI for each pollutant
+        if 'pm25' in pollutants:
+            pm25_aqi = self.calculate_aqi(pollutants['pm25'], self.pm25_breakpoints)
+            aqi_values.append(pm25_aqi)
+            if pm25_aqi > max_aqi:
+                max_aqi = pm25_aqi
+                dominant_pollutant = "PM2.5"
 
+        # Add other pollutants here if needed
 
-def calculate_aqi_for_pollutant(pollutant: str, concentration: float) -> Optional[int]:
-    """
-    Calculate AQI sub-index for a specific pollutant.
-    
-    Args:
-        pollutant: Pollutant name (pm25, pm10, o3, no2, so2, co)
-        concentration: Pollutant concentration in appropriate units
-        
-    Returns:
-        AQI value (0-500) or None if out of range
-    """
-    if pollutant not in AQI_BREAKPOINTS:
-        return None
-    
-    breakpoints = AQI_BREAKPOINTS[pollutant]
-    
-    # Find the appropriate breakpoint range
-    for c_low, c_high, i_low, i_high in breakpoints:
-        if c_low <= concentration <= c_high:
-            # Linear interpolation formula
-            aqi = ((i_high - i_low) / (c_high - c_low)) * (concentration - c_low) + i_low
-            return int(round(aqi))
-    
-    # Concentration out of range
-    if concentration > breakpoints[-1][1]:
-        return 500  # Cap at maximum
-    
-    return None
+        # Overall AQI is the maximum of individual AQIs
+        overall_aqi = max(aqi_values) if aqi_values else 0
 
+        # Get category
+        category, color, description = self.get_aqi_category(overall_aqi)
 
-def get_aqi_category(aqi: int) -> Dict[str, str]:
-    """
-    Get AQI category info for a given AQI value.
-    
-    Returns:
-        Dict with 'level', 'color', 'description'
-    """
-    for i_low, i_high, level, color, description in AQI_CATEGORIES:
-        if i_low <= aqi <= i_high:
-            return {
-                "level": level,
-                "color": color,
-                "description": description,
-                "aqi": aqi
-            }
-    
-    # Fallback for out-of-range
-    return {
-        "level": "Hazardous",
-        "color": "#7E0023",
-        "description": "Health warnings of emergency conditions",
-        "aqi": aqi
-    }
-
-
-def calculate_overall_aqi(pollutants: Dict[str, Optional[float]]) -> Dict[str, any]:
-    """
-    Calculate overall AQI from multiple pollutants.
-    EPA method: Take the maximum sub-index.
-    
-    Args:
-        pollutants: Dict mapping pollutant name -> concentration
-                   e.g., {"pm25": 35.0, "pm10": 50.0, "o3": 60.0}
-    
-    Returns:
-        Dict with overall AQI, dominant pollutant, category info, and sub-indices
-    """
-    sub_indices = {}
-    
-    # Calculate sub-index for each available pollutant
-    for pollutant, concentration in pollutants.items():
-        if concentration is not None and pollutant in AQI_BREAKPOINTS:
-            aqi = calculate_aqi_for_pollutant(pollutant, concentration)
-            if aqi is not None:
-                sub_indices[pollutant] = aqi
-    
-    if not sub_indices:
         return {
-            "aqi": None,
-            "category": "Unavailable",
-            "color": "#999999",
-            "description": "No data available",
-            "dominant_pollutant": None,
-            "sub_indices": {}
+            "aqi": overall_aqi,
+            "category": category,
+            "color": color,
+            "description": description,
+            "dominant_pollutant": dominant_pollutant,
+            "dominant_pollutant_aqi": max_aqi
         }
-    
-    # Overall AQI = maximum sub-index (EPA standard)
-    overall_aqi = max(sub_indices.values())
-    dominant_pollutant = max(sub_indices, key=sub_indices.get)
-    
-    # Get category info
-    category_info = get_aqi_category(overall_aqi)
-    
-    # Pollutant display names
-    pollutant_names = {
-        "pm25": "PM2.5",
-        "pm10": "PM10",
-        "o3": "Ozone",
-        "no2": "NO₂",
-        "so2": "SO₂",
-        "co": "CO"
-    }
-    
-    return {
-        "aqi": overall_aqi,
-        "category": category_info["level"],
-        "color": category_info["color"],
-        "description": category_info["description"],
-        "dominant_pollutant": pollutant_names.get(dominant_pollutant, dominant_pollutant),
-        "dominant_pollutant_key": dominant_pollutant,
-        "sub_indices": {
-            pollutant_names.get(p, p): aqi 
-            for p, aqi in sub_indices.items()
-        }
-    }
 
+    def get_aqi_category(self, aqi):
+        """Get AQI category based on AQI value"""
+        for (low, high, category, color, description) in self.aqi_categories:
+            if low <= aqi <= high:
+                return category, color, description
+        return "Unknown", "#000000", "AQI out of range"
 
-def get_health_recommendations(aqi: int, dominant_pollutant: str = None) -> Dict[str, any]:
-    """
-    Get health recommendations based on AQI and dominant pollutant.
-    Based on WHO 2021 Air Quality Guidelines and EPA recommendations.
-    
-    Returns:
-        Dict with 'general', 'sensitive_groups', 'activities', 'mask_recommendation'
-    """
-    if aqi is None or aqi < 0:
-        return {
-            "general": "No data available",
+    def get_health_recommendations(self, aqi, dominant_pollutant):
+        """Get health recommendations based on AQI"""
+        recommendations = {
+            "general": "",
             "sensitive_groups": "",
-            "activities": "",
-            "mask_recommendation": "Not applicable"
-        }
-    
-    if aqi <= 50:  # Good
-        return {
-            "general": "Air quality is excellent. Ideal for outdoor activities.",
-            "sensitive_groups": "No restrictions for any group.",
-            "activities": "All outdoor activities recommended.",
-            "mask_recommendation": "Not required",
-            "color": "green"
-        }
-    
-    elif aqi <= 100:  # Moderate
-        return {
-            "general": "Air quality is acceptable. Unusually sensitive people should consider limiting prolonged outdoor exertion.",
-            "sensitive_groups": "Children with asthma should limit prolonged outdoor exertion.",
-            "activities": "Normal outdoor activities are acceptable.",
-            "mask_recommendation": "Optional for sensitive individuals",
-            "color": "yellow"
-        }
-    
-    elif aqi <= 150:  # Unhealthy for Sensitive Groups
-        return {
-            "general": "Sensitive groups should reduce prolonged or heavy outdoor exertion.",
-            "sensitive_groups": "Children, elderly, and people with respiratory conditions should limit outdoor activities.",
-            "activities": "Reduce prolonged or heavy exercise outdoors. General public can continue normal activities.",
-            "mask_recommendation": "Recommended: Surgical mask or N95 for sensitive groups",
-            "color": "orange"
-        }
-    
-    elif aqi <= 200:  # Unhealthy
-        return {
-            "general": "Everyone should reduce prolonged or heavy outdoor exertion.",
-            "sensitive_groups": "Children, elderly, and people with heart/lung disease should avoid outdoor activities.",
-            "activities": "Avoid prolonged outdoor exertion. Shorten outdoor activities.",
-            "mask_recommendation": "Recommended: N95/KN95 mask for everyone outdoors",
-            "color": "red"
-        }
-    
-    elif aqi <= 300:  # Very Unhealthy
-        return {
-            "general": "Health alert! Everyone should avoid outdoor physical exertion.",
-            "sensitive_groups": "Remain indoors. Use air purifiers if available.",
-            "activities": "Avoid all outdoor activities. Move activities indoors or reschedule.",
-            "mask_recommendation": "Required: N95/KN95 mask if going outdoors. Consider staying indoors.",
-            "color": "purple"
-        }
-    
-    else:  # Hazardous (> 300)
-        return {
-            "general": "⚠️ EMERGENCY: Remain indoors with windows/doors closed. Use air purifiers.",
-            "sensitive_groups": "⚠️ CRITICAL: Seek immediate medical attention if experiencing symptoms.",
-            "activities": "⚠️ Do NOT go outdoors unless absolutely necessary.",
-            "mask_recommendation": "REQUIRED: N95/FFP2 mask minimum. Consider respirator with filters.",
-            "color": "maroon"
+            "good_outdoor_activity": True,
+            "mask_recommended": False
         }
 
+        if aqi <= 50:
+            recommendations["general"] = "Enjoy outdoor activities! Air quality is good."
+            recommendations["sensitive_groups"] = "No special precautions needed."
+            recommendations["good_outdoor_activity"] = True
+            recommendations["mask_recommended"] = False
 
-def get_pollutant_breakdown_chart(sub_indices: Dict[str, int]) -> Dict[str, any]:
-    """
-    Generate data for pollutant contribution pie/bar chart.
-    
-    Returns:
-        Chart data with labels, values, and colors
-    """
-    if not sub_indices:
-        return {
-            "labels": [],
-            "values": [],
-            "colors": []
-        }
-    
-    # Color palette for pollutants
-    pollutant_colors = {
-        "PM2.5": "#e74c3c",
-        "PM10": "#e67e22",
-        "Ozone": "#3498db",
-        "NO₂": "#9b59b6",
-        "SO₂": "#1abc9c",
-        "CO": "#34495e"
-    }
-    
-    labels = list(sub_indices.keys())
-    values = list(sub_indices.values())
-    colors = [pollutant_colors.get(label, "#95a5a6") for label in labels]
-    
-    return {
-        "labels": labels,
-        "values": values,
-        "colors": colors,
-        "total_pollutants": len(labels)
-    }
+        elif aqi <= 100:
+            recommendations["general"] = "Air quality is acceptable, but moderate pollution may pose a risk for sensitive individuals."
+            recommendations["sensitive_groups"] = "Consider reducing prolonged outdoor exertion if you experience symptoms."
+            recommendations["good_outdoor_activity"] = True
+            recommendations["mask_recommended"] = False
+
+        elif aqi <= 150:
+            recommendations["general"] = "Air quality is unhealthy for sensitive groups. General public may experience minor effects."
+            recommendations["sensitive_groups"] = "Reduce prolonged outdoor exertion. Consider moving activities indoors or rescheduling."
+            recommendations["good_outdoor_activity"] = False
+            recommendations["mask_recommended"] = True
+
+        elif aqi <= 200:
+            recommendations["general"] = "Everyone may begin to experience health effects. Sensitive groups may experience more serious effects."
+            recommendations["sensitive_groups"] = "Avoid prolonged outdoor exertion. Stay indoors if possible."
+            recommendations["good_outdoor_activity"] = False
+            recommendations["mask_recommended"] = True
+
+        elif aqi <= 300:
+            recommendations["general"] = "Health alert! Everyone may experience more serious health effects."
+            recommendations["sensitive_groups"] = "Avoid all outdoor physical activity. Stay indoors and keep activity levels low."
+            recommendations["good_outdoor_activity"] = False
+            recommendations["mask_recommended"] = True
+
+        else:
+            recommendations["general"] = "Health warning! Emergency conditions. Everyone is more likely to be affected."
+            recommendations["sensitive_groups"] = "Everyone should avoid all outdoor physical activity. Remain indoors and keep activity levels very low."
+            recommendations["good_outdoor_activity"] = False
+            recommendations["mask_recommended"] = True
+
+        # Add specific recommendations based on dominant pollutant
+        if dominant_pollutant == "PM2.5":
+            recommendations["general"] += " PM2.5 particles can penetrate deep into lungs."
+            recommendations["sensitive_groups"] += " Especially important for people with heart or lung disease, older adults, and children."
+
+        return recommendations
+
+# Initialize AQI calculator instance
+aqi_calculator = AQICalculator()
