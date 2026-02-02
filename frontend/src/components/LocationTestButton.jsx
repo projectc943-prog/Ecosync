@@ -33,18 +33,30 @@ const LocationTestButton = ({ userEmail }) => {
             setStatus(`📍 Got: ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
 
             // Get city name
-            const geoResponse = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10`,
-                { headers: { 'User-Agent': 'EcoSync/1.0' } }
-            );
-            const geoData = await geoResponse.json();
-            const city = geoData.address?.city || geoData.address?.town || 'Unknown';
+            let city = 'Unknown';
+            try {
+                const geoResponse = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10`,
+                    { headers: { 'User-Agent': 'EcoSync/1.0' } }
+                );
+                if (geoResponse.ok) {
+                    const geoData = await geoResponse.json();
+                    city = geoData.address?.city || geoData.address?.town || 'Unknown';
+                }
+            } catch (geoErr) {
+                console.warn("Nominatim fetch failed", geoErr);
+            }
+
             setStatus(`🏙️ Location: ${city}`);
 
-            // Update backend
+            // Update backend - Explicitly use port 8009 if API_BASE_URL is generic
             const token = localStorage.getItem('access_token');
+            // Force 8009 if running locally to avoid port mismatch
+            const backendUrl = window.location.hostname === 'localhost' ? 'http://localhost:8009' : API_BASE_URL;
+
             if (token) {
-                const response = await fetch(`${API_BASE_URL}/api/user/location`, {
+                console.log(`Sending PUT to ${backendUrl}/api/user/location`);
+                const response = await fetch(`${backendUrl}/api/user/location`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -60,13 +72,18 @@ const LocationTestButton = ({ userEmail }) => {
                 if (response.ok) {
                     setStatus(`✅ Updated: ${city}`);
                 } else {
-                    setStatus('❌ Failed to update database');
+                    const errText = await response.text();
+                    console.error("Backend Error:", errText);
+                    setStatus(`❌ API Error: ${response.status}`);
                 }
+            } else {
+                setStatus('⚠️ No Auth Token (Login first)');
             }
         } catch (error) {
             if (error.code === 1) {
                 setStatus('⚠️ Permission denied');
             } else {
+                console.error("Test Location Error:", error);
                 setStatus(`❌ Error: ${error.message}`);
             }
         }

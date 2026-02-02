@@ -1,0 +1,563 @@
+C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\assistant\service.py:2: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+INFO:     Started server process [7552]
+INFO:     Waiting for application startup.
+2026-02-02 13:32:57,671 [INFO] app.main: Starting background services...
+2026-02-02 13:32:57,671 [INFO] app.main: EcoSync Backend Initialized Successfully.
+2026-02-02 13:32:57,672 [INFO] app.main: Startup: Background tasks initiated (Polling Enabled)
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8009 (Press CTRL+C to quit)
+2026-02-02 13:32:58,257 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+LOADING MAIN FROM C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\main.py
+LOADING AUTH_V2 FROM C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\routers\auth_v2.py
+Error seeding admin: 'charmap' codec can't encode character '\u2705' in position 0: character maps to <undefined>
+[Cache] Refreshed 15 markers at 2026-02-02 08:02:57.675929
+INFO:     127.0.0.1:58538 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58538 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:32:59,581 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:58538 - "POST /iot/data HTTP/1.1" 200 OK
+2026-02-02 13:33:02,916 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:58538 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58538 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63854 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57474 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:33:30,929 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+[Cache] Refreshed 15 markers at 2026-02-02 08:03:27.680378
+INFO:     127.0.0.1:62190 - "POST /iot/data HTTP/1.1" 200 OK
+2026-02-02 13:33:32,207 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:62190 - "POST /iot/data HTTP/1.1" 200 OK
+>>> TRACE: get_db starting at 2026-02-02T13:33:32.707395
+>>> TRACE: get_db closing at 2026-02-02T13:33:32.713111
+INFO:     127.0.0.1:62190 - "GET /me HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\protocols\http\h11_impl.py", line 410, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\applications.py", line 1135, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\trustedhost.py", line 51, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 377, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 215, in serialize_response
+    raise ResponseValidationError(
+    ...<3 lines>...
+    )
+fastapi.exceptions.ResponseValidationError: 1 validation error:
+  {'type': 'missing', 'loc': ('response', 'is_active'), 'msg': 'Field required', 'input': <app.models.User object at 0x000001B882BCF250>}
+
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\routers\auth_v2.py", line 308, in read_users_me
+    GET /me
+>>> TRACE: get_db starting at 2026-02-02T13:33:32.764014
+>>> TRACE: get_db closing at 2026-02-02T13:33:32.768969
+INFO:     127.0.0.1:52333 - "GET /me HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\protocols\http\h11_impl.py", line 410, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\applications.py", line 1135, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\trustedhost.py", line 51, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 377, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 215, in serialize_response
+    raise ResponseValidationError(
+    ...<3 lines>...
+    )
+fastapi.exceptions.ResponseValidationError: 1 validation error:
+  {'type': 'missing', 'loc': ('response', 'is_active'), 'msg': 'Field required', 'input': <app.models.User object at 0x000001B882BCF390>}
+
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\routers\auth_v2.py", line 308, in read_users_me
+    GET /me
+>>> TRACE: get_db starting at 2026-02-02T13:33:36.256039
+>>> TRACE: Login attempt for sreeksreeya@gmail.com at 2026-02-02T13:33:36.256775
+>>> TRACE: User lookup took 0.002727s
+>>> TRACE: Verifying password for sreeksreeya@gmail.com
+>>> TRACE: Password verification success in 0.365619s
+>>> TRACE: Token generation took 0.000261s
+>>> TRACE: Login success for sreeksreeya@gmail.com. Total time: 0.368607s
+INFO:     127.0.0.1:58326 - "POST /token HTTP/1.1" 200 OK
+>>> TRACE: get_db closing at 2026-02-02T13:33:36.627191
+INFO:     127.0.0.1:49283 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49284 - "GET /api/data HTTP/1.1" 200 OK
+>>> TRACE: get_db starting at 2026-02-02T13:33:37.860206
+>>> TRACE: get_db starting at 2026-02-02T13:33:37.860958
+>>> TRACE: get_db closing at 2026-02-02T13:33:37.872231
+>>> TRACE: get_db closing at 2026-02-02T13:33:37.872353
+INFO:     127.0.0.1:49282 - "PUT /api/user/location HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\protocols\http\h11_impl.py", line 410, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\applications.py", line 1135, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\trustedhost.py", line 51, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 355, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 245, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\routers\auth_v2.py", line 330, in update_user_location
+    print(f"\U0001f4cd Updating location for {current_user.email}")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f4cd' in position 0: character maps to <undefined>
+INFO:     127.0.0.1:58326 - "PUT /api/user/location HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\protocols\http\h11_impl.py", line 410, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\applications.py", line 1135, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\trustedhost.py", line 51, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 355, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 245, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\routers\auth_v2.py", line 330, in update_user_location
+    print(f"\U0001f4cd Updating location for {current_user.email}")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f4cd' in position 0: character maps to <undefined>
+2026-02-02 13:33:40,007 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:53473 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53581 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:33:40,013 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:61994 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53473 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61994 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:33:42,692 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:61994 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61994 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:33:45,706 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:61994 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61994 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:33:48,704 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:61994 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61994 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:33:51,724 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:61994 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61994 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:33:54,704 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:61994 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61994 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:33:57,704 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+[Cache] Refreshed 15 markers at 2026-02-02 08:03:57.681647
+INFO:     127.0.0.1:61994 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61994 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:34:00,705 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:61994 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61994 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+>>> TRACE: get_db starting at 2026-02-02T13:34:03.408923
+>>> TRACE: get_db closing at 2026-02-02T13:34:03.413093
+INFO:     127.0.0.1:61994 - "PUT /api/user/location HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\protocols\http\h11_impl.py", line 410, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\applications.py", line 1135, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\trustedhost.py", line 51, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 355, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 245, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\routers\auth_v2.py", line 330, in update_user_location
+    print(f"\U0001f4cd Updating location for {current_user.email}")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f4cd' in position 0: character maps to <undefined>
+2026-02-02 13:34:03,692 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:52743 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52743 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:34:06,901 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:52743 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52743 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:34:09,913 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:52743 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52743 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:34:12,907 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:52743 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52743 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:34:15,900 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:52743 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52743 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:34:18,907 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:52743 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52743 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:34:21,910 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:52743 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52743 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:34:24,913 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:52743 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52743 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:34:27,902 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+[Cache] Refreshed 15 markers at 2026-02-02 08:04:27.685832
+INFO:     127.0.0.1:52743 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52743 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:34:30,915 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:52743 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52743 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:34:33,904 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:52743 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52743 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:34:36,913 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:52743 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52743 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:34:39,916 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:52743 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52743 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:34:42,915 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:52743 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52743 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:34:45,916 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:52743 - "POST /iot/data HTTP/1.1" 200 OK
+2026-02-02 13:34:48,911 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:52743 - "POST /iot/data HTTP/1.1" 200 OK
+2026-02-02 13:34:51,902 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:52743 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52743 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:34:54,917 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:52743 - "POST /iot/data HTTP/1.1" 200 OK
+2026-02-02 13:34:57,914 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+[Cache] Refreshed 15 markers at 2026-02-02 08:04:57.690148
+INFO:     127.0.0.1:52743 - "POST /iot/data HTTP/1.1" 200 OK
+2026-02-02 13:35:00,911 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:52743 - "POST /iot/data HTTP/1.1" 200 OK
+2026-02-02 13:35:03,912 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:52743 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52743 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54257 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57429 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+[Cache] Refreshed 15 markers at 2026-02-02 08:05:27.699153
+INFO:     127.0.0.1:55177 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57149 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:35:51,912 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:52188 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52188 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+[Cache] Refreshed 15 markers at 2026-02-02 08:05:57.710603
+INFO:     127.0.0.1:56956 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54349 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:36:14,892 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:54349 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54349 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:36:15,695 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:54349 - "POST /iot/data HTTP/1.1" 200 OK
+2026-02-02 13:36:18,910 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:54349 - "POST /iot/data HTTP/1.1" 200 OK
+2026-02-02 13:36:21,911 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:54349 - "POST /iot/data HTTP/1.1" 200 OK
+2026-02-02 13:36:24,912 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:54349 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54349 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:36:27,912 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+[Cache] Refreshed 15 markers at 2026-02-02 08:06:27.713167
+INFO:     127.0.0.1:54349 - "POST /iot/data HTTP/1.1" 200 OK
+2026-02-02 13:36:30,912 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:54349 - "POST /iot/data HTTP/1.1" 200 OK
+2026-02-02 13:36:33,916 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:54349 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54349 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:36:36,912 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:54349 - "POST /iot/data HTTP/1.1" 200 OK
+2026-02-02 13:36:39,911 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:54349 - "POST /iot/data HTTP/1.1" 200 OK
+2026-02-02 13:36:42,906 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:54349 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54349 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+2026-02-02 13:36:45,910 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:54349 - "POST /iot/data HTTP/1.1" 200 OK
+2026-02-02 13:36:48,912 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:54349 - "POST /iot/data HTTP/1.1" 200 OK
+2026-02-02 13:36:51,903 [ERROR] app.main: IoT Data Error: module 'app.services.kalman_filter' has no attribute 'filter_temperature'
+INFO:     127.0.0.1:54349 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54349 - "GET /api/filtered/latest HTTP/1.1" 200 OK

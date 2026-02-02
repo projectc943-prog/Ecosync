@@ -294,26 +294,26 @@ async def get_top_locations():
     
     # List of known hot/interesting places to check dynamically
     GLOBAL_HOTSPOTS = [
-        {"city": "Death Valley, USA", "lat": 36.5323, "lon": -116.9325},
-        {"city": "Kuwait City, KW", "lat": 29.3759, "lon": 47.9774},
-        {"city": "Basra, Iraq", "lat": 30.5081, "lon": 47.7835},
-        {"city": "Doha, Qatar", "lat": 25.2854, "lon": 51.5310},
-        {"city": "Phoenix, USA", "lat": 33.4484, "lon": -112.0740},
-        {"city": "Riyadh, SA", "lat": 24.7136, "lon": 46.6753},
-        {"city": "Dubai, UAE", "lat": 25.2048, "lon": 55.2708},
-        {"city": "Cairo, Egypt", "lat": 30.0444, "lon": 31.2357},
-        {"city": "Las Vegas, USA", "lat": 36.1699, "lon": -115.1398},
-        {"city": "New Delhi, IN", "lat": 28.6139, "lon": 77.2090},
-        {"city": "Bangkok, TH", "lat": 13.7563, "lon": 100.5018},
-        {"city": "Singapore, SG", "lat": 1.3521, "lon": 103.8198},
-        {"city": "Darwin, AU", "lat": -12.4634, "lon": 130.8456},
-        {"city": "Khartoum, SD", "lat": 15.5007, "lon": 32.5599},
-        {"city": "Timbuktu, ML", "lat": 16.7666, "lon": -3.0026},
-        {"city": "Mecca, SA", "lat": 21.3891, "lon": 39.8579},
-        {"city": "Alice Springs, AU", "lat": -23.6980, "lon": 133.8807},
-        {"city": "Seville, ES", "lat": 37.3891, "lon": -5.9845},
-        {"city": "Athens, GR", "lat": 37.9838, "lon": 23.7275},
-        {"city": "Mexico City, MX", "lat": 19.4326, "lon": -99.1332}
+        {"city": "Delhi", "lat": 28.6139, "lon": 77.2090},
+        {"city": "Mumbai", "lat": 19.0760, "lon": 72.8777},
+        {"city": "Bengaluru", "lat": 12.9716, "lon": 77.5946},
+        {"city": "Hyderabad", "lat": 17.3850, "lon": 78.4867},
+        {"city": "Chennai", "lat": 13.0827, "lon": 80.2707},
+        {"city": "Kolkata", "lat": 22.5726, "lon": 88.3639},
+        {"city": "Jaipur", "lat": 26.9124, "lon": 75.7873},
+        {"city": "Lucknow", "lat": 26.8467, "lon": 80.9461},
+        {"city": "Bhopal", "lat": 23.2599, "lon": 77.4126},
+        {"city": "Ahmedabad", "lat": 23.0225, "lon": 72.5714},
+        {"city": "Nagpur", "lat": 21.1458, "lon": 79.0882},
+        {"city": "Indore", "lat": 22.7196, "lon": 75.8577},
+        {"city": "Patna", "lat": 25.5941, "lon": 85.1376},
+        {"city": "Vadodara", "lat": 22.3072, "lon": 73.1812},
+        {"city": "Ludhiana", "lat": 30.9010, "lon": 75.8573},
+        {"city": "Agra", "lat": 27.1767, "lon": 78.0081},
+        {"city": "Nashik", "lat": 19.9975, "lon": 73.7898},
+        {"city": "Faridabad", "lat": 28.4089, "lon": 77.3178},
+        {"city": "Meerut", "lat": 28.9845, "lon": 77.7064},
+        {"city": "Rajkot", "lat": 22.3039, "lon": 70.8022}
     ]
 
     async def fetch_city(client, city_obj):

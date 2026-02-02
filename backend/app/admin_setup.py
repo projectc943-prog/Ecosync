@@ -14,7 +14,7 @@ def create_admin_user():
             # Update password if exists (ensures it matches docs even if DB persisted)
             existing.hashed_password = security.get_password_hash(password)
             db.commit()
-            print(f"✅ Admin user {email} updated with correct password.")
+            print(f"Admin user {email} updated with correct password.")
         else:
             print(f"Creating new Admin user: {email}")
             hashed_pw = security.get_password_hash(password)
@@ -24,7 +24,7 @@ def create_admin_user():
             )
             db.add(new_user)
             db.commit()
-            print(f"✅ Admin user created: {email}")
+            print(f"Admin user created: {email}")
             
     except Exception as e:
         print(f"Error seeding admin: {e}")

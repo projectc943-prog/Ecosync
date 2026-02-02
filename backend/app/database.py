@@ -5,7 +5,7 @@ from sqlalchemy.pool import StaticPool
 import os
 
 # Database configuration
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///iot_system.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./iot_system.db")
 
 # Create engine
 engine = create_engine(

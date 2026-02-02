@@ -1,0 +1,35 @@
+C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\assistant\service.py:2: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+INFO:     Started server process [12492]
+INFO:     Waiting for application startup.
+2026-02-02 13:23:17,304 [INFO] app.main: Starting background services...
+2026-02-02 13:23:17,305 [INFO] app.main: EcoSync Backend Initialized Successfully.
+2026-02-02 13:23:17,305 [INFO] app.main: Startup: Background tasks initiated (Polling Enabled)
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8009 (Press CTRL+C to quit)
+LOADING MAIN FROM C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\main.py
+LOADING AUTH_V2 FROM C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\routers\auth_v2.py
+Error seeding admin: 'charmap' codec can't encode character '\u2705' in position 0: character maps to <undefined>
+[Cache] Refreshed 15 markers at 2026-02-02 07:53:17.308657
+>>> TRACE: get_db starting at 2026-02-02T13:23:29.783482
+DEBUG REGISTER PAYLOAD: {'email': 'testuser_validation@example.com', 'password': 'password123', 'first_name': 'Test', 'last_name': 'Validation', 'plan': 'lite', 'location_name': 'Test Location', 'location_lat': 0.0, 'location_lon': 0.0}
+INFO:     127.0.0.1:59296 - "POST /auth/register HTTP/1.1" 200 OK
+>>> TRACE: get_db closing at 2026-02-02T13:23:30.102671
+[Cache] Refreshed 15 markers at 2026-02-02 07:53:47.313552
+>>> TRACE: get_db starting at 2026-02-02T13:23:55.627522
+>>> TRACE: Login attempt for 12345@g.com at 2026-02-02T13:23:55.628699
+>>> TRACE: User lookup took 0.002668s
+DEBUG: User 12345@g.com not found
+>>> TRACE: get_db closing at 2026-02-02T13:23:55.631934
+INFO:     127.0.0.1:64753 - "POST /token HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:50624 - "OPTIONS /auth/register HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:50624 - "OPTIONS /auth/register HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:50624 - "OPTIONS /auth/register HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:50624 - "OPTIONS /auth/register HTTP/1.1" 400 Bad Request

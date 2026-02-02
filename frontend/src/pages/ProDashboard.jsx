@@ -30,17 +30,20 @@ const ProDashboard = ({ onToggle }) => {
 
     // Derived Data
     const latestData = useMemo(() => (sensorData && sensorData.length > 0) ? sensorData[sensorData.length - 1] : {}, [sensorData]);
-    const temp = useMemo(() => latestData.temperature?.toFixed(1) || '--', [latestData]);
-    const rawTemp = useMemo(() => latestData.raw_temperature?.toFixed(1) || '--', [latestData]);
+    const temp = useMemo(() => latestData.temperature != null ? latestData.temperature.toFixed(1) : 'ERR', [latestData]);
+    const rawTemp = useMemo(() => latestData.raw_temperature != null ? latestData.raw_temperature.toFixed(1) : '--', [latestData]);
 
-    const hum = useMemo(() => latestData.humidity?.toFixed(1) || '--', [latestData]);
-    const rawHum = useMemo(() => latestData.raw_humidity?.toFixed(1) || '--', [latestData]);
+    const hum = useMemo(() => latestData.humidity != null ? latestData.humidity.toFixed(1) : 'ERR', [latestData]);
+    const rawHum = useMemo(() => latestData.raw_humidity != null ? latestData.raw_humidity.toFixed(1) : '--', [latestData]);
 
-    const aqi = useMemo(() => latestData.mq_ppm?.toFixed(0) || '--', [latestData]);
-    const rawAqi = useMemo(() => latestData.raw_mq_ppm?.toFixed(0) || '--', [latestData]);
+    const aqi = useMemo(() => latestData.gas != null ? latestData.gas.toFixed(0) : '--', [latestData]);
+    const rawAqi = useMemo(() => latestData.mq_raw != null ? latestData.mq_raw : '--', [latestData]);
 
-    const wind = useMemo(() => latestData.wind_speed?.toFixed(1) || '--', [latestData]);
-    const rawWind = useMemo(() => latestData.raw_wind_speed?.toFixed(1) || '--', [latestData]);
+    const wind = useMemo(() => latestData.wind_speed != null ? latestData.wind_speed.toFixed(1) : '--', [latestData]);
+    const rawWind = useMemo(() => latestData.raw_wind_speed != null ? latestData.raw_wind_speed.toFixed(1) : '--', [latestData]);
+
+    const rain = useMemo(() => latestData.rain < 2000 ? 'RAINING' : 'DRY', [latestData]);
+    const motion = useMemo(() => latestData.motion === 1 ? 'DETECTED' : 'CLEAR', [latestData]);
 
 
     // Local Prediction Logic (Fallback)
@@ -173,12 +176,12 @@ const ProDashboard = ({ onToggle }) => {
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
 
-                <StatCard title="Core Temp" value={temp} rawValue={rawTemp} unit="°C" icon={Thermometer} color="amber" />
-                <StatCard title="Humidity" value={hum} rawValue={rawHum} unit="%" icon={Droplets} color="blue" />
-                <StatCard title="Air Quality" value={aqi} rawValue={rawAqi} unit="PM2.5" icon={Activity} color="emerald" />
-                <StatCard title="Wind Speed" value={wind} rawValue={rawWind} unit="km/h" icon={Wind} color="cyan" />
-                <WeatherCard prediction={weatherPrediction.prediction} severity={weatherPrediction.severity} />
-                <StatCard title="System Status" value="ONLINE" unit="" icon={Shield} color="purple" />
+                <StatCard title="Core Temp" value={temp} rawValue={rawTemp} unit="°C" icon={Thermometer} color={temp === 'ERR' ? "red" : "amber"} />
+                <StatCard title="Humidity" value={hum} rawValue={rawHum} unit="%" icon={Droplets} color={hum === 'ERR' ? "red" : "blue"} />
+                <StatCard title="Air Quality" value={aqi} rawValue={rawAqi} unit="PPM" icon={Activity} color="emerald" />
+                <StatCard title="Rain Stat" value={rain} rawValue={latestData.rain} unit="" icon={Cloud} color={rain === 'RAINING' ? "blue" : "slate"} />
+                <StatCard title="Motion" value={motion} unit="" icon={Zap} color={motion === 'DETECTED' ? "red" : "indigo"} />
+                <StatCard title="LCD Screen" value={latestData.screen || 0} unit="MODE" icon={Settings} color="purple" />
             </div>
 
 

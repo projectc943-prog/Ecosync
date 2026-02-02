@@ -16,25 +16,24 @@ const LightDashboard = ({ onToggle }) => {
     // Memoized Data
     // Memoized Data
     const latestData = useMemo(() => (sensorData && sensorData.length > 0) ? sensorData[sensorData.length - 1] : {}, [sensorData]);
-    const temp = useMemo(() => latestData.temperature?.toFixed(1) || '0', [latestData]);
-    const tempRaw = useMemo(() => latestData.temp_raw?.toFixed(1) || '0', [latestData]);
+    const temp = useMemo(() => latestData.temperature != null ? latestData.temperature.toFixed(1) : '--.-', [latestData]);
+    const tempRaw = useMemo(() => latestData.temp_raw != null ? latestData.temp_raw.toFixed(1) : '--.-', [latestData]);
 
-    const hum = useMemo(() => latestData.humidity?.toFixed(1) || '0', [latestData]);
-    const humRaw = useMemo(() => latestData.hum_raw?.toFixed(1) || '0', [latestData]);
+    const hum = useMemo(() => latestData.humidity != null ? latestData.humidity.toFixed(1) : '--.-', [latestData]);
+    const humRaw = useMemo(() => latestData.hum_raw != null ? latestData.hum_raw.toFixed(1) : '--.-', [latestData]);
 
-    const press = useMemo(() => latestData.pressure?.toFixed(0) || '0', [latestData]);
-    const pressRaw = useMemo(() => latestData.pressure?.toFixed(0) || '0', [latestData]); // Assuming raw=calibrated for pressure currently
 
-    const gas = useMemo(() => latestData.gas?.toFixed(0) || '0', [latestData]);
-    const gasRaw = useMemo(() => latestData.mq_raw?.toFixed(0) || '0', [latestData]); // mq_raw maps to gasRaw
+    const gas = useMemo(() => latestData.gas != null ? latestData.gas.toFixed(0) : '---', [latestData]);
+    const gasRaw = useMemo(() => latestData.mq_raw != null ? latestData.mq_raw.toFixed(0) : '---', [latestData]);
 
     const motion = useMemo(() => latestData.motion === 1 ? 'DETECTED' : 'CLEAR', [latestData]);
-    const rainPrediction = useMemo(() => {
-        const p = parseFloat(press);
-        if (p < 1000) return 'RAINY';
-        if (p > 1020) return 'CLEAR';
-        return 'CLOUDY';
-    }, [press]);
+    const rain = useMemo(() => latestData.rain != null ? latestData.rain.toFixed(0) : '0', [latestData]);
+    const rainStatus = useMemo(() => {
+        const val = parseInt(rain);
+        if (val < 1000) return 'RAINING';
+        if (val < 2000) return 'DAMP';
+        return 'DRY';
+    }, [rain]);
 
     // Stat Card
     // Stat Card - Redesigned to match reference (Left aligned, watermark icon, footer)
@@ -113,10 +112,9 @@ const LightDashboard = ({ onToggle }) => {
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
                 <StatCard title="Temperature" value={temp} rawValue={tempRaw} unit="°C" icon={Thermometer} color="emerald" />
                 <StatCard title="Humidity" value={hum} rawValue={humRaw} unit="%" icon={Droplets} color="teal" />
-                <StatCard title="Pressure" value={press} rawValue={pressRaw} unit="hPa" icon={Wind} color="cyan" />
                 <StatCard title="Gas Level" value={gas} rawValue={gasRaw} unit="PPM" icon={Activity} color="green" />
                 <StatCard title="Motion" value={motion} unit="" icon={Zap} color="amber" />
-                <StatCard title="Rain Forecast" value={rainPrediction} unit="" icon={CloudRain} color="blue" />
+                <StatCard title="Rain Sensor" value={rainStatus} unit="" icon={CloudRain} color="blue" />
             </div>
 
             {/* Analysis Charts Grid */}
@@ -196,8 +194,21 @@ const LightDashboard = ({ onToggle }) => {
                         </div>
                     </div>
                     <div className="flex items-center gap-4">
-                        <div className={`px-3 py-1 rounded-full text-xs font-bold border ${connectionStatus ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-red-500/20 border-red-500 text-red-400'}`}>
-                            {connectionStatus ? 'CONNECTED' : 'NO DEVICE'}
+                        <button
+                            onClick={connectSerial}
+                            className="text-[10px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded transition-colors uppercase font-bold tracking-wider flex items-center gap-2"
+                        >
+                            <Zap size={14} /> {connectionStatus ? 'RECONNECT' : 'CONNECT ESP32'}
+                        </button>
+                        <div className="flex flex-col items-end">
+                            <div className={`px-3 py-1 rounded-full text-[10px] font-black border tracking-widest ${connectionStatus ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.2)]' : 'bg-red-500/20 border-red-500 text-red-400'}`}>
+                                {connectionStatus ? 'SERIAL ACTIVE' : 'NO DEVICE'}
+                            </div>
+                            {latestData.timestamp && (
+                                <span className="text-[8px] text-slate-500 font-mono mt-1 uppercase">
+                                    Last Pulse: {latestData.timestamp}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </header>

@@ -1,0 +1,436 @@
+C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\assistant\service.py:2: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+INFO:     Started server process [14140]
+INFO:     Waiting for application startup.
+2026-02-02 14:09:21,879 [INFO] app.main: Starting background services...
+2026-02-02 14:09:21,880 [INFO] app.main: EcoSync Backend Initialized Successfully.
+2026-02-02 14:09:21,880 [INFO] app.main: Startup: Background tasks initiated (Polling Enabled)
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8009 (Press CTRL+C to quit)
+LOADING MAIN FROM C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\main.py
+LOADING AUTH_V2 FROM C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\routers\auth_v2.py
+Admin user gitams4@gmail.com updated with correct password.
+[Cache] Refreshed 15 markers at 2026-02-02 08:39:21.881923
+INFO:     127.0.0.1:50165 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52184 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53104 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51194 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59201 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49343 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49773 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51766 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56423 - "GET /api/data HTTP/1.1" 200 OK
+[Cache] Refreshed 15 markers at 2026-02-02 08:39:51.889616
+INFO:     127.0.0.1:65344 - "GET /api/data HTTP/1.1" 200 OK
+[Cache] Refreshed 15 markers at 2026-02-02 08:40:21.899242
+[Cache] Refreshed 15 markers at 2026-02-02 08:40:51.914488
+[Cache] Refreshed 15 markers at 2026-02-02 08:41:21.915578
+[Cache] Refreshed 15 markers at 2026-02-02 08:41:51.930536
+[Cache] Refreshed 15 markers at 2026-02-02 08:42:21.945721
+>>> TRACE: get_db starting at 2026-02-02T14:12:41.230830
+>>> TRACE: get_db closing at 2026-02-02T14:12:41.233846
+INFO:     127.0.0.1:59232 - "GET /me HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\protocols\http\h11_impl.py", line 410, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\applications.py", line 1135, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\trustedhost.py", line 51, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 377, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 215, in serialize_response
+    raise ResponseValidationError(
+    ...<3 lines>...
+    )
+fastapi.exceptions.ResponseValidationError: 1 validation error:
+  {'type': 'missing', 'loc': ('response', 'is_active'), 'msg': 'Field required', 'input': <app.models.User object at 0x000001FEA12D4050>}
+
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\routers\auth_v2.py", line 308, in read_users_me
+    GET /me
+[Cache] Refreshed 15 markers at 2026-02-02 08:42:51.949187
+[Cache] Refreshed 15 markers at 2026-02-02 08:43:21.962114
+[Cache] Refreshed 15 markers at 2026-02-02 08:43:51.976752
+>>> TRACE: get_db starting at 2026-02-02T14:13:52.667876
+>>> TRACE: Login attempt for sreeksreeya@gmail.com at 2026-02-02T14:13:52.668200
+>>> TRACE: User lookup took 0.001313s
+>>> TRACE: Verifying password for sreeksreeya@gmail.com
+>>> TRACE: Password verification success in 0.427498s
+>>> TRACE: Token generation took 0.000987s
+>>> TRACE: Login success for sreeksreeya@gmail.com. Total time: 0.429798s
+INFO:     127.0.0.1:64699 - "POST /token HTTP/1.1" 200 OK
+>>> TRACE: get_db closing at 2026-02-02T14:13:53.100405
+>>> TRACE: get_db starting at 2026-02-02T14:13:57.688742
+Updating location for sreeksreeya@gmail.com
+   New location:  (13.286997191142598, 77.5955709306207)
+Location updated successfully for sreeksreeya@gmail.com
+INFO:     127.0.0.1:64699 - "PUT /api/user/location HTTP/1.1" 200 OK
+>>> TRACE: get_db closing at 2026-02-02T14:13:57.705098
+>>> TRACE: get_db starting at 2026-02-02T14:13:57.713592
+Updating location for sreeksreeya@gmail.com
+   New location:  (13.286997191142598, 77.5955709306207)
+Location updated successfully for sreeksreeya@gmail.com
+INFO:     127.0.0.1:64699 - "PUT /api/user/location HTTP/1.1" 200 OK
+>>> TRACE: get_db closing at 2026-02-02T14:13:57.718319
+[Cache] Refreshed 15 markers at 2026-02-02 08:44:21.992202
+[Cache] Refreshed 15 markers at 2026-02-02 08:44:52.003146
+[Cache] Refreshed 15 markers at 2026-02-02 08:45:22.004939
+INFO:     127.0.0.1:63379 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63379 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63379 - "OPTIONS /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58369 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63379 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63379 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58369 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58369 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63379 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63379 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58369 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58369 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58369 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58369 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58369 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58369 - "POST /iot/data HTTP/1.1" 200 OK
+[Cache] Refreshed 15 markers at 2026-02-02 08:45:52.019365
+INFO:     127.0.0.1:58369 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58369 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58369 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58369 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+>>> TRACE: get_db starting at 2026-02-02T14:15:57.558044
+>>> TRACE: get_db closing at 2026-02-02T14:15:57.563137
+INFO:     127.0.0.1:58369 - "GET /me HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\protocols\http\h11_impl.py", line 410, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\applications.py", line 1135, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\trustedhost.py", line 51, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 377, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 215, in serialize_response
+    raise ResponseValidationError(
+    ...<3 lines>...
+    )
+fastapi.exceptions.ResponseValidationError: 1 validation error:
+  {'type': 'missing', 'loc': ('response', 'is_active'), 'msg': 'Field required', 'input': <app.models.User object at 0x000001FEA137B890>}
+
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\routers\auth_v2.py", line 308, in read_users_me
+    GET /me
+>>> TRACE: get_db starting at 2026-02-02T14:15:57.569860
+>>> TRACE: get_db closing at 2026-02-02T14:15:57.572243
+INFO:     127.0.0.1:54709 - "GET /me HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\protocols\http\h11_impl.py", line 410, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\applications.py", line 1135, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\trustedhost.py", line 51, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 377, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 215, in serialize_response
+    raise ResponseValidationError(
+    ...<3 lines>...
+    )
+fastapi.exceptions.ResponseValidationError: 1 validation error:
+  {'type': 'missing', 'loc': ('response', 'is_active'), 'msg': 'Field required', 'input': <app.models.User object at 0x000001FEA126A9C0>}
+
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\routers\auth_v2.py", line 308, in read_users_me
+    GET /me
+INFO:     127.0.0.1:57331 - "POST /iot/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56356 - "GET /api/filtered/latest HTTP/1.1" 200 OK
+[Cache] Refreshed 15 markers at 2026-02-02 08:46:22.027038
+[Cache] Refreshed 15 markers at 2026-02-02 08:46:52.039031
+[Cache] Refreshed 15 markers at 2026-02-02 08:47:22.041201
+[Cache] Refreshed 15 markers at 2026-02-02 08:47:52.056341
+[Cache] Refreshed 15 markers at 2026-02-02 08:48:22.065516
+[Cache] Refreshed 15 markers at 2026-02-02 08:48:52.080933
+[Cache] Refreshed 15 markers at 2026-02-02 08:49:22.087002
+[Cache] Refreshed 15 markers at 2026-02-02 08:49:52.090277
+[Cache] Refreshed 15 markers at 2026-02-02 08:50:22.091564
+[Cache] Refreshed 15 markers at 2026-02-02 08:50:52.094301
+[Cache] Refreshed 15 markers at 2026-02-02 08:51:22.098841
+[Cache] Refreshed 15 markers at 2026-02-02 08:51:52.106893
+[Cache] Refreshed 15 markers at 2026-02-02 08:52:22.115635
+INFO:     127.0.0.1:55574 - "OPTIONS /me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58209 - "OPTIONS /me HTTP/1.1" 200 OK
+>>> TRACE: get_db starting at 2026-02-02T14:22:48.871747
+>>> TRACE: get_db closing at 2026-02-02T14:22:48.874337
+INFO:     127.0.0.1:55574 - "GET /me HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\protocols\http\h11_impl.py", line 410, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\applications.py", line 1135, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\trustedhost.py", line 51, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 377, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 215, in serialize_response
+    raise ResponseValidationError(
+    ...<3 lines>...
+    )
+fastapi.exceptions.ResponseValidationError: 1 validation error:
+  {'type': 'missing', 'loc': ('response', 'is_active'), 'msg': 'Field required', 'input': <app.models.User object at 0x000001FEA126A9C0>}
+
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\routers\auth_v2.py", line 308, in read_users_me
+    GET /me
+>>> TRACE: get_db starting at 2026-02-02T14:22:48.880046
+>>> TRACE: get_db closing at 2026-02-02T14:22:48.882217
+INFO:     127.0.0.1:58209 - "GET /me HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\protocols\http\h11_impl.py", line 410, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\applications.py", line 1135, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\trustedhost.py", line 51, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 377, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 215, in serialize_response
+    raise ResponseValidationError(
+    ...<3 lines>...
+    )
+fastapi.exceptions.ResponseValidationError: 1 validation error:
+  {'type': 'missing', 'loc': ('response', 'is_active'), 'msg': 'Field required', 'input': <app.models.User object at 0x000001FEA1374F50>}
+
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\routers\auth_v2.py", line 308, in read_users_me
+    GET /me

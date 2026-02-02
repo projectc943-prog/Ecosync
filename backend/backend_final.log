@@ -1,0 +1,45 @@
+C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\assistant\service.py:2: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+INFO:     Started server process [16292]
+INFO:     Waiting for application startup.
+2026-02-02 13:17:44,639 [INFO] app.main: Starting background services...
+2026-02-02 13:17:44,639 [INFO] app.main: EcoSync Backend Initialized Successfully.
+2026-02-02 13:17:44,639 [INFO] app.main: Startup: Background tasks initiated (Polling Enabled)
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8009 (Press CTRL+C to quit)
+LOADING MAIN FROM C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\main.py
+LOADING AUTH_V2 FROM C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\routers\auth_v2.py
+Creating new Admin user: gitams4@gmail.com
+Error seeding admin: 'charmap' codec can't encode character '\u2705' in position 0: character maps to <undefined>
+[Cache] Refreshed 15 markers at 2026-02-02 07:47:44.647333
+[Cache] Refreshed 15 markers at 2026-02-02 07:48:14.648947
+[Cache] Refreshed 15 markers at 2026-02-02 07:48:44.652812
+[Cache] Refreshed 15 markers at 2026-02-02 07:49:14.666143
+[Cache] Refreshed 15 markers at 2026-02-02 07:49:44.666814
+INFO:     127.0.0.1:49671 - "OPTIONS /me HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:64125 - "OPTIONS /me HTTP/1.1" 400 Bad Request
+[Cache] Refreshed 15 markers at 2026-02-02 07:50:14.678737
+>>> TRACE: get_db starting at 2026-02-02T13:20:29.208445
+>>> TRACE: Login attempt for 12345@g.com at 2026-02-02T13:20:29.209216
+>>> TRACE: User lookup took 0.002053s
+DEBUG: User 12345@g.com not found
+>>> TRACE: get_db closing at 2026-02-02T13:20:29.212168
+INFO:     127.0.0.1:59521 - "POST /token HTTP/1.1" 401 Unauthorized
+>>> TRACE: get_db starting at 2026-02-02T13:20:31.772660
+>>> TRACE: Login attempt for 12345@g.com at 2026-02-02T13:20:31.773016
+>>> TRACE: User lookup took 0.000916s
+DEBUG: User 12345@g.com not found
+>>> TRACE: get_db closing at 2026-02-02T13:20:31.774227
+INFO:     127.0.0.1:59521 - "POST /token HTTP/1.1" 401 Unauthorized
+[Cache] Refreshed 15 markers at 2026-02-02 07:50:44.690918
+INFO:     127.0.0.1:59304 - "OPTIONS /auth/register HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:59304 - "OPTIONS /auth/register HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:59304 - "OPTIONS /auth/register HTTP/1.1" 400 Bad Request
+^C

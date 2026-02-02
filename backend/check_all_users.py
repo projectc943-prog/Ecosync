@@ -16,7 +16,7 @@ for i, u in enumerate(users, 1):
     print(f"   Name: {u.first_name} {u.last_name}")
     print(f"   Location: {u.location_name or 'Not set'}")
     print(f"   Coordinates: ({u.location_lat}, {u.location_lon})" if u.location_lat else "   Coordinates: Not set")
-    print(f"   Active: {u.is_active}")
+    print(f"   Verified: {u.is_verified}")
     print(f"   Plan: {u.plan}")
 
 db.close()

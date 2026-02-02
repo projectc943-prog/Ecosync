@@ -30,7 +30,7 @@ def send_email_notification(to_email, subject, body):
         text = msg.as_string()
         server.sendmail(SMTP_USER, to_email, text)
         server.quit()
-        print(f"✅ Email sent successfully to {to_email}")
+        print(f"Email sent successfully to {to_email}")
         return True
     except Exception as e:
         print(f"❌ Failed to send email: {e}")

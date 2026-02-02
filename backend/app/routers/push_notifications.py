@@ -244,7 +244,7 @@ def send_push_notification_to_user(
                 vapid_claims=VAPID_CLAIMS
             )
             sent_count += 1
-            print(f"✅ Push notification sent to user {user_id}")
+            print(f"Push notification sent to user {user_id}")
 
         except WebPushException as e:
             print(f"❌ Push failed for subscription {sub.id}: {e}")

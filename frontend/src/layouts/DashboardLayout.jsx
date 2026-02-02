@@ -3,6 +3,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { THEME } from '../components/dashboard/shared/Common';
 import { useLocation } from '../contexts/LocationContext';
+import ModeToggle from '../components/ModeToggle';
 
 // Lazy Load Heavy Views
 const LiteView = React.lazy(() => import('../components/dashboard/LiteView'));
@@ -123,7 +124,11 @@ const DashboardShell = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
                 {/* Mode Switcher */}
-                <div className="sticky top-4 z-50">
+                <div className="sticky top-4 z-50 flex justify-end">
+                    <ModeToggle
+                        isProMode={mode === 'pro'}
+                        onToggle={() => setMode(mode === 'pro' ? 'lite' : 'pro')}
+                    />
                 </div>
 
                 {/* Content Area with Error Boundary Placeholder */}

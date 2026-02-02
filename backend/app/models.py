@@ -38,7 +38,7 @@ class Device(Base):
     lon = Column(Float, nullable=True)
     status = Column(String, default="created")
     last_seen = Column(DateTime, nullable=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # Changed to NOT NULL
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
     # Relationships
     user = relationship("User", back_populates="devices")
@@ -56,6 +56,10 @@ class SensorData(Base):
     wind_speed = Column(Float, nullable=True)
     pm2_5 = Column(Float, nullable=True)
     pm10 = Column(Float, nullable=True)
+    mq_raw = Column(Float, nullable=True)
+    gas = Column(Float, nullable=True)
+    rain = Column(Float, nullable=True)
+    motion = Column(Integer, nullable=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     
     # Relationships
@@ -87,6 +91,9 @@ class AlertSettings(Base):
     humidity_max = Column(Float, default=80.0)
     pm25_threshold = Column(Float, default=150.0)
     wind_threshold = Column(Float, default=30.0)
+    gas_threshold = Column(Float, default=600.0)
+    rain_alert = Column(Boolean, default=True)
+    motion_alert = Column(Boolean, default=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

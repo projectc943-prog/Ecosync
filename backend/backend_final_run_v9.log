@@ -1,0 +1,186 @@
+C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\assistant\service.py:2: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+INFO:     Started server process [14652]
+INFO:     Waiting for application startup.
+2026-02-02 13:51:28,330 [INFO] app.main: Starting background services...
+2026-02-02 13:51:28,331 [INFO] app.main: EcoSync Backend Initialized Successfully.
+2026-02-02 13:51:28,331 [INFO] app.main: Startup: Background tasks initiated (Polling Enabled)
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8009 (Press CTRL+C to quit)
+LOADING MAIN FROM C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\main.py
+LOADING AUTH_V2 FROM C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\routers\auth_v2.py
+Error seeding admin: 'charmap' codec can't encode character '\u2705' in position 0: character maps to <undefined>
+[Cache] Refreshed 15 markers at 2026-02-02 08:21:28.334409
+>>> TRACE: get_db starting at 2026-02-02T13:51:28.364285
+>>> TRACE: Login attempt for sreeksreeya@gmail.com at 2026-02-02T13:51:28.364716
+>>> TRACE: User lookup took 0.001245s
+>>> TRACE: Verifying password for sreeksreeya@gmail.com
+>>> TRACE: Password verification success in 0.334775s
+>>> TRACE: Token generation took 0.002355s
+>>> TRACE: Login success for sreeksreeya@gmail.com. Total time: 0.338375s
+INFO:     127.0.0.1:57508 - "POST /token HTTP/1.1" 200 OK
+>>> TRACE: get_db closing at 2026-02-02T13:51:28.704489
+INFO:     127.0.0.1:52261 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52262 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52263 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54777 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58856 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57869 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54299 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50662 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60615 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61925 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63665 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51267 - "GET /api/data HTTP/1.1" 200 OK
+[Cache] Refreshed 15 markers at 2026-02-02 08:21:58.340046
+INFO:     127.0.0.1:61591 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49324 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50395 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63845 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57916 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59616 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56390 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63825 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58843 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56465 - "GET /api/data HTTP/1.1" 200 OK
+[Cache] Refreshed 15 markers at 2026-02-02 08:22:28.342070
+INFO:     127.0.0.1:49684 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57355 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54538 - "GET /api/data HTTP/1.1" 200 OK
+[Cache] Refreshed 15 markers at 2026-02-02 08:22:58.344026
+[Cache] Refreshed 15 markers at 2026-02-02 08:23:28.356527
+INFO:     127.0.0.1:51167 - "GET /api/data HTTP/1.1" 200 OK
+[Cache] Refreshed 15 markers at 2026-02-02 08:23:58.357052
+[Cache] Refreshed 15 markers at 2026-02-02 08:24:28.366024
+INFO:     127.0.0.1:62245 - "GET /api/data HTTP/1.1" 200 OK
+[Cache] Refreshed 15 markers at 2026-02-02 08:24:58.368457
+INFO:     127.0.0.1:58999 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60188 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61180 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60032 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59780 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62717 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59595 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64707 - "OPTIONS /api/user/location HTTP/1.1" 200 OK
+>>> TRACE: get_db starting at 2026-02-02T13:55:24.665829
+>>> TRACE: get_db closing at 2026-02-02T13:55:24.670524
+INFO:     127.0.0.1:64707 - "PUT /api/user/location HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\protocols\http\h11_impl.py", line 410, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\applications.py", line 1135, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\trustedhost.py", line 51, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 355, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\fastapi\routing.py", line 245, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\starlette\concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\routers\auth_v2.py", line 330, in update_user_location
+    print(f"\U0001f4cd Updating location for {current_user.email}")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f4cd' in position 0: character maps to <undefined>
+INFO:     127.0.0.1:58637 - "GET /api/data HTTP/1.1" 200 OK
+[Cache] Refreshed 15 markers at 2026-02-02 08:25:28.369773
+INFO:     127.0.0.1:61442 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58902 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52189 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56286 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52184 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54621 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58677 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65093 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51705 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57279 - "GET /api/data HTTP/1.1" 200 OK
+[Cache] Refreshed 15 markers at 2026-02-02 08:25:58.383699
+INFO:     127.0.0.1:56762 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63150 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58068 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61873 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49207 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64450 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50159 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63106 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58872 - "GET /api/data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54797 - "GET /api/data HTTP/1.1" 200 OK
+[Cache] Refreshed 15 markers at 2026-02-02 08:26:28.385823
+INFO:     127.0.0.1:53347 - "GET /api/data HTTP/1.1" 200 OK
+[Cache] Refreshed 15 markers at 2026-02-02 08:26:58.397417
+[Cache] Refreshed 15 markers at 2026-02-02 08:27:28.403940
+INFO:     127.0.0.1:64114 - "GET /api/data HTTP/1.1" 200 OK
+[Cache] Refreshed 15 markers at 2026-02-02 08:27:58.404685
+[Cache] Refreshed 15 markers at 2026-02-02 08:28:28.411140
+INFO:     127.0.0.1:51875 - "GET /api/data HTTP/1.1" 200 OK
+^C

@@ -7,7 +7,6 @@ const CALIBRATION = {
     temp: 0,      // Offset in °C
     hum: 0,       // Offset in %
     gas: 0,       // Offset in raw units
-    press: 0      // Offset in hPa
 };
 
 class KalmanFilter {
@@ -106,42 +105,12 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
         const fetchData = async () => {
             try {
                 if (mode === 'lite' || mode === 'light') {
-                    // LITE MODE: Try API, fallback to simple mock
-                    try {
-                        const res = await fetch('/api/data'); // Proxy endpoint
-                        const data = await res.json();
-                        if (data.error) throw new Error(data.error);
-
-                        const packet = {
-                            ts: Date.now(),
-                            timestamp: new Date().toLocaleTimeString(),
-                            temperature: data.temperature || 0,
-                            humidity: data.humidity || 0,
-                            mq_ppm: data.aqi || 0,
-                            trustScore: 90,
-                            mq_ppm: data.aqi || 0,
-                            gas: data.gas || 0,
-                            motion: data.motion || 0,
-                            trustScore: 90,
-                            deviceId: "ESP32-LITE"
-                        };
-
-                        bufferRef.current = [...bufferRef.current, packet].slice(-20); // Smaller buffer for lite
-                        setStream({ connected: true, lastSeen: Date.now(), data: packet, history: bufferRef.current, alerts: [] });
-                        setHealth({ status: 'ONLINE', lastPacketTime: new Date() });
-                        return;
-                    } catch (e) {
-                        // Fallback Lite Mock
-                        console.log("Lite Mode: Using fallback data");
-                        const packet = {
-                            ts: Date.now(), timestamp: new Date().toLocaleTimeString(),
-                            ts: Date.now(), timestamp: new Date().toLocaleTimeString(),
-                            temperature: 25, humidity: 50, mq_ppm: 10, gas: 120, motion: 0, trustScore: 80, deviceId: "ESP32-LITE-OFFLINE"
-                        };
-                        setStream({ connected: false, lastSeen: Date.now(), data: packet, history: [], alerts: [] });
-                        setHealth({ status: 'OFFLINE', lastPacketTime: null });
-                        return;
+                    // LITE MODE: Polling disabled until valid endpoint exists
+                    // We rely purely on SERIAL in Lite for now to avoid 404 confusion
+                    if (health.status === 'DISCONNECTED') {
+                        setHealth({ status: 'AWAITING SERIAL', lastPacketTime: null });
                     }
+                    return;
                 }
 
                 // PRO MODE: Advanced Simulation + Real Data Wrapper
@@ -201,6 +170,7 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                     mq_ppm: Number(filteredAqi.toFixed(0)), // PM2.5
                     raw_mq_ppm: Number(rawAqi.toFixed(0)),
                     mq_raw: 400 + Math.random() * 50,
+                    gas: Number(filteredAqi.toFixed(0)), // Add gas field for Pro Dashboard compatibility
 
                     // Wind Speed
                     wind_speed: Number(filteredWind.toFixed(1)),
@@ -286,9 +256,10 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
             }
         };
 
-        // Poll every 3 seconds
-        fetchData();
-        intervalId = setInterval(fetchData, 3000);
+        // Poll every 3 seconds ONLY if serial is not active
+        intervalId = setInterval(() => {
+            if (!portRef.current) fetchData();
+        }, 3000);
 
         return () => clearInterval(intervalId);
     }, []);
@@ -335,7 +306,6 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
             const kfTemp = new KalmanFilter(2.0, 0.5); // Higher R = smooth but slow
             const kfHum = new KalmanFilter(5.0, 1.0);
             const kfGas = new KalmanFilter(10.0, 2.0);
-            // const kfPress = new KalmanFilter(1.0, 0.1); 
 
             // Reading loop
             while (true) {
@@ -356,12 +326,13 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                         const json = JSON.parse(trimmed);
 
                         // 1. RAW EXTRACTION
-                        const tRaw = json.temperature || json.temp || 0;
-                        const hRaw = json.humidity || json.hum || 0;
-                        // const pRaw = json.pressure || 1013;
-                        const gasRaw = json.gas || json.mq_raw || 0;
-                        const motionRaw = json.motion || 0;
-                        const pm25Raw = json.pm25 || json.pm2_5 || 0;
+                        const tRaw = json.temperature !== undefined ? json.temperature : (json.temp !== undefined ? json.temp : null);
+                        const hRaw = json.humidity !== undefined ? json.humidity : (json.hum !== undefined ? json.hum : null);
+                        const gasRaw = json.gas !== undefined ? json.gas : (json.mq_raw !== undefined ? json.mq_raw : 0);
+                        const motionRaw = json.motion !== undefined ? json.motion : 0;
+                        const rainRaw = json.rain !== undefined ? json.rain : 0;
+                        const pm25Raw = json.pm25 !== undefined ? json.pm25 : (json.pm2_5 !== undefined ? json.pm2_5 : 0);
+                        const screenMode = json.screen !== undefined ? json.screen : 0;
 
                         // 2. CALIBRATION (Apply Offsets)
                         const tCal = tRaw + CALIBRATION.temp;
@@ -372,32 +343,30 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                         const tFilt = kfTemp.filter(tCal);
                         const hFilt = kfHum.filter(hCal);
                         const gasFilt = kfGas.filter(gasCal);
-                        // const pFilt = kfPress.filter(pRaw);
 
                         // Reusing simple pass-through for uncalibrated metrics or if no filter needed
-                        const pVal = json.pressure || 1013;
                         const pm25Val = pm25Raw; // Add Kalman here if needed for PM2.5
 
                         const packet = {
                             ts: Date.now(),
                             timestamp: new Date().toLocaleTimeString(),
 
-                            temperature: Number(tFilt.toFixed(1)),
+                            temperature: typeof tFilt === 'number' ? Number(tFilt.toFixed(1)) : null,
                             temp_raw: tRaw,
 
-                            humidity: Number(hFilt.toFixed(1)),
+                            humidity: typeof hFilt === 'number' ? Number(hFilt.toFixed(1)) : null,
                             hum_raw: hRaw,
 
-                            mq_ppm: 0, // Not used in Lite anymore? Or map gasFilt?
                             pm25: pm25Val,
                             pm25_raw: pm25Raw,
 
-                            pressure: pVal,
 
                             mq_raw: gasRaw,
-                            gas: Number(gasFilt.toFixed(0)), // Filtered Gas
+                            gas: typeof gasFilt === 'number' ? Number(gasFilt.toFixed(0)) : null, // Filtered Gas
 
                             motion: motionRaw,
+                            rain: rainRaw,
+                            screen: screenMode,
                             trustScore: 100,
                             deviceId: "ESP32-SERIAL-KF"
                         };
@@ -411,7 +380,6 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                                     timestamp: new Date().toISOString(),
                                     temperature: packet.temperature,
                                     humidity: packet.humidity,
-                                    pressure: packet.pressure,
                                     pm2_5: packet.pm25,
                                     vibration: packet.gas
                                 }]);
@@ -430,8 +398,10 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                                         temperature: packet.temperature,
                                         humidity: packet.humidity,
                                         pm25: packet.pm25,
-                                        pressure: packet.pressure,
                                         mq_raw: packet.gas,
+                                        rain: packet.rain,
+                                        motion: packet.motion,
+                                        screen: packet.screen,
                                         user_email: userEmail,
                                         lat: coordinates[0],
                                         lon: coordinates[1]

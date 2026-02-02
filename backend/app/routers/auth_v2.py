@@ -327,7 +327,7 @@ def update_user_location(
     Update user's current location coordinates
     This enables dynamic location tracking for geofencing alerts
     """
-    print(f"📍 Updating location for {current_user.email}")
+    print(f"Updating location for {current_user.email}")
     print(f"   New location: {location_data.location_name} ({location_data.location_lat}, {location_data.location_lon})")
     
     # Update user location
@@ -338,7 +338,7 @@ def update_user_location(
     db.commit()
     db.refresh(current_user)
     
-    print(f"✅ Location updated successfully for {current_user.email}")
+    print(f"Location updated successfully for {current_user.email}")
     
     return {
         "status": "success",

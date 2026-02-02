@@ -23,7 +23,13 @@ from .connectors.esp32_stub import ESP32StubConnector
 
 from .routers import assistant, auth_v2 as auth, map as map_router, pro_api, push_notifications, devices
 from .routers.push_notifications import send_push_notification_to_user
-from .services import kalman_filter, aqi_calculator, external_apis, fusion_engine, weather_service
+from .services import (
+    kalman_filter as kf_instance,
+    aqi_calculator,
+    external_apis,
+    fusion_engine,
+    weather_service
+)
 
 from .services.websocket_manager import manager
 from .services.api_cache import refresh_map_cache, get_cached_markers
@@ -78,7 +84,13 @@ ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:8009",
-    "http://127.0.0.1:8009"
+    "http://127.0.0.1:8009",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost:5175",
+    "http://127.0.0.1:5175",
+    "http://localhost:5176",
+    "http://127.0.0.1:5176"
 ]
 
 app.add_middleware(
@@ -248,7 +260,7 @@ def send_email_alert(subject: str, body: str, recipient: str = None):
         server.sendmail(sender_email, receiver_email, text)
         server.quit()
         
-        logger.info(f"✅ Email Alert SENT successfully to {receiver_email}")
+        logger.info(f"Email Alert SENT successfully to {receiver_email}")
         return True
         
     except smtplib.SMTPAuthenticationError as e:
@@ -317,16 +329,20 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
     HUM_MAX = settings.humidity_max if settings else 80.0
     PM25_THRESH = settings.pm25_threshold if settings else 150.0
     WIND_THRESH = settings.wind_threshold if settings else 30.0
+    GAS_THRESH = settings.gas_threshold if settings else 600.0
+    RAIN_ALERT_ENABLED = settings.rain_alert if settings else True
+    MOTION_ALERT_ENABLED = settings.motion_alert if settings else True
     # Logic change: We will fetch ALL users below instead of just one recipient
     
     triggers = []
     
-    # 1. High Temperature -> Fire Risk
-    if measurement.temperature and measurement.temperature > TEMP_THRESH:
-        triggers.append(f"CRITICAL TEMP: {measurement.temperature}°C (Limit: {TEMP_THRESH}°C)")
+    # 1. High Temperature -> Fire Risk (Validate range -50 to 100°C)
+    if measurement.temperature and -50 <= measurement.temperature <= 100:
+        if measurement.temperature > TEMP_THRESH:
+            triggers.append(f"CRITICAL TEMP: {measurement.temperature}°C (Limit: {TEMP_THRESH}°C)")
     
     # 2. Humidity Extremes -> Biological Stress
-    if measurement.humidity:
+    if measurement.humidity and 0 <= measurement.humidity <= 100:
         if measurement.humidity > HUM_MAX:
             triggers.append(f"HIGH HUMIDITY: {measurement.humidity}% (Limit: {HUM_MAX}%)")
         elif measurement.humidity < HUM_MIN:
@@ -339,6 +355,20 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
     # 4. High Wind Speed -> Physical Security Risk
     if measurement.wind_speed and measurement.wind_speed > WIND_THRESH:
         triggers.append(f"HAZARDOUS WIND: {measurement.wind_speed} km/h (Limit: {WIND_THRESH} km/h)")
+
+    # 5. Gas Leak Detection (Validate range 0-4095 for ESP32 ADC)
+    if measurement.gas and 0 <= measurement.gas <= 4095:
+        if measurement.gas > GAS_THRESH:
+            triggers.append(f"GAS ALERT: {measurement.gas} (Limit: {GAS_THRESH})")
+
+    # 6. Rain Detection (Validate range 0-4095, threshold < 2000 usually means wet)
+    if RAIN_ALERT_ENABLED and measurement.rain and 0 <= measurement.rain <= 4095:
+        if measurement.rain < 2000:
+            triggers.append(f"RAIN DETECTED: {measurement.rain}")
+
+    # 7. Motion Detection
+    if MOTION_ALERT_ENABLED and measurement.motion == 1:
+        triggers.append(f"MOTION DETECTED")
 
     if triggers:
         alert_msg = " | ".join(triggers)
@@ -378,7 +408,7 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
         if device.lat and device.lon:
             try:
                 nearby_users = db.query(models.User).filter(
-                    models.User.is_active == True,
+                    models.User.is_verified == True,
                     models.User.location_lat != None,
                     models.User.location_lon != None
                 ).all()
@@ -463,7 +493,7 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
                 for user in target_users:
                      sent_push = send_push_notification_to_user(user.id, push_payload, db)
                      if sent_push:
-                         logger.info(f"📲 Push notification sent to {user.email}")
+                         logger.info(f"Push notification sent to {user.email}")
             except Exception as e:
                 logger.error(f"Failed to send push notifications: {e}")
             
@@ -479,10 +509,10 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
             
             # Log final status
             if email_status:
-                logger.info(f"✅ Alert emails sent successfully to {emails_sent_successfully}/{len(recipients)} recipients")
+                logger.info(f"Alert emails sent successfully to {emails_sent_successfully}/{len(recipients)} recipients")
             else:
-                logger.warning(f"⚠️ Email delivery failed, but CONSOLE ALERT was displayed above")
-                logger.warning(f"💡 Check the terminal output for alert details")
+                logger.warning(f"Email delivery failed, but CONSOLE ALERT was displayed above")
+                logger.warning(f"Check the terminal output for alert details")
         else:
              logger.warning("Alert triggered but no email recipients found (No users in DB).")
 
@@ -497,6 +527,9 @@ class IoTSensorData(BaseModel):
     pressure: float = 1013.0
     mq_raw: float = 0.0
     wind_speed: float = 0.0
+    rain: float = 0.0
+    motion: int = 0
+    gas: Optional[float] = None
     user_email: Optional[str] = None
     lat: Optional[float] = None
     lon: Optional[float] = None
@@ -513,10 +546,10 @@ async def receive_iot_data(data: IoTSensorData, background_tasks: BackgroundTask
         current_ts = dt.utcnow()
         
         # 1. Kalman Filtering & Cleaning
-        filtered_temp, temp_conf = kalman_filter.filter_temperature(data.temperature)
-        filtered_hum, hum_conf = kalman_filter.filter_humidity(data.humidity)
-        filtered_pm25, pm25_conf = kalman_filter.filter_pm25(data.pm25)
-        mq_cleaned = kalman_filter.clean_mq_data(data.mq_raw)
+        filtered_temp, temp_conf = kf_instance.filter_temperature(data.temperature)
+        filtered_hum, hum_conf = kf_instance.filter_humidity(data.humidity)
+        filtered_pm25, pm25_conf = kf_instance.filter_pm25(data.pm25)
+        mq_cleaned = kf_instance.clean_mq_data(data.mq_raw)
         
         # 2. Get/Create Device (Unique per User for localized geofencing)
         id_sanitized = data.user_email.replace("@", "_").replace(".", "_") if data.user_email else "MAIN"
@@ -547,13 +580,18 @@ async def receive_iot_data(data: IoTSensorData, background_tasks: BackgroundTask
             mq_norm = min(100, max(0, (mq_cleaned["smoothed"] - 200) / 6))
             measurement = models.SensorData(
                 device_id=device.id,
+                user_id=device.user_id,
                 timestamp=current_ts,
                 temperature=filtered_temp,
                 humidity=filtered_hum,
                 pressure=data.pressure,
                 wind_speed=0.0,
                 pm2_5=filtered_pm25,
-                pm10=mq_cleaned["smoothed"] # Storing smoothed MQ here
+                pm10=0.0, # Using as placeholder for PM10
+                mq_raw=data.mq_raw,
+                gas=data.gas or mq_cleaned["smoothed"],
+                rain=data.rain,
+                motion=data.motion
             )
             db.add(measurement)
             db.commit()

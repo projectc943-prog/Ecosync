@@ -45,7 +45,7 @@ const NEWS_DATA = [
     {
         id: 5,
         title: "Flash Flood Warning",
-        summary: "Barometric pressure drops suggest imminent heavy rainfall in Sector 4. Drainage systems on high alert.",
+        summary: "Atmospheric shifts suggest imminent heavy rainfall in Sector 4. Drainage systems on high alert.",
         source: "Met-Station Alpha",
         timestamp: "4h ago",
         category: "WARNING",

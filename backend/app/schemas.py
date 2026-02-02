@@ -21,9 +21,11 @@ class UserCreate(BaseModel):
 class UserResponse(BaseModel):
     id: int
     email: str
-    full_name: Optional[str] = None
-    is_active: bool
-    created_at: datetime
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    plan: Optional[str] = "lite"
+    is_verified: bool = False
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -64,6 +66,9 @@ class SensorDataCreate(BaseModel):
     pm25: float = 0.0
     pressure: float = 1013.0
     mq_raw: float = 0.0
+    gas: float = 0.0
+    rain: float = 4095.0
+    motion: int = 0
     wind_speed: float = 0.0
     user_email: Optional[str] = None
     lat: Optional[float] = None
@@ -78,6 +83,9 @@ class SensorDataResponse(BaseModel):
     pm25: float
     pressure: float
     mq_raw: float
+    gas: float
+    rain: float
+    motion: int
     wind_speed: float
     user_email: Optional[str] = None
     lat: Optional[float] = None
@@ -94,6 +102,9 @@ class AlertSettingsCreate(BaseModel):
     humidity_max: float = 80.0
     pm25_threshold: float = 150.0
     wind_threshold: float = 30.0
+    gas_threshold: float = 600.0
+    rain_alert: bool = True
+    motion_alert: bool = True
     is_active: bool = True
 
 class AlertSettingsResponse(BaseModel):
@@ -104,6 +115,9 @@ class AlertSettingsResponse(BaseModel):
     humidity_max: float
     pm25_threshold: float
     wind_threshold: float
+    gas_threshold: float
+    rain_alert: bool
+    motion_alert: bool
     is_active: bool
     created_at: datetime
     updated_at: datetime

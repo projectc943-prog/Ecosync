@@ -51,11 +51,16 @@ const LiteDashboard = ({ sensorData, alerts, connectionStatus, onSwitchToPro }) 
         return (sensorData && sensorData.length > 0) ? sensorData[sensorData.length - 1] : {};
     }, [sensorData]);
 
-    const temp = useMemo(() => latestData.temperature?.toFixed(1) || '--', [latestData]);
-    const hum = useMemo(() => latestData.humidity?.toFixed(1) || '--', [latestData]);
-    const press = useMemo(() => latestData.pressure?.toFixed(0) || '--', [latestData]);
-    const gas = useMemo(() => latestData.pm2_5 > 100 ? 'DETECTED' : 'CLEAR', [latestData]);
-    const gasColor = useMemo(() => latestData.pm2_5 > 100 ? 'red' : 'emerald', [latestData]);
+    const temp = useMemo(() => latestData.temperature != null ? latestData.temperature.toFixed(1) : 'ERR', [latestData]);
+    const hum = useMemo(() => latestData.humidity != null ? latestData.humidity.toFixed(1) : 'ERR', [latestData]);
+    const gas = useMemo(() => latestData.mq_raw > 600 ? 'DETECTED' : 'CLEAR', [latestData]);
+    const gasColor = useMemo(() => latestData.mq_raw > 600 ? 'red' : 'emerald', [latestData]);
+
+    const motion = useMemo(() => latestData.motion === 1 ? 'DETECTED' : 'CLEAR', [latestData]);
+    const motionColor = useMemo(() => latestData.motion === 1 ? 'red' : 'blue', [latestData]);
+
+    const rain = useMemo(() => latestData.rain < 2000 ? 'RAINING' : 'DRY', [latestData]);
+    const rainColor = useMemo(() => latestData.rain < 2000 ? 'blue' : 'slate', [latestData]);
 
     // Check for Device
     if (!sensorData || sensorData.length === 0) {
@@ -119,11 +124,13 @@ const LiteDashboard = ({ sensorData, alerts, connectionStatus, onSwitchToPro }) 
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Temperature" value={temp} unit="°C" icon={Thermometer} color="cyan" trend={Math.abs(latestData.temperature || 0) * 2} />
-                <StatCard title="Humidity" value={hum} unit="%" icon={Droplets} color="blue" trend={latestData.humidity || 0} />
-                <StatCard title="Pressure" value={press} unit="hPa" icon={Wind} color="purple" trend={(latestData.pressure - 800) / 4 || 0} />
-                <StatCard title="Air Quality" value={gas} unit="PM2.5" icon={Activity} color={gasColor} trend={latestData.pm2_5 || 0} />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+                <StatCard title="Temperature" value={temp} unit="°C" icon={Thermometer} color={temp === 'ERR' ? 'red' : 'cyan'} trend={temp === 'ERR' ? 0 : Math.abs(latestData.temperature || 0) * 2} />
+                <StatCard title="Humidity" value={hum} unit="%" icon={Droplets} color={hum === 'ERR' ? 'red' : 'blue'} trend={hum === 'ERR' ? 0 : latestData.humidity || 0} />
+                <StatCard title="Air Quality" value={gas} unit="RAW" icon={Activity} color={gasColor} trend={(latestData.mq_raw / 1024) * 100 || 0} />
+                <StatCard title="Rain Status" value={rain} unit="" icon={Cloud} color={rainColor} trend={(4095 - latestData.rain) / 40 || 0} />
+                <StatCard title="Motion" value={motion} unit="" icon={Zap} color={motionColor} trend={latestData.motion ? 100 : 0} />
+                <StatCard title="Screen" value={latestData.screen || 0} unit="MODE" icon={Activity} color="purple" trend={(latestData.screen / 2) * 100 || 0} />
             </div>
 
             <div className="glass-panel p-6 border-t-2 border-t-emerald-500/20">

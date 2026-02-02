@@ -3,7 +3,6 @@
 #include <HTTPClient.h>
 #include <WiFi.h>
 
-
 // --- USER CONFIGURATION (EDIT THESE) ---
 const char *ssid = "YOUR_WIFI_NAME";
 const char *password = "YOUR_WIFI_PASSWORD";
@@ -17,6 +16,8 @@ const char *userEmail =
 #define DHTPIN 4
 #define DHTTYPE DHT11
 #define MQ_PIN 34
+#define RAIN_PIN 35
+#define PIR_PIN 27
 
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -24,6 +25,8 @@ void setup() {
   Serial.begin(115200);
   dht.begin();
   pinMode(MQ_PIN, INPUT);
+  pinMode(RAIN_PIN, INPUT);
+  pinMode(PIR_PIN, INPUT);
 
   // 1. Connect to WiFi
   Serial.println("\nPossible Ecosync WiFi Boot...");
@@ -42,6 +45,8 @@ void loop() {
   float h = dht.readHumidity();
   float t = dht.readTemperature();
   int mqRaw = analogRead(MQ_PIN);
+  int rainVal = analogRead(RAIN_PIN);
+  int motion = digitalRead(PIR_PIN);
 
   // Check for read failure
   if (isnan(h) || isnan(t)) {
@@ -51,12 +56,12 @@ void loop() {
   }
 
   // 3. Prepare JSON Payload
-  // Using String for simplicity, but ArduinoJson is better for complex data
   String jsonPayload = "{";
   jsonPayload += "\"temperature\": " + String(t) + ",";
   jsonPayload += "\"humidity\": " + String(h) + ",";
   jsonPayload += "\"mq_raw\": " + String(mqRaw) + ",";
-  jsonPayload += "\"pm25\": " + String(mqRaw / 10.0) + ","; // Mock conversion
+  jsonPayload += "\"rain\": " + String(rainVal) + ",";
+  jsonPayload += "\"motion\": " + String(motion) + ",";
   jsonPayload += "\"user_email\": \"" + String(userEmail) + "\"";
   jsonPayload += "}";
 

@@ -259,11 +259,11 @@ const Analytics = ({ sensorData = [], predictions = [], isProMode = false }) => 
                             <div className="flex gap-4">
                                 <div className="text-center bg-black/20 p-2 rounded-xl flex-1">
                                     <div className="text-[9px] text-slate-500 font-bold uppercase mb-1">Temp</div>
-                                    <div className="text-sm font-bold text-white">{item.temperature}°C</div>
+                                    <div className="text-sm font-bold text-white">{item.temperature.toFixed(1)}°C</div>
                                 </div>
                                 <div className="text-center bg-black/20 p-2 rounded-xl flex-1">
                                     <div className="text-[9px] text-slate-500 font-bold uppercase mb-1">PM2.5</div>
-                                    <div className="text-sm font-bold text-white">{item.pm2_5}</div>
+                                    <div className="text-sm font-bold text-white">{item.pm2_5.toFixed(1)}</div>
                                 </div>
                             </div>
                         </div>

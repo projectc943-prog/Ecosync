@@ -19,6 +19,12 @@ add_column_if_missing("users", "location_lat", "FLOAT")
 add_column_if_missing("users", "location_lon", "FLOAT")
 add_column_if_missing("users", "zip_code", "VARCHAR")
 
+# Add missing columns to sensor_data
+add_column_if_missing("sensor_data", "mq_raw", "FLOAT")
+add_column_if_missing("sensor_data", "gas", "FLOAT")
+add_column_if_missing("sensor_data", "rain", "FLOAT")
+add_column_if_missing("sensor_data", "motion", "INTEGER")
+
 conn.commit()
 conn.close()
 print("Schema update complete.")

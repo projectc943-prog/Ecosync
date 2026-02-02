@@ -10,7 +10,7 @@ echo.
 
 %ARDUINO_CLI% board list
 echo.
-set /p PORT="ENTER YOUR COM PORT (e.g. COM3): "
+set /p PORT="COM14: "
 
 echo.
 echo Starting Serial Monitor on %PORT% at 115200 baud...
