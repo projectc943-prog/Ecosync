@@ -43,6 +43,7 @@ app = FastAPI(
 )
 
 @app.get("/")
+@app.get("/health")
 def health_check():
     return {"status": "active", "service": "IoT Backend", "timestamp": dt.utcnow()}
 
@@ -680,10 +681,38 @@ async def websocket_endpoint(websocket: WebSocket, device_id: str):
 
     # Authenticate the connection
     try:
-        user = await get_current_user(websocket=websocket)
-        if not user:
+        # Get token from query parameters
+        token = websocket.query_params.get("token")
+        if not token:
             await websocket.close(code=4001, reason="Authentication required")
             return
+
+        # Verify token
+        credentials_exception = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        try:
+            payload = jwt.decode(token, security.SECRET_KEY, algorithms=[security.ALGORITHM])
+            username: str = payload.get("sub")
+            if username is None:
+                raise credentials_exception
+        except JWTError:
+            raise credentials_exception
+
+        # Get user from database
+        db = database.SessionLocal()
+        try:
+            user = db.query(models.User).filter(models.User.email == username).first()
+            if user is None:
+                raise credentials_exception
+        finally:
+            db.close()
+
+        # Store user in WebSocket manager
+        await manager.connect(websocket, device_id, user)
+        logger.info(f"WebSocket connected for device {device_id} (user: {user.email})")
     except Exception as auth_error:
         logger.error(f"WebSocket auth failed: {auth_error}")
         await websocket.close(code=4001, reason="Authentication failed")

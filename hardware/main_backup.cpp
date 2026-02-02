@@ -33,7 +33,7 @@ PubSubClient client(espClient);
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // --- PIN DEFINITIONS ---
-#define DHTPIN 15
+#define DHTPIN 4
 #define MQ_ANALOG_PIN 34
 #define RAIN_ANALOG_PIN 35
 #define PIR_PIN 27
@@ -75,9 +75,6 @@ int mqValue = 0;
 int rainValue = 0;
 int pirValue = 0;
 int irValue = 0;
-// Speed Counter Variables
-volatile unsigned long pulseCount = 0;
-int lastIrState = HIGH;
 
 void reconnect() {
   static unsigned long lastMqttAttempt = 0;
@@ -174,9 +171,6 @@ void loop() {
   static int pageIndex = 0;
   static unsigned long lastWiFiCheck = 0;
 
-  // Scoped Variables
-  bool dhtError = false;
-
   // Debug information
   static unsigned long loopCounter = 0;
   loopCounter++;
@@ -224,25 +218,18 @@ void loop() {
     }
   }
 
-  unsigned long runSec = millis() / 1000;
-  unsigned long runMin = runSec / 60;
-  runSec = runSec % 60;
-
   // 2. Read Sensors (Every 2 Seconds)
   if (millis() - lastSensorRead > 2000) {
     lastSensorRead = millis();
 
     // Read DHT sensor with error handling
-    // bool dhtError = false; // Moved to top of loop
-    dhtError = false; // Reset error state
     float newH = dht.readHumidity();
     float newT = dht.readTemperature();
     if (!isnan(newH) && !isnan(newT)) {
       h = newH;
       t = newT;
     } else {
-      dhtError = true;
-      Serial.println("Warning: DHT Read Failed! Using old values.");
+      Serial.println("DHT sensor read error, using previous values");
     }
 
     // Read analog sensors with validation
@@ -294,25 +281,14 @@ void loop() {
 
     // Determine Status for Serial Match
     const char *gasStatus = (mqValue > GAS_THRESHOLD) ? "Alert" : "Safe";
-    // Rain: Low (0-2000) = Wet. High (4095) = Dry.
-    const char *rainStatus = (rainValue < 2000) ? "Rain" : "Clear";
-    // Motion: High = Detected.
-    const char *motStatus = (pirValue == HIGH) ? "Detected" : "Clear";
+    const char *rainStatus = (rainValue > RAIN_THRESHOLD) ? "Rain" : "Clear";
+    const char *motStatus = (pirValue == LOW) ? "Detected" : "Clear";
     const char *spdStatus = (irValue == LOW) ? "Detected" : "Clear";
 
     // Serial Debug (Synced with LCD)
-    // Serial Debug (Structured Block)
-    Serial.println("\n--- 🌿 EcoSync Sensor Data 🌿 ---");
-    Serial.printf("⏱️  Time   : %02lu:%02lu\n", runMin, runSec);
-    Serial.printf("🌡️  Temp   : %.1f °C %s\n", t,
-                  dhtError ? "⚠️ (READ ERROR)" : "");
-    Serial.printf("💧  Hum    : %.1f %% %s\n", h,
-                  dhtError ? "⚠️ (READ ERROR)" : "");
-    Serial.printf("💨  Gas    : %d (%s)\n", mqValue, gasStatus);
-    Serial.printf("🌧️  Rain   : %d (%s)\n", rainValue, rainStatus);
-    Serial.printf("🏃  Motion : %s\n", motStatus);
-    Serial.printf("🏎️  Rotations: %lu\n", pulseCount);
-    Serial.println("--------------------------------");
+    Serial.printf(
+        "Temp:%.1f Hum:%.1f Gas:%s(%d) Water:%s(%d) Motion:%s Speed:%s\n", t, h,
+        gasStatus, mqValue, rainStatus, rainValue, motStatus, spdStatus);
 
     // HTTP Post (Only if Connected)
     if (WiFi.status() == WL_CONNECTED) {
@@ -324,8 +300,8 @@ void loop() {
       doc["humidity"] = hum_kalman;
       doc["mq_value"] = mqValue;
       doc["rain_value"] = rainValue;
-      // CALIBRATED: Active High Motion (Idle=0)
-      doc["motion_detected"] = (pirValue == HIGH);
+      // CALIBRATED: Active Low Motion (Idle=1)
+      doc["motion_detected"] = (pirValue == LOW);
       doc["ir_detected"] = (irValue == LOW);
       doc["pm25"] = pm25_kalman;
       doc["pressure"] = 1013;
@@ -340,9 +316,9 @@ void loop() {
         client.publish("ecosync/humidity", String(hum_kalman, 2).c_str());
         client.publish("ecosync/gas", String(mqValue).c_str());
         client.publish("ecosync/rain", String(rainValue).c_str());
-        // CALIBRATED: 1 if HIGH
-        client.publish("ecosync/motion", (pirValue == HIGH) ? "1" : "0");
-        client.publish("ecosync/ir", String(pulseCount).c_str());
+        // CALIBRATED: 1 if LOW
+        client.publish("ecosync/motion", (pirValue == LOW) ? "1" : "0");
+        client.publish("ecosync/ir", irValue == LOW ? "1" : "0");
       }
     }
   }
@@ -351,49 +327,49 @@ void loop() {
   if (millis() - lastPageSwitch > 2000) {
     lastPageSwitch = millis();
 
-    // Soft Reset Removed for stability
+    // SOFT RESET LCD occasionally to clear "random characters"
+    static int reInitCounter = 0;
+    reInitCounter++;
+    if (reInitCounter >= 30) { // Every ~60 seconds
+      lcd.init();
+      lcd.backlight();
+      reInitCounter = 0;
+    }
 
     lcd.clear();
 
     // Identify Counts/Status
     bool gasAlert = (mqValue > GAS_THRESHOLD);
-    // CALIBRATED RAIN: 0=Wet, 4095=Dry
-    bool rainAlert = (rainValue < 2000);
-    // CALIBRATED MOTION: High = Detected
-    bool motionDetected = (pirValue == HIGH);
-    // Speed is just count now
+    // CALIBRATED RAIN: High Value = Wet (> 1500) (Dry was ~600)
+    bool rainAlert = (rainValue > RAIN_THRESHOLD);
+    // CALIBRATED MOTION: Low = Detected (Idle was 1/HIGH)
+    bool motionDetected = (pirValue == LOW);
+    bool speedDetected = (irValue == LOW);
 
-    // Cycle 4 screens now
-    pageIndex = (pageIndex + 1) % 4;
+    // Cycle 3 screens
+    pageIndex = (pageIndex + 1) % 3;
 
     char line1[17];
     char line2[17];
 
     if (pageIndex == 0) {
-      // Screen 0: Time (Padded to 16)
-      snprintf(line1, 17, "Time: %02lu:%02lu     ", runMin, runSec);
-      snprintf(line2, 17, "EcoSync Pro     ");
-    } else if (pageIndex == 1) {
-      // Screen 1: Temp/Hum (Padded to 16)
-      // If error, show "Err" instead of space
-      char errInd = dhtError ? 'E' : ' ';
-      snprintf(line1, 17, "Temp: %.1f%c C   ", temp_kalman, errInd);
+      // Screen 0: Temperature & Humidity
+      snprintf(line1, 17, "Temp: %.1f C    ", temp_kalman);
       snprintf(line2, 17, "Hum : %.0f %%      ", hum_kalman);
-    } else if (pageIndex == 2) {
-      // Screen 2: Gas & Rain
+    } else if (pageIndex == 1) {
+      // Screen 1: Gas & Rain
       const char *gasStatus = gasAlert ? "Alert" : "Safe ";
       const char *rainStatus = rainAlert ? "Rain " : "Clear";
 
       snprintf(line1, 17, "Gas : %s %-4d", gasStatus, mqValue);
-      // Padded manually if needed, but %-4d helps.
-      // Ensure specific length
-      snprintf(line2, 17, "Rain : %s %-4d", rainStatus, rainValue);
-    } else if (pageIndex == 3) {
-      // Screen 3: Motion & Rotations
+      snprintf(line2, 17, "Water: %s %-4d", rainStatus, rainValue);
+    } else if (pageIndex == 2) {
+      // Screen 2: Motion & Speed
       const char *motStatus = motionDetected ? "Detected" : "Clear   ";
+      const char *spdStatus = speedDetected ? "Detected" : "Clear   ";
 
-      snprintf(line1, 17, "Motion: %-8s", motStatus);
-      snprintf(line2, 17, "Rotations: %-5lu", pulseCount);
+      snprintf(line1, 17, "Motion: %s", motStatus);
+      snprintf(line2, 17, "Speed : %s", spdStatus);
     }
 
     lcd.setCursor(0, 0);

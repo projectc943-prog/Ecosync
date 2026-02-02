@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }) => {
 
                     if (response.ok) {
                         const userData = await response.json();
-                        console.log("AuthContext: Use data loaded", userData);
+                        console.log("AuthContext: User data loaded", userData);
                         setCurrentUser({ email: userData.email, name: `${userData.first_name} ${userData.last_name}` });
                         setUserProfile(userData);
                     } else {
@@ -77,6 +77,8 @@ export const AuthProvider = ({ children }) => {
                     }
                 } catch (e) {
                     console.error("Session init error", e);
+                    // Clear invalid token on error
+                    localStorage.removeItem('access_token');
                 }
             }
             console.log("AuthContext: Setting loading false");

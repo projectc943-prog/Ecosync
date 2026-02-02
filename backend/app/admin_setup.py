@@ -20,8 +20,7 @@ def create_admin_user():
             hashed_pw = security.get_password_hash(password)
             new_user = database.User(
                 email=email,
-                hashed_password=hashed_pw,
-                is_active=True
+                hashed_password=hashed_pw
             )
             db.add(new_user)
             db.commit()

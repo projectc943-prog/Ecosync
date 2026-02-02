@@ -45,10 +45,9 @@ body {
   /* Abstract Green Data/Forest */
   background-image:
     radial-gradient(circle at 15% 50%, rgba(16, 185, 129, 0.08), transparent 25%),
-    radial-gradient(circle at 85% 30%, rgba(132, 204, 22, 0.08), transparent 25%),
-    url('/Users/dhanush/.gemini/antigravity/brain/989be157-fc4f-4ba1-9e52-3adf1ddc45e4/eco_greenery_weather_background_1769336694908.png');
-  /* Macro Leaf/Abstract Dark Nature */
+    radial-gradient(circle at 85% 30%, rgba(132, 204, 22, 0.08), transparent 25%);
   background-size: cover;
+
   background-position: center;
   background-attachment: fixed;
   color: #e2e8f0;
