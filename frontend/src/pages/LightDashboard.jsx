@@ -1,9 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line } from 'recharts';
-import { Bell, Wifi, Activity, Droplets, Thermometer, Wind, Zap, Map as MapIcon, Newspaper, User, Menu, X, Leaf, Shield, Cpu, ExternalLink, CloudRain } from 'lucide-react';
+import { Bell, Wifi, Activity, Droplets, Thermometer, Wind, Zap, Map as MapIcon, Newspaper, User, Menu, X, Leaf, Shield, Cpu, ExternalLink, CloudRain, Brain, ShieldCheck, FlaskConical, AlertTriangle, Gauge } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useEsp32Stream } from '../hooks/useEsp32Stream';
 import NewsComponent from '../components/NewsComponent';
+
+// Phase 2 Components
+import RiskPanel from '../components/RiskPanel';
+import ExplainableAlert from '../components/ExplainableAlert';
+import RestrictedActivity from '../components/RestrictedActivity';
+import SensorHealth from '../components/SensorHealth';
+import TrendGraph from '../components/TrendGraph';
 
 const LightDashboard = ({ onToggle }) => {
     const { logout, userProfile, currentUser } = useAuth();
@@ -14,14 +21,12 @@ const LightDashboard = ({ onToggle }) => {
     const [isDeviceConfigOpen, setIsDeviceConfigOpen] = useState(false);
 
     // Memoized Data
-    // Memoized Data
     const latestData = useMemo(() => (sensorData && sensorData.length > 0) ? sensorData[sensorData.length - 1] : {}, [sensorData]);
     const temp = useMemo(() => latestData.temperature != null ? latestData.temperature.toFixed(1) : '--.-', [latestData]);
     const tempRaw = useMemo(() => latestData.temp_raw != null ? latestData.temp_raw.toFixed(1) : '--.-', [latestData]);
 
     const hum = useMemo(() => latestData.humidity != null ? latestData.humidity.toFixed(1) : '--.-', [latestData]);
     const humRaw = useMemo(() => latestData.hum_raw != null ? latestData.hum_raw.toFixed(1) : '--.-', [latestData]);
-
 
     const gas = useMemo(() => latestData.gas != null ? latestData.gas.toFixed(0) : '---', [latestData]);
     const gasRaw = useMemo(() => latestData.mq_raw != null ? latestData.mq_raw.toFixed(0) : '---', [latestData]);
@@ -35,8 +40,20 @@ const LightDashboard = ({ onToggle }) => {
         return 'DRY';
     }, [rain]);
 
+    // Smart Metrics extraction
+    const smartMetrics = latestData.smart_metrics || {};
+    const trustScore = useMemo(() => smartMetrics.trust_score != null ? Math.round(smartMetrics.trust_score) : 'N/A', [smartMetrics]);
+    const ph = useMemo(() => smartMetrics.ph != null ? smartMetrics.ph.toFixed(1) : 'N/A', [smartMetrics]);
+    const anomaly = smartMetrics.anomaly_label !== "Normal" ? smartMetrics.anomaly_label : null;
+    const insight = smartMetrics.insight;
+
+    // Phase 2 Metrics
+    const riskLevel = smartMetrics.risk_level || "SAFE";
+    const sensorHealth = smartMetrics.sensor_health || {};
+    const baseline = smartMetrics.baseline || {};
+    const prediction = smartMetrics.prediction || {};
+
     // Stat Card
-    // Stat Card - Redesigned to match reference (Left aligned, watermark icon, footer)
     const StatCard = ({ title, value, rawValue, unit, icon: Icon, color }) => (
         <div className={`relative p-5 rounded-xl border border-slate-800 bg-slate-900/50 flex flex-col justify-between overflow-hidden group hover:border-${color}-500/50 transition-all`}>
 
@@ -56,7 +73,6 @@ const LightDashboard = ({ onToggle }) => {
                 </h3>
             </div>
 
-            {/* Footer: Raw vs Calibrated */}
             {/* Footer: Raw vs Calibrated */}
             {rawValue ? (
                 <div className="mt-4 pt-3 border-t border-slate-800/80 flex flex-col gap-1 text-[10px] uppercase tracking-wider font-medium z-10 w-full">
@@ -78,89 +94,163 @@ const LightDashboard = ({ onToggle }) => {
     );
 
     const renderOverview = () => (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            {/* Device Connection Banner */}
-            {!connectionStatus && (
-                <div className="bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-emerald-500/20 rounded-full text-emerald-400 animate-pulse">
-                            <Cpu size={24} />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-white">Connect Your ESP32</h3>
-                            <p className="text-sm text-slate-400">Connect via USB to view real-time metrics on this dashboard.</p>
-                        </div>
-                    </div>
-                    <div className="flex flex-col md:flex-row gap-3">
-                        <button
-                            onClick={connectSerial}
-                            className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-lg flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/20"
-                        >
-                            <Zap size={18} /> PAIR DEVICE
-                        </button>
-                        <button
-                            onClick={() => setIsDeviceConfigOpen(true)}
-                            className="px-6 py-3 bg-transparent border-2 border-emerald-500/30 hover:border-emerald-500 text-emerald-400 font-bold rounded-lg flex items-center gap-2 transition-all"
-                        >
-                            <Cpu size={18} /> SET UP DEVICE
-                        </button>
-                    </div>
+        <div className="space-y-6 animate-in fade-in duration-500 pb-20">
+            {/* Top Row: Risk Panel & Alert Banner */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-1">
+                    <RiskPanel riskLevel={riskLevel} />
                 </div>
-            )}
+                <div className="md:col-span-2 space-y-4">
+                    {/* Smart Insight Banner */}
+                    {(insight || anomaly) && (
+                        <div className={`w-full p-4 rounded-xl border flex items-center gap-4 animate-in slide-in-from-top-2 ${anomaly ? 'bg-red-500/10 border-red-500/30 text-red-100' : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-100'}`}>
+                            <div className={`p-2 rounded-lg ${anomaly ? 'bg-red-500/20 text-red-400' : 'bg-indigo-500/20 text-indigo-400'}`}>
+                                {anomaly ? <AlertTriangle size={20} /> : <Brain size={20} />}
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-sm uppercase tracking-wider mb-1 flex items-center gap-2">
+                                    {anomaly ? 'Anomaly Detected' : 'AI Smart Insight'}
+                                </h4>
+                                <p className="text-sm opacity-90 leading-relaxed font-medium">
+                                    {insight || "System behavior is unusual. Check sensors."}
+                                </p>
+                            </div>
+                        </div>
+                    )}
 
-            {/* Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
+                    {/* Connection Banner if offline */}
+                    {!connectionStatus && (
+                        <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                <Cpu size={20} className="text-emerald-400" />
+                                <span className="text-sm font-bold text-slate-300">ESP32 Disconnected</span>
+                            </div>
+                            <button onClick={connectSerial} className="px-4 py-2 bg-emerald-500 text-black text-xs font-bold rounded hover:bg-emerald-400">
+                                CONNECT
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Metrics Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard title="Temperature" value={temp} rawValue={tempRaw} unit="°C" icon={Thermometer} color="emerald" />
                 <StatCard title="Humidity" value={hum} rawValue={humRaw} unit="%" icon={Droplets} color="teal" />
                 <StatCard title="Gas Level" value={gas} rawValue={gasRaw} unit="PPM" icon={Activity} color="green" />
                 <StatCard title="Motion" value={motion} unit="" icon={Zap} color="amber" />
                 <StatCard title="Rain Sensor" value={rainStatus} unit="" icon={CloudRain} color="blue" />
+                <StatCard title="Trust Score" value={trustScore} unit="%" icon={ShieldCheck} color={trustScore > 80 ? 'emerald' : 'yellow'} />
+                <StatCard title="pH Level" value={ph} unit="pH" icon={FlaskConical} color="purple" />
+                <StatCard title="Pressure" value={latestData?.pressure || 1013} unit="hPa" icon={Gauge} color="cyan" />
             </div>
 
-            {/* Analysis Charts Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <AnalysisCard
-                    title="Temperature"
-                    unit="°C"
-                    data={sensorData}
-                    dataKey="temperature"
-                    rawKey="temp_raw"
-                    color="amber"
-                    icon={Thermometer}
-                />
-                <AnalysisCard
-                    title="Humidity"
-                    unit="%"
-                    data={sensorData}
-                    dataKey="humidity"
-                    rawKey="hum_raw"
-                    color="blue"
-                    icon={Droplets}
-                />
-                <AnalysisCard
-                    title="Gas"
-                    unit="PPM"
-                    data={sensorData}
-                    dataKey="gas"
-                    rawKey="mq_raw"
-                    color="emerald"
-                    icon={Activity}
-                />
-            </div>
+            {/* Safety & Trends Grid */}
+            {/* Safety & Trends Section */}
+            <div className="space-y-6">
+                {/* 1. Alerts Banner */}
+                <ExplainableAlert currentData={latestData} baselineData={baseline} alertReason={anomaly ? insight : null} />
 
-            {/* Signal Processing Info */}
-            <div className="glass-panel p-6 border-l-4 border-l-emerald-500 bg-emerald-500/5">
-                <div className="flex gap-4 items-start">
-                    <Shield className="text-emerald-400 mt-1" size={24} />
-                    <div>
-                        <h4 className="text-white font-bold uppercase tracking-widest text-sm">Bio-Digital Signal Processing Active</h4>
-                        <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                            Incoming sensor signals are being processed through a real-time EMA (Exponential Moving Average) filter to ensure precision analysis and noise reduction from the hardware link.
-                        </p>
+                {/* 2. Monitors Grid (Restricted | Health | Prediction) */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <RestrictedActivity motionDetected={latestData.motion === 1} timestamp={latestData.ts} />
+                    <SensorHealth healthData={sensorHealth} />
+
+                    {/* Short Term Prediction Card */}
+                    <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5">
+                        <h3 className="text-slate-200 font-bold mb-4 flex items-center gap-2">
+                            <Activity size={18} className="text-indigo-400" />
+                            Short Term Prediction
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="p-3 bg-slate-800/50 rounded-lg">
+                                <span className="text-xs text-slate-500 block mb-1">TEMP TREND</span>
+                                <span className={`text-lg font-bold ${prediction.temperature === 'Rising' ? 'text-red-400' : 'text-emerald-400'}`}>
+                                    {prediction.temperature || 'Stable'}
+                                </span>
+                            </div>
+                            <div className="p-3 bg-slate-800/50 rounded-lg">
+                                <span className="text-xs text-slate-500 block mb-1">GAS TREND</span>
+                                <span className={`text-lg font-bold ${prediction.gas === 'Rising' ? 'text-red-400' : 'text-emerald-400'}`}>
+                                    {prediction.gas || 'Stable'}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                {/* 3. Trends Graph (Bottom) */}
+                <TrendGraph data={sensorData} className="h-[350px]" />
             </div>
-        </div>
+
+            {/* Analysis Charts Grid (Original) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                <Activity className="text-emerald-500" size={20} />
+                                Temperature Analysis (Kalman Filter)
+                            </h3>
+                            <p className="text-slate-400 text-sm">Real-time noise reduction vs Raw input</p>
+                        </div>
+                    </div>
+                    <div className="h-[300px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={sensorData}>
+                                <defs>
+                                    <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                                <XAxis dataKey="timestamp" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#f8fafc' }}
+                                    itemStyle={{ color: '#f8fafc' }}
+                                />
+                                <Area type="monotone" dataKey="temp_raw" stroke="#64748b" strokeWidth={1} fill="transparent" strokeDasharray="5 5" name="Raw Sensor" />
+                                <Area type="monotone" dataKey="temperature" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorTemp)" name="Filtered" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                <Wind className="text-indigo-500" size={20} />
+                                Humidity Trends
+                            </h3>
+                            <p className="text-slate-400 text-sm">Environmental moisture tracking</p>
+                        </div>
+                    </div>
+                    <div className="h-[300px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={sensorData}>
+                                <defs>
+                                    <linearGradient id="colorHum" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                                <XAxis dataKey="timestamp" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#f8fafc' }}
+                                    itemStyle={{ color: '#f8fafc' }}
+                                />
+                                <Area type="monotone" dataKey="humidity" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorHum)" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div >
+        </div >
     );
 
     return (

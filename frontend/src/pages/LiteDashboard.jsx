@@ -1,7 +1,26 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
-import { Activity, Droplets, Thermometer, Wind, AlertTriangle, Wifi, Zap } from 'lucide-react';
+import { Activity, Droplets, Thermometer, Wind, AlertTriangle, Wifi, Zap, Cloud, Brain, ShieldCheck, FlaskConical } from 'lucide-react';
 import API_BASE_URL from '../config';
+
+const SmartInsightCard = ({ insight, anomaly }) => {
+    if (!insight && !anomaly) return null;
+    return (
+        <div className={`p-4 rounded-xl border flex items-start gap-4 animate-in fade-in slide-in-from-top-4 ${anomaly ? 'bg-red-500/10 border-red-500/30 text-red-100' : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-100'}`}>
+            <div className={`p-2 rounded-lg ${anomaly ? 'bg-red-500/20 text-red-400' : 'bg-indigo-500/20 text-indigo-400'}`}>
+                {anomaly ? <AlertTriangle size={20} /> : <Brain size={20} />}
+            </div>
+            <div>
+                <h4 className="font-bold text-sm uppercase tracking-wider mb-1 flex items-center gap-2">
+                    {anomaly ? 'Anomaly Detected' : 'AI Smart Insight'}
+                    {anomaly && <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">ACTION REQUIRED</span>}
+                </h4>
+                <p className="text-sm opacity-90 leading-relaxed font-medium">
+                    {insight || "System behavior is unusual. Check sensors."}
+                </p>
+                {anomaly && <p className="text-xs mt-2 opacity-75 font-mono">Metric: {anomaly}</p>}
+            </div>
+        </div>
+    );
+};
 
 const StatCard = ({ title, value, unit, icon: Icon, color, trend }) => (
     <div className="glass-panel p-6 relative overflow-hidden group">
@@ -62,6 +81,13 @@ const LiteDashboard = ({ sensorData, alerts, connectionStatus, onSwitchToPro }) 
     const rain = useMemo(() => latestData.rain < 2000 ? 'RAINING' : 'DRY', [latestData]);
     const rainColor = useMemo(() => latestData.rain < 2000 ? 'blue' : 'slate', [latestData]);
 
+    // Smart Metrics
+    const smartMetrics = latestData.smart_metrics || {};
+    const trustScore = useMemo(() => smartMetrics.trust_score != null ? smartMetrics.trust_score.toFixed(0) : 'N/A', [smartMetrics]);
+    const trustColor = useMemo(() => (smartMetrics.trust_score || 0) > 80 ? 'emerald' : ((smartMetrics.trust_score || 0) > 50 ? 'yellow' : 'red'), [smartMetrics]);
+    const ph = useMemo(() => smartMetrics.ph != null ? smartMetrics.ph.toFixed(1) : 'N/A', [smartMetrics]);
+    const phColor = useMemo(() => (smartMetrics.ph < 6 || smartMetrics.ph > 8) ? 'red' : 'emerald', [smartMetrics]);
+
     // Check for Device
     if (!sensorData || sensorData.length === 0) {
         const token = localStorage.getItem('token');
@@ -117,20 +143,27 @@ const LiteDashboard = ({ sensorData, alerts, connectionStatus, onSwitchToPro }) 
                 )}
             </header>
 
-            {alerts.length > 0 && (
-                <div className="w-full p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-200 flex items-center gap-3 animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.2)]">
-                    <AlertTriangle className="text-red-500" />
-                    <span className="font-bold">CRITICAL ALERT:</span> {alerts[0].message}
-                </div>
-            )}
+            {/* Smart Insights & Alerts Section */}
+            <div className="grid grid-cols-1 gap-4">
+                {alerts.length > 0 && (
+                    <div className="w-full p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-200 flex items-center gap-3 animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.2)]">
+                        <AlertTriangle className="text-red-500" />
+                        <span className="font-bold">CRITICAL ALERT:</span> {alerts[0].message}
+                    </div>
+                )}
+
+                {smartMetrics.insight && <SmartInsightCard insight={smartMetrics.insight} anomaly={smartMetrics.anomaly_label !== "Normal" ? smartMetrics.anomaly_label : null} />}
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
                 <StatCard title="Temperature" value={temp} unit="°C" icon={Thermometer} color={temp === 'ERR' ? 'red' : 'cyan'} trend={temp === 'ERR' ? 0 : Math.abs(latestData.temperature || 0) * 2} />
                 <StatCard title="Humidity" value={hum} unit="%" icon={Droplets} color={hum === 'ERR' ? 'red' : 'blue'} trend={hum === 'ERR' ? 0 : latestData.humidity || 0} />
                 <StatCard title="Air Quality" value={gas} unit="RAW" icon={Activity} color={gasColor} trend={(latestData.mq_raw / 1024) * 100 || 0} />
                 <StatCard title="Rain Status" value={rain} unit="" icon={Cloud} color={rainColor} trend={(4095 - latestData.rain) / 40 || 0} />
-                <StatCard title="Motion" value={motion} unit="" icon={Zap} color={motionColor} trend={latestData.motion ? 100 : 0} />
-                <StatCard title="Screen" value={latestData.screen || 0} unit="MODE" icon={Activity} color="purple" trend={(latestData.screen / 2) * 100 || 0} />
+
+                {/* New Smart Cards */}
+                <StatCard title="Trust Score" value={trustScore} unit="%" icon={ShieldCheck} color={trustColor} trend={smartMetrics.trust_score || 0} />
+                <StatCard title="pH Level" value={ph} unit="pH" icon={FlaskConical} color={phColor} trend={((parseFloat(ph) || 0) / 14) * 100} />
             </div>
 
             <div className="glass-panel p-6 border-t-2 border-t-emerald-500/20">

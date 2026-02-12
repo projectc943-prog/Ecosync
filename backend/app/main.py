@@ -28,8 +28,15 @@ from .services import (
     aqi_calculator,
     external_apis,
     fusion_engine,
+    fusion_engine,
     weather_service
 )
+from . import ml_engine
+
+# Initialize ML components
+anomaly_detector = ml_engine.IoTAnomalyDetector()
+trust_calculator = ml_engine.TrustScoreCalculator()
+insight_generator = ml_engine.SmartInsightGenerator()
 
 from .services.websocket_manager import manager
 from .services.api_cache import refresh_map_cache, get_cached_markers
@@ -549,7 +556,32 @@ async def receive_iot_data(data: IoTSensorData, background_tasks: BackgroundTask
         filtered_temp, temp_conf = kf_instance.filter_temperature(data.temperature)
         filtered_hum, hum_conf = kf_instance.filter_humidity(data.humidity)
         filtered_pm25, pm25_conf = kf_instance.filter_pm25(data.pm25)
+        filtered_pm25, pm25_conf = kf_instance.filter_pm25(data.pm25)
         mq_cleaned = kf_instance.clean_mq_data(data.mq_raw)
+
+        # 1b. Trust Score & Anomaly Detection
+        current_data = {
+            "temperature": filtered_temp,
+            "humidity": filtered_hum,
+            "pm2_5": filtered_pm25,
+            "pressure": data.pressure,
+            "wind_speed": data.wind_speed,
+            "uv_index": 0, # Placeholder
+            "vibration": 0, # Placeholder
+            "ph": data.ph,
+            "gas": data.gas or mq_cleaned["smoothed"]
+        }
+        
+        trust_score = trust_calculator.calculate_score(current_data)
+        is_anomaly, anomaly_score = anomaly_detector.update_and_predict([
+            filtered_temp, data.pressure, 0, data.wind_speed, 0, 0, 0, filtered_pm25, 0, 0, 0
+        ])
+        
+        anomalies_list, precautions = anomaly_detector.check_thresholds(current_data)
+        smart_insight = insight_generator.generate_insight(current_data, anomalies_list)
+        
+        if is_anomaly:
+            anomalies_list.append("Statistical Outlier")
         
         # 2. Get/Create Device (Unique per User for localized geofencing)
         id_sanitized = data.user_email.replace("@", "_").replace(".", "_") if data.user_email else "MAIN"
@@ -575,6 +607,24 @@ async def receive_iot_data(data: IoTSensorData, background_tasks: BackgroundTask
                 device.lon = data.lon
             db.commit()
 
+        # New Smart Alert Logic (Phase 2) - Calculated for EVERY request
+        smart_report = insight_generator.generate_full_report(
+            {
+                "temperature": data.temperature,
+                "gas": data.mq_raw, # Using mq_raw as gas proxy
+                "humidity": data.humidity,
+                "ph": data.ph
+            },
+            anomalies_list
+        )
+        
+        smart_insight = smart_report["insight"]
+        trust_score = trust_calculator.calculate_score({
+            "temperature": data.temperature,
+            "humidity": data.humidity,
+            "pm2_5": filtered_pm25,
+        })
+
         # 3. Store Filtered Data with proper transaction handling
         try:
             mq_norm = min(100, max(0, (mq_cleaned["smoothed"] - 200) / 6))
@@ -591,8 +641,18 @@ async def receive_iot_data(data: IoTSensorData, background_tasks: BackgroundTask
                 mq_raw=data.mq_raw,
                 gas=data.gas or mq_cleaned["smoothed"],
                 rain=data.rain,
-                motion=data.motion
+                motion=data.motion,
+                ph=data.ph,
+                trust_score=trust_score,
+                anomaly_label=",".join(anomalies_list) if anomalies_list else "Normal",
+                smart_insight=smart_insight
             )
+            
+            # Add extra metrics to object for immediate response (not stored in DB yet)
+            measurement.risk_level = smart_report["risk_level"]
+            measurement.prediction = smart_report["prediction"]
+            measurement.sensor_health = smart_report["sensor_health"]
+            measurement.baseline = smart_report["baseline"]
             db.add(measurement)
             db.commit()
 
@@ -633,7 +693,16 @@ async def receive_iot_data(data: IoTSensorData, background_tasks: BackgroundTask
                     },
                     "mq_index": mq_norm,
                     "pressure": data.pressure,
-                    "wind_speed": data.wind_speed
+                    "mq_index": mq_norm,
+                    "pressure": data.pressure,
+                    "wind_speed": data.wind_speed,
+                    "smart_metrics": {
+                        "trust_score": round(trust_score, 1),
+                        "is_anomaly": is_anomaly,
+                        "anomaly_score": round(anomaly_score, 3),
+                        "insight": smart_insight,
+                        "ph": data.ph
+                    }
                 }
                 await manager.broadcast(payload, "ESP32_MAIN")
             except Exception as ws_error:
@@ -705,7 +774,13 @@ async def get_filtered_iot_data(db: Session = Depends(get_db)):
             "dominant_pollutant": aqi_result.get("dominant_pollutant")
         },
         "health": health_recs,
-        "weather": prediction
+        "weather": prediction,
+        "smart_metrics": {
+            "trust_score": reading.trust_score,
+            "anomaly_label": reading.anomaly_label,
+            "insight": reading.smart_insight,
+            "ph": reading.ph
+        }
     }
 
 

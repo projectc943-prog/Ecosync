@@ -90,6 +90,16 @@ class SensorDataResponse(BaseModel):
     user_email: Optional[str] = None
     lat: Optional[float] = None
     lon: Optional[float] = None
+    
+    # Smart Metrics
+    ph: Optional[float] = None
+    trust_score: Optional[float] = None
+    anomaly_label: Optional[str] = "Normal"
+    smart_insight: Optional[str] = None
+    risk_level: Optional[str] = "SAFE"
+    prediction: Optional[dict] = None
+    sensor_health: Optional[dict] = None
+    baseline: Optional[dict] = None
 
     class Config:
         from_attributes = True

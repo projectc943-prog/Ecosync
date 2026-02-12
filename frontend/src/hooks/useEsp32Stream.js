@@ -105,12 +105,68 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
         const fetchData = async () => {
             try {
                 if (mode === 'lite' || mode === 'light') {
-                    // LITE MODE: Polling disabled until valid endpoint exists
-                    // We rely purely on SERIAL in Lite for now to avoid 404 confusion
-                    if (health.status === 'DISCONNECTED') {
-                        setHealth({ status: 'AWAITING SERIAL', lastPacketTime: null });
+                    // LIGHT MODE: If Serial is NOT connected, poll backend for demo/simulated data
+                    if (health.status !== 'ONLINE') {
+                        try {
+                            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/filtered/latest`);
+                            if (response.ok) {
+                                const latest = await response.json();
+                                if (latest) {
+                                    // Fix: Access nested objects from API response
+                                    const filtered = latest.filtered || {};
+                                    const smart = latest.smart_metrics || {};
+
+                                    const now = Date.now();
+                                    const packet = {
+                                        ts: now,
+                                        timestamp: latest.timestamp ? new Date(latest.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString(),
+
+                                        temperature: filtered.temperature,
+                                        temp_raw: filtered.temperature,
+
+                                        humidity: filtered.humidity,
+                                        hum_raw: filtered.humidity,
+
+                                        gas: filtered.mq_smoothed,
+                                        mq_raw: filtered.mq_smoothed,
+
+                                        pm25: filtered.pm25,
+
+                                        // Add Pressure (for 8th card)
+                                        pressure: filtered.pressure || 1013,
+
+                                        motion: latest.motion || 0, // Usually root or filtered depending on backend, let's assume root for now if main.py didn't put it in filtered
+                                        rain: latest.rain || 0,
+
+                                        trustScore: smart.trust_score,
+                                        smart_metrics: {
+                                            insight: smart.insight || smart.smart_insight, // Handle inconsistent naming
+                                            anomaly_label: smart.anomaly_label,
+                                            ph: smart.ph,
+                                            trust_score: smart.trust_score,
+                                            risk_level: latest.risk_level || "SAFE", // check where risk_level is in main.py
+                                            prediction: latest.prediction,
+                                            sensor_health: latest.sensor_health,
+                                            baseline: latest.baseline
+                                        }
+                                    };
+
+                                    // Update Stream State
+                                    bufferRef.current = [...bufferRef.current, packet].slice(-50);
+                                    setStream({
+                                        connected: false, // Not physically connected
+                                        lastSeen: now,
+                                        data: packet,
+                                        history: bufferRef.current,
+                                        alerts: []
+                                    });
+                                }
+                            }
+                        } catch (e) {
+                            console.warn("Demo Data Poll Error:", e);
+                        }
                     }
-                    return;
+                    return; // Exit fetchData if in lite/light mode and handled
                 }
 
                 // PRO MODE: Advanced Simulation + Real Data Wrapper
@@ -185,7 +241,48 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                 // --- CLOUD PERSISTENCE & ALERTS ---
                 const localTime = new Date(now - (new Date().getTimezoneOffset() * 60000)).toISOString();
 
-                // 1. Supabase Sync
+                let smartData = {};
+
+                // 2. Local Backend Alerts Sync (Await for Smart Data)
+                try {
+                    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/iot/data`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            temperature: Number(filteredTemp.toFixed(2)),
+                            humidity: Number(filteredHum.toFixed(2)),
+                            pm25: Number(filteredAqi.toFixed(2)),
+                            pressure: 1013,
+                            mq_raw: packet.mq_raw,
+                            wind_speed: Number(filteredWind.toFixed(2)),
+                            user_email: userEmail,
+                            lat: coordinates[0],
+                            lon: coordinates[1]
+                        })
+                    });
+
+                    if (response.ok) {
+                        smartData = await response.json();
+                    }
+                } catch (err) {
+                    console.error("Backend Alert Sync Error:", err);
+                }
+
+                // Merge Smart Metrics
+                packet.trustScore = smartData.trust_score ?? 98.7; // Default fallback
+                packet.smart_metrics = {
+                    insight: smartData.smart_insight,
+                    anomaly_label: smartData.anomaly_label || "Normal",
+                    ph: smartData.ph,
+                    trust_score: smartData.trust_score,
+                    // Phase 2 Metrics
+                    risk_level: smartData.risk_level || "SAFE",
+                    prediction: smartData.prediction,
+                    sensor_health: smartData.sensor_health,
+                    baseline: smartData.baseline
+                };
+
+                // 1. Supabase Sync (Fire and Forget)
                 (async () => {
                     try {
                         const { error } = await supabase.from('sensor_readings').insert([
@@ -204,34 +301,6 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                         if (error) console.error("Supabase Sync Error:", error.message);
                     } catch (err) {
                         console.error("Supabase Sync Fatal Error:", err);
-                    }
-                })();
-
-                // 2. Local Backend Alerts Sync
-                (async () => {
-                    try {
-                        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/iot/data`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                temperature: Number(filteredTemp.toFixed(2)),
-                                humidity: Number(filteredHum.toFixed(2)),
-                                pm25: Number(filteredAqi.toFixed(2)),
-                                pressure: 1013,
-                                mq_raw: packet.mq_raw,
-                                wind_speed: Number(filteredWind.toFixed(2)),
-                                user_email: userEmail,
-                                lat: coordinates[0],
-                                lon: coordinates[1]
-                            })
-                        });
-
-                        if (!response.ok) {
-                            const errData = await response.json();
-                            console.warn("Backend Alert Sync Warning:", errData.detail);
-                        }
-                    } catch (err) {
-                        console.error("Backend Alert Sync Fatal Error:", err);
                     }
                 })();
 
@@ -367,11 +436,48 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                             motion: motionRaw,
                             rain: rainRaw,
                             screen: screenMode,
-                            trustScore: 100,
+                            trustScore: 99.9, // Placeholder until fetch returns
                             deviceId: "ESP32-SERIAL-KF"
                         };
 
-                        // --- PERSISTENCE & ALERTS FOR SERIAL ---
+                        // --- BACKEND SYNC & SMART METRICS FETCH ---
+                        try {
+                            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/iot/data`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    temperature: packet.temperature,
+                                    humidity: packet.humidity,
+                                    pm25: packet.pm25,
+                                    mq_raw: packet.gas,
+                                    rain: packet.rain,
+                                    motion: packet.motion,
+                                    screen: packet.screen,
+                                    user_email: userEmail,
+                                    lat: coordinates[0],
+                                    lon: coordinates[1]
+                                })
+                            });
+
+                            if (response.ok) {
+                                const smartData = await response.json();
+                                packet.trustScore = smartData.trust_score ?? 99.9;
+                                packet.smart_metrics = {
+                                    insight: smartData.smart_insight,
+                                    anomaly_label: smartData.anomaly_label,
+                                    ph: smartData.ph,
+                                    trust_score: smartData.trust_score,
+                                    // Phase 2 Metrics
+                                    risk_level: smartData.risk_level || "SAFE",
+                                    prediction: smartData.prediction,
+                                    sensor_health: smartData.sensor_health,
+                                    baseline: smartData.baseline
+                                };
+                            }
+                        } catch (err) {
+                            console.error("Serial Backend Alert Sync Error:", err);
+                        }
+
                         // 1. Supabase Sync (Serial Mode)
                         (async () => {
                             try {
@@ -385,30 +491,6 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                                 }]);
                             } catch (err) {
                                 console.error("Serial Supabase Sync Error:", err);
-                            }
-                        })();
-
-                        // 2. Backend Alerts Sync (Serial Mode)
-                        (async () => {
-                            try {
-                                fetch(`${import.meta.env.VITE_API_BASE_URL}/iot/data`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        temperature: packet.temperature,
-                                        humidity: packet.humidity,
-                                        pm25: packet.pm25,
-                                        mq_raw: packet.gas,
-                                        rain: packet.rain,
-                                        motion: packet.motion,
-                                        screen: packet.screen,
-                                        user_email: userEmail,
-                                        lat: coordinates[0],
-                                        lon: coordinates[1]
-                                    })
-                                });
-                            } catch (err) {
-                                console.error("Serial Backend Alert Sync Error:", err);
                             }
                         })();
 

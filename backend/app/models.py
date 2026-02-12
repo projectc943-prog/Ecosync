@@ -60,6 +60,10 @@ class SensorData(Base):
     gas = Column(Float, nullable=True)
     rain = Column(Float, nullable=True)
     motion = Column(Integer, nullable=True)
+    ph = Column(Float, nullable=True)
+    trust_score = Column(Float, nullable=True)
+    anomaly_label = Column(String, nullable=True)
+    smart_insight = Column(Text, nullable=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     
     # Relationships
