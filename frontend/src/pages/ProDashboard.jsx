@@ -255,8 +255,11 @@ const ProDashboard = ({ onToggle }) => {
                         >
                             <Cloud size={14} /> CLOUD SYNC
                         </button>
-                        <div className="flex items-center gap-2 px-4 py-1 bg-amber-500/10 border border-amber-500/40 rounded-full text-amber-400 text-xs font-bold">
-                            <CheckCircle size={14} /> SYSTEM OPTIMAL
+                        <div className={`px-3 py-1 rounded-full text-[10px] font-black border tracking-widest ${(sensorData && sensorData.length > 0 && (Date.now() - new Date(latestData.timestamp).getTime() < 60000))
+                                ? 'bg-blue-500/20 border-blue-500 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)]'
+                                : 'bg-red-500/20 border-red-500 text-red-400'
+                            }`}>
+                            {(sensorData && sensorData.length > 0 && (Date.now() - new Date(latestData.timestamp).getTime() < 60000)) ? 'ONLINE (BRIDGE)' : 'OFFLINE'}
                         </div>
 
 

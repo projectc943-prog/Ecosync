@@ -528,8 +528,8 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
 
 # --- IoT Ingestion Endpoint ---
 class IoTSensorData(BaseModel):
-    temperature: float
-    humidity: float
+    temperature: Optional[float] = None
+    humidity: Optional[float] = None
     pm25: float = 0.0
     pressure: float = 1013.0
     mq_raw: float = 0.0
@@ -553,8 +553,11 @@ async def receive_iot_data(data: IoTSensorData, background_tasks: BackgroundTask
         current_ts = dt.utcnow()
         
         # 1. Kalman Filtering & Cleaning
-        filtered_temp, temp_conf = kf_instance.filter_temperature(data.temperature)
-        filtered_hum, hum_conf = kf_instance.filter_humidity(data.humidity)
+        temp_val = data.temperature if data.temperature is not None else 0.0
+        hum_val = data.humidity if data.humidity is not None else 0.0
+        
+        filtered_temp, temp_conf = kf_instance.filter_temperature(temp_val)
+        filtered_hum, hum_conf = kf_instance.filter_humidity(hum_val)
         filtered_pm25, pm25_conf = kf_instance.filter_pm25(data.pm25)
         filtered_pm25, pm25_conf = kf_instance.filter_pm25(data.pm25)
         mq_cleaned = kf_instance.clean_mq_data(data.mq_raw)
@@ -584,8 +587,13 @@ async def receive_iot_data(data: IoTSensorData, background_tasks: BackgroundTask
             anomalies_list.append("Statistical Outlier")
         
         # 2. Get/Create Device (Unique per User for localized geofencing)
-        id_sanitized = data.user_email.replace("@", "_").replace(".", "_") if data.user_email else "MAIN"
-        device_id = f"DASHBOARD_{id_sanitized}"
+        if data.user_email:
+             id_sanitized = data.user_email.replace("@", "_").replace(".", "_")
+             device_id = f"DASHBOARD_{id_sanitized}"
+        else:
+             device_id = "ESP32_MAIN"
+        
+        print(f"DEBUG: Using Device ID: {device_id} for email: {data.user_email}")
         
         device = db.query(models.Device).filter(models.Device.id == device_id).first()
         if not device:
@@ -713,7 +721,7 @@ async def receive_iot_data(data: IoTSensorData, background_tasks: BackgroundTask
             measurement.wind_speed = data.wind_speed
             db.commit()
 
-            return {"status": "ok", "message": "Data processed successfully"}
+            return {"status": "ok", "message": "Data processed successfully", "device_id": device_id}
 
         except Exception as e:
             logger.error(f"IoT Data Error: {e}")
@@ -735,11 +743,35 @@ def get_historical_data(limit: int = 100, db: Session = Depends(get_db)):
 @app.get("/api/filtered/latest", tags=["IoT"])
 async def get_filtered_iot_data(db: Session = Depends(get_db)):
     """Returns latest Kalman-filtered data with AQI and health recommendations."""
+    # Debug: Try ESP32_MAIN first
     reading = db.query(models.SensorData).filter(
         models.SensorData.device_id == "ESP32_MAIN"
     ).order_by(models.SensorData.timestamp.desc()).first()
     
     if not reading:
+        # Debug: Try ANY device
+        last_any = db.query(models.SensorData).order_by(models.SensorData.timestamp.desc()).first()
+        if last_any:
+             print(f"DEBUG: Found data for {last_any.device_id} but not ESP32_MAIN")
+             return {
+                 "status": "partial",
+                 "message": f"Data found for {last_any.device_id}",
+                 "timestamp": last_any.timestamp,
+                 "filtered": {
+                     "temperature": last_any.temperature,
+                     "humidity": last_any.humidity,
+                     "pm25": last_any.pm2_5,
+                     "mq_smoothed": last_any.gas
+                 },
+                 "smart_metrics": {
+                        "trust_score": last_any.trust_score,
+                        "smart_insight": last_any.smart_insight,
+                        "anomaly_label": last_any.anomaly_label,
+                        "ph": last_any.ph,
+                        "prediction": "From Backup Device"
+                 }
+             }
+
         return {"status": "no_data", "message": "No ESP32 data available"}
     
     # Calculate AQI

@@ -18,19 +18,15 @@ import time
 import json
 
 # --- Configuration ---
-API_URL = "https://capstone-backend-djdd.onrender.com/iot/data"
+API_URL = "http://localhost:8009/iot/data"
 BAUD_RATE = 115200
 
+import serial.tools.list_ports
+
 def get_serial_ports():
-    """ Lists serial port names on Mac """
-    if sys.platform.startswith('darwin'):
-        # On Mac, Arduinos often appear as cu.usbmodem
-        ports = glob.glob('/dev/cu.usbmodem*') + glob.glob('/dev/cu.usbserial*') + \
-                glob.glob('/dev/tty.usbmodem*') + glob.glob('/dev/tty.usbserial*')
-    else:
-        ports = []
-    # Deduplicate while preserving order
-    return list(dict.fromkeys(ports))
+    """ Lists serial port names cross-platform """
+    ports = serial.tools.list_ports.comports()
+    return [port.device for port in ports]
 
 def main():
     print("--- IoT Serial Bridge ---")
@@ -49,6 +45,7 @@ def main():
         try:
             with serial.Serial(serial_port, BAUD_RATE, timeout=1) as ser:
                 time.sleep(2) # Wait for Arduino reset
+                ser.reset_input_buffer()
                 print(f"Connected! Bridging {serial_port} -> {API_URL}")
 
                 while True:
@@ -66,17 +63,20 @@ def main():
                                 
                                 # Map keys to match Backend Pydantic Model (IoTSensorData)
                                 mapped_data = {
-                                    "temperature": raw_json.get("temperature", 0.0),
-                                    "humidity": raw_json.get("humidity", 0.0),
+                                    "temperature": raw_json.get("temperature", None),
+                                    "humidity": raw_json.get("humidity", None),
                                     "pm25": raw_json.get("pm2_5", 0.0),
                                     "pressure": raw_json.get("pressure", 1013.0),
-                                    "mq_raw": raw_json.get("vibration", 0.0) # Using vibration as a proxy for MQ for testing
+                                    "mq_raw": raw_json.get("mq_raw", raw_json.get("gas", 0.0)),
+                                    "motion": raw_json.get("motion", 0),
+                                    "screen": raw_json.get("screen", 0),
+                                    "rain": raw_json.get("rain", 0.0)
                                 }
                                 
                                 # POST to Backend
                                 try:
                                     resp = requests.post(API_URL, json=mapped_data, timeout=5)
-                                    print(f"Sent: {mapped_data} | Status: {resp.status_code}")
+                                    print(f"Sent: {mapped_data} | Status: {resp.status_code} | Resp: {resp.text}")
                                 except requests.exceptions.RequestException as e:
                                     print(f"Backend error: {e}")
 
