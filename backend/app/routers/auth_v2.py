@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime as dt
 import random
 import string
-print(f"LOADING AUTH_V2 FROM {__file__}")
+# print(f"LOADING AUTH_V2 FROM {__file__}")
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session

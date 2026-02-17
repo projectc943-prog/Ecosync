@@ -1,0 +1,41 @@
+C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\app\assistant\service.py:2: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+INFO:     Started server process [18540]
+INFO:     Waiting for application startup.
+2026-02-17 22:27:45,340 [INFO] app.main: Starting background services...
+2026-02-17 22:27:45,395 [INFO] app.main: EcoSync Backend Initialized Successfully.
+2026-02-17 22:27:45,395 [INFO] app.main: Startup: Background tasks initiated (Polling Enabled)
+2026-02-17 22:27:45,447 [ERROR] app.main: Polling cycle error: (psycopg2.errors.UndefinedColumn) column devices.user_id does not exist
+LINE 1: ...s_status, devices.last_seen AS devices_last_seen, devices.us...
+                                                             ^
+
+[SQL: SELECT devices.id AS devices_id, devices.name AS devices_name, devices.connector_type AS devices_connector_type, devices.lat AS devices_lat, devices.lon AS devices_lon, devices.status AS devices_status, devices.last_seen AS devices_last_seen, devices.user_id AS devices_user_id 
+FROM devices 
+WHERE devices.connector_type = %(connector_type_1)s]
+[parameters: {'connector_type_1': 'public_api'}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     Application startup complete.
+ERROR:    [Errno 10048] error while attempting to bind on address ('0.0.0.0', 8000): [winerror 10048] only one usage of each socket address (protocol/network address/port) is normally permitted
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+Loading environment from: C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\.env.local
+--- DATABASE INITIALIZATION ---
+URL: aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require
+Error seeding admin: (psycopg2.errors.UndefinedColumn) column users.created_at does not exist
+LINE 1: ...s_verified, users.otp_secret AS users_otp_secret, users.crea...
+                                                             ^
+
+[SQL: SELECT users.id AS users_id, users.email AS users_email, users.hashed_password AS users_hashed_password, users.first_name AS users_first_name, users.last_name AS users_last_name, users.plan AS users_plan, users.location_name AS users_location_name, users.location_lat AS users_location_lat, users.location_lon AS users_location_lon, users.mobile AS users_mobile, users.is_verified AS users_is_verified, users.otp_secret AS users_otp_secret, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users 
+WHERE users.email = %(email_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'email_1': 'gitams4@gmail.com', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+[Cache] Refreshed 15 markers at 2026-02-17 16:57:45.448079

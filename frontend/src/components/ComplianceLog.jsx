@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ClipboardCheck, CheckCircle2, AlertCircle, Clock, CalendarDays } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -40,7 +40,14 @@ const ComplianceLog = () => {
         }
     };
 
+    const compliancePercentage = useMemo(() => {
+        if (!tasks.length) return 0;
+        const completed = tasks.filter(t => t.status === "COMPLETED").length;
+        return Math.round((completed / tasks.length) * 100);
+    }, [tasks]);
+
     const toggleStatus = async (id) => {
+        console.log(`Toggling status for task ${id}...`);
         try {
             const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/compliance/verify`, {
                 method: 'POST',
@@ -52,11 +59,13 @@ const ComplianceLog = () => {
             });
 
             if (res.ok) {
-                // Refresh logs to get updated server state
+                console.log("Successfully verified task");
                 fetchLogs();
+            } else {
+                console.error("Verification API failed", await res.text());
             }
         } catch (e) {
-            console.error("Verification failed", e);
+            console.error("Verification request failed", e);
         }
     };
 
@@ -75,7 +84,7 @@ const ComplianceLog = () => {
                 </div>
                 <div className="px-3 py-1 rounded-full bg-slate-800 border border-slate-700 flex items-center gap-2">
                     <CalendarDays size={14} className="text-slate-400" />
-                    <span className="text-xs font-bold text-slate-300">COMPLIANCE: 40%</span>
+                    <span className="text-xs font-bold text-slate-300">COMPLIANCE: {compliancePercentage}%</span>
                 </div>
             </div>
 

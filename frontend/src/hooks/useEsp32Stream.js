@@ -436,7 +436,12 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                             motion: motionRaw,
                             rain: rainRaw,
                             screen: screenMode,
-                            trustScore: 99.9, // Placeholder until fetch returns
+                            trustScore: 99.9,
+                            smart_metrics: {
+                                trust_score: 99.9,
+                                risk_level: "SAFE",
+                                sensor_health: "GOOD"
+                            },
                             deviceId: "ESP32-SERIAL-KF"
                         };
 
@@ -481,16 +486,42 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                         // 1. Supabase Sync (Serial Mode)
                         (async () => {
                             try {
-                                await supabase.from('sensor_data').insert([{
+                                const { error } = await supabase.from('sensor_readings').insert([{
                                     device_id: "ESP32-SERIAL",
-                                    timestamp: new Date().toISOString(),
+                                    created_at: new Date().toISOString(),
                                     temperature: packet.temperature,
+                                    raw_temperature: packet.temp_raw,
                                     humidity: packet.humidity,
-                                    pm2_5: packet.pm25,
-                                    vibration: packet.gas
+                                    raw_humidity: packet.hum_raw,
+
+                                    gas: packet.gas,              // Mapping Gas
+                                    raw_gas: packet.mq_raw,
+                                    motion: packet.motion,        // Mapping Motion
+                                    raw_motion: packet.motion,
+                                    trust_score: packet.trustScore
                                 }]);
+
+                                if (error) {
+                                    console.error("Supabase Sync Error:", error.message);
+                                    // DEBUG: Show error to user ONCE
+                                    if (!window.hasAlertedSupabaseError) {
+                                        alert("Supabase Error: " + error.message);
+                                        window.hasAlertedSupabaseError = true;
+                                    }
+                                } else {
+                                    // DEBUG: Notify success ONCE
+                                    if (!window.hasAlertedSupabaseSuccess) {
+                                        // alert("Supabase Write Success! Data is being saved."); 
+                                        // Commented out success alert to avoid annoyance, but error alert is active
+                                        window.hasAlertedSupabaseSuccess = true;
+                                    }
+                                }
                             } catch (err) {
-                                console.error("Serial Supabase Sync Error:", err);
+                                console.error("Supabase Sync Fatal Error:", err);
+                                if (!window.hasAlertedSupabaseError) {
+                                    alert("Supabase Fatal Error: " + err.message);
+                                    window.hasAlertedSupabaseError = true;
+                                }
                             }
                         })();
 

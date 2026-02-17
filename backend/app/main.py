@@ -4,7 +4,7 @@ import os
 from datetime import datetime as dt, timedelta
 from typing import List, Optional
 import math
-print(f"LOADING MAIN FROM {__file__}")
+# print(f"LOADING MAIN FROM {__file__}")
 
 
 from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect
@@ -27,7 +27,6 @@ from .services import (
     kalman_filter as kf_instance,
     aqi_calculator,
     external_apis,
-    fusion_engine,
     fusion_engine,
     weather_service
 )
@@ -627,12 +626,13 @@ class IoTSensorData(BaseModel):
     user_email: Optional[str] = None
     lat: Optional[float] = None
     lon: Optional[float] = None
+    ph: float = 7.0
 
 
-from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks
+
 
 @app.post("/iot/data", tags=["IoT"])
-async def receive_iot_data(data: IoTSensorData, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+async def receive_iot_data(data: IoTSensorData, db: Session = Depends(get_db)):
     """
     Receives sensor data from ESP32, applies Kalman filtering, saves to DB, and broadcasts via WebSocket.
     """
@@ -645,7 +645,6 @@ async def receive_iot_data(data: IoTSensorData, background_tasks: BackgroundTask
         
         filtered_temp, temp_conf = kf_instance.filter_temperature(temp_val)
         filtered_hum, hum_conf = kf_instance.filter_humidity(hum_val)
-        filtered_pm25, pm25_conf = kf_instance.filter_pm25(data.pm25)
         filtered_pm25, pm25_conf = kf_instance.filter_pm25(data.pm25)
         mq_cleaned = kf_instance.clean_mq_data(data.mq_raw)
 

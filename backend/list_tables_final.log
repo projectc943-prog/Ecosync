@@ -1,0 +1,12 @@
+Checking database: aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require
+
+Existing Tables:
+- devices
+- users
+- sensor_data
+- alerts
+- api_snapshots
+- diary_entries
+- user_layouts
+
+[!] safety_logs table is MISSING.

@@ -19,6 +19,11 @@ try:
     devices = db.query(models.Device).all()
     for d in devices:
         print(f" - {d.id}")
+        
+    print("--- ALL USERS ---")
+    users = db.query(models.User).all()
+    for u in users:
+        print(f" - {u.email} (Verified: {u.is_verified})")
 
 finally:
     db.close()
