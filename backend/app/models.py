@@ -101,3 +101,16 @@ class AlertSettings(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class SafetyLog(Base):
+    __tablename__ = "safety_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    task_name = Column(String, nullable=False)
+    status = Column(String, default="PENDING") # PENDING, COMPLETED, SKIPPED
+    verified_by = Column(String, nullable=True) # Name of verifier
+    verified_at = Column(DateTime, nullable=True)
+    shift = Column(String, default="A") # A, B, C
+    date = Column(String, nullable=False, index=True) # YYYY-MM-DD
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

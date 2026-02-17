@@ -22,10 +22,14 @@ const MobileNav = () => {
                         ${isActive ? 'text-emerald-400 scale-110' : 'text-slate-500'}
                     `}
                 >
-                    <item.icon size={20} className={({ isActive }) => isActive ? 'fill-current opacity-20' : ''} />
-                    <span className="text-[10px] font-bold uppercase tracking-tighter">{item.label}</span>
-                    {/* Active Glow Indicator */}
-                    <div className="active-dot w-1 h-1 bg-emerald-500 rounded-full opacity-0 scale-0 transition-all duration-300 group-[.active]:opacity-100 group-[.active]:scale-100 mt-0.5" />
+                    {({ isActive }) => (
+                        <>
+                            <item.icon size={20} className={isActive ? 'fill-current opacity-20' : ''} />
+                            <span className="text-[10px] font-bold uppercase tracking-tighter">{item.label}</span>
+                            {/* Active Glow Indicator */}
+                            <div className={`w-1 h-1 bg-emerald-500 rounded-full transition-all duration-300 mt-0.5 ${isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`} />
+                        </>
+                    )}
                 </NavLink>
             ))}
         </div>

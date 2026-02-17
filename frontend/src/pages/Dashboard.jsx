@@ -9,9 +9,16 @@ import NotificationPermissionPrompt from '../components/NotificationPermissionPr
 import pushNotificationManager from '../utils/pushNotifications';
 
 
-const Dashboard = () => {
+const Dashboard = ({ initialView }) => {
     const { userProfile, currentUser } = useAuth();
     const [isProMode, setIsProMode] = useState(false);
+
+    // Force Lite mode if accessing a specific dashboard view
+    useEffect(() => {
+        if (initialView && initialView !== 'overview') {
+            setIsProMode(false);
+        }
+    }, [initialView]);
 
     const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
     const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
@@ -110,7 +117,7 @@ const Dashboard = () => {
 
             {isProMode
                 ? <ProDashboard onToggle={handleToggle} />
-                : <LightDashboard onToggle={handleToggle} />}
+                : <LightDashboard onToggle={handleToggle} initialView={initialView} />}
 
             {/* Manual Location Test Button */}
             <LocationTestButton userEmail={currentUser?.email} />

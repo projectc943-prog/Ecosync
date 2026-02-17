@@ -6,12 +6,28 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': 'http://127.0.0.1:8009',
-      '/auth': 'http://127.0.0.1:8009',
-      '/token': 'http://127.0.0.1:8009',
-      '/iot': 'http://127.0.0.1:8009',
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/auth': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/token': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/iot': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        secure: false,
+      },
       '/ws': {
-        target: 'ws://127.0.0.1:8009',
+        target: 'ws://127.0.0.1:8000',
         ws: true
       }
     }

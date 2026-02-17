@@ -1,43 +1,90 @@
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { AreaChart, Area, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const TrendGraph = ({ data, className }) => {
-    // Expects 'data' to be an array of objects {ts, temperature, baseline}
-    // Phase 2: 'ml_engine.py' adds 'baseline' field (if mocked) or we map it here
-    // But for now, we rely on the modification in 'useEsp32Stream.js' or 'LightDashboard.jsx'
-    // to this component to include a mock 'baseline' key for each point.
-
-    // If 'data' is the history array from useEsp32Stream:
-    const chartData = (data && data.length > 0) ? data.map(pt => ({
+    // Robust Data Handling: Ensure we have data or show placeholder
+    const chartData = (data && data.length > 0) ? data.map((pt, idx) => ({
         ...pt,
-        // Mock baseline as a smooth curve around 25deg
-        baseline: 25 + Math.sin(pt.ts / 10000) * 2
-    })).slice(-20) : Array(10).fill({ temperature: 0, baseline: 25 }).map((d, i) => ({ ...d, ts: i }));
+        // Generate a smooth baseline if not provided by backend
+        // In real app, this comes from 'ml_engine.py'
+        baseline: pt.baseline || (24 + Math.sin(idx / 5) * 1.5)
+    })) : Array.from({ length: 20 }, (_, i) => ({
+        temperature: 24,
+        baseline: 24,
+        ts: i
+    }));
 
     return (
-        <div className={`w-full bg-slate-900/30 rounded-xl border border-slate-800/50 p-4 ${className || 'h-[200px]'}`}>
-            <div className="flex justify-between items-center mb-2">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Temp Trend vs Baseline</h4>
-                <div className="flex gap-4 text-[10px]">
-                    <span className="flex items-center gap-1 text-emerald-400"><div className="w-2 h-2 rounded-full bg-emerald-400" /> Current</span>
-                    <span className="flex items-center gap-1 text-slate-500"><div className="w-2 h-2 rounded-full bg-slate-500" /> Hist. Arg</span>
+        <div className={`w-full bg-slate-900/30 rounded-xl border border-slate-800/50 p-4 ${className || 'h-[250px]'} relative overflow-hidden`}>
+            {/* Header / Legend */}
+            <div className="flex justify-between items-center mb-4 relative z-10">
+                <div className="flex flex-col">
+                    <h4 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Temperature Trend</h4>
+                    <span className="text-[10px] text-slate-500 font-mono">Real-time vs Historical Baseline</span>
+                </div>
+                <div className="flex gap-4 text-[10px] font-bold tracking-wider">
+                    <span className="flex items-center gap-1.5 text-emerald-400">
+                        <div className="w-2 h-0.5 bg-emerald-400" /> LIVE
+                    </span>
+                    <span className="flex items-center gap-1.5 text-slate-500">
+                        <div className="w-2 h-0.5 bg-slate-500 border-t border-dashed border-slate-500" /> NORMAL (AVG)
+                    </span>
                 </div>
             </div>
 
-            <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                    <XAxis dataKey="timestamp" hide />
-                    <YAxis domain={['auto', 'auto']} hide />
-                    <Tooltip
-                        contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px' }}
-                        itemStyle={{ fontSize: '12px' }}
+            <ResponsiveContainer width="100%" height="85%">
+                <AreaChart data={chartData}>
+                    <defs>
+                        <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                        </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                    <XAxis dataKey="ts" hide />
+                    <YAxis
+                        domain={['dataMin - 5', 'dataMax + 5']}
+                        hide
                     />
-                    {/* Baseline (Faded) */}
-                    <Line type="monotone" dataKey="baseline" stroke="#64748b" strokeWidth={2} strokeDasharray="5 5" dot={false} isAnimationActive={false} />
-                    {/* Current (Active) */}
-                    <Line type="monotone" dataKey="temperature" stroke="#10b981" strokeWidth={3} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
-                </LineChart>
+                    <Tooltip
+                        contentStyle={{
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            borderColor: '#334155',
+                            borderRadius: '8px',
+                            backdropFilter: 'blur(4px)',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                        }}
+                        itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                        labelStyle={{ display: 'none' }}
+                        formatter={(value, name) => [
+                            `${value.toFixed(1)}°C`,
+                            name === 'temperature' ? 'Live Temp' : 'Baseline'
+                        ]}
+                    />
+
+                    {/* Baseline (Historical) - Dashed Line */}
+                    <Line
+                        type="monotone"
+                        dataKey="baseline"
+                        stroke="#64748b"
+                        strokeWidth={2}
+                        strokeDasharray="4 4"
+                        dot={false}
+                        isAnimationActive={true}
+                        animationDuration={1500}
+                    />
+
+                    {/* Live Data - Area + Line */}
+                    <Area
+                        type="monotone"
+                        dataKey="temperature"
+                        stroke="#10b981"
+                        strokeWidth={3}
+                        fillOpacity={1}
+                        fill="url(#colorTemp)"
+                        activeDot={{ r: 6, strokeWidth: 0, fill: '#34d399' }}
+                    />
+                </AreaChart>
             </ResponsiveContainer>
         </div>
     );

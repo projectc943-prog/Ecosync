@@ -18,7 +18,7 @@ import time
 import json
 
 # --- Configuration ---
-API_URL = "http://localhost:8009/iot/data"
+API_URL = "http://localhost:8000/iot/data"
 BAUD_RATE = 115200
 
 import serial.tools.list_ports

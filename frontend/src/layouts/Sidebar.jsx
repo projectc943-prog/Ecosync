@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate, useSearchParams } from 'react-router-dom';
-import { LayoutDashboard, Map, Server, Zap, LogOut, TrendingUp, User, Activity, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Map, Server, Zap, LogOut, TrendingUp, User, Activity, BarChart3, ShieldCheck, Newspaper, Info, Phone } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar = () => {
@@ -17,6 +17,10 @@ const Sidebar = () => {
         { icon: Activity, label: 'Analysis', path: '/analysis' },
         { icon: Map, label: 'Global Map', path: '/global' },
         { icon: BarChart3, label: 'Analytics', path: '/analytics' },
+        { icon: ShieldCheck, label: 'Safety Hub', path: '/safety' },
+        { icon: Newspaper, label: 'Industry Intel', path: '/intel' },
+        { icon: Info, label: 'About Project', path: '/about' },
+        { icon: Phone, label: 'Contact Support', path: '/support' },
         { icon: User, label: 'Profile', path: '/profile' },
     ];
 
@@ -67,14 +71,13 @@ const Sidebar = () => {
                             key={item.path}
                             to={item.path}
                             onClick={() => setIsMobileOpen(false)} // Close on click (mobile)
-                            className={({ isActive }) => `
-                                relative group p-4 rounded-2xl transition-all duration-300
-                                ${isActive
-                                    ? 'bg-emerald-500/20 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.3)]'
-                                    : 'text-slate-500 hover:text-white hover:bg-white/5'}
-                            `}
+                            className={({ isActive }) => {
+                                const activeClass = 'bg-emerald-500/20 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.3)]';
+                                const inactiveClass = 'text-slate-500 hover:text-white hover:bg-white/5';
+                                return `relative group p-4 rounded-2xl transition-all duration-300 ${isActive ? activeClass : inactiveClass}`;
+                            }}
                         >
-                            <item.icon className={`w-6 h-6 transition-transform duration-300 group-hover:scale-110`} strokeWidth={1.5} />
+                            <item.icon className="w-6 h-6 transition-transform duration-300 group-hover:scale-110" strokeWidth={1.5} />
 
                             {/* Active Indicator Bar */}
                             <div className={`

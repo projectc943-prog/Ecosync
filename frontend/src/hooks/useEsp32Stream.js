@@ -135,8 +135,8 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                                         // Add Pressure (for 8th card)
                                         pressure: filtered.pressure || 1013,
 
-                                        motion: latest.motion || 0, // Usually root or filtered depending on backend, let's assume root for now if main.py didn't put it in filtered
-                                        rain: latest.rain || 0,
+                                        motion: latest.motion !== undefined ? latest.motion : null,
+                                        rain: latest.rain !== undefined ? latest.rain : null,
 
                                         trustScore: smart.trust_score,
                                         smart_metrics: {

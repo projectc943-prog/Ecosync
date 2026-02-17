@@ -331,42 +331,71 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
         settings = db.query(models.AlertSettings).filter(models.AlertSettings.is_active == True).first()
     
     # Defaults if no settings found
-    TEMP_THRESH = settings.temp_threshold if settings else 45.0
-    HUM_MIN = settings.humidity_min if settings else 20.0
-    HUM_MAX = settings.humidity_max if settings else 80.0
-    PM25_THRESH = settings.pm25_threshold if settings else 150.0
-    WIND_THRESH = settings.wind_threshold if settings else 30.0
-    GAS_THRESH = settings.gas_threshold if settings else 600.0
+    USER_TEMP_THRESH = settings.temp_threshold if settings else 45.0
+    USER_HUM_MIN = settings.humidity_min if settings else 20.0
+    USER_HUM_MAX = settings.humidity_max if settings else 80.0
+    USER_PM25_THRESH = settings.pm25_threshold if settings else 150.0
+    USER_WIND_THRESH = settings.wind_threshold if settings else 30.0
+    
+    # --- CRITICAL SAFETY OVERRIDES (HARD LIMITS) ---
+    # These cannot be relaxed by users. We take the LOWER of (User Setting, Hard Limit) for safety
+    # Actually, for alerts, we want to trigger if EITHER User Limit OR Hard Limit is breached.
+    # So effectively, the threshold is min(User, Critical)? No.
+    # If User says "Alert at 80C" and Critical is 70C, we want to alert at 70C. So yes, min().
+    # If User says "Alert at 30C" and Critical is 70C, we want to alert at 30C.
+    
+    CRITICAL_TEMP = 70.0 # Fire Risk
+    CRITICAL_GAS = 2000.0 # Explosion Risk / Heavy Leak
+    CRITICAL_PM25 = 300.0 # Hazardous
+    
+    # Effective Thresholds (The stricter of the two)
+    TEMP_THRESH = min(USER_TEMP_THRESH, CRITICAL_TEMP)
+    PM25_THRESH = min(USER_PM25_THRESH, CRITICAL_PM25)
+    
+    HUM_MIN = USER_HUM_MIN
+    HUM_MAX = USER_HUM_MAX
+    WIND_THRESH = USER_WIND_THRESH
+    
+    # Gas is usually not user-configurable in basic settings, but if it were:
+    GAS_THRESH = min(settings.gas_threshold if settings and settings.gas_threshold else 600.0, CRITICAL_GAS)
+    
     RAIN_ALERT_ENABLED = settings.rain_alert if settings else True
     MOTION_ALERT_ENABLED = settings.motion_alert if settings else True
     # Logic change: We will fetch ALL users below instead of just one recipient
     
     triggers = []
     
-    # 1. High Temperature -> Fire Risk (Validate range -50 to 100°C)
+    # 1. High Temperature -> Fire Risk
     if measurement.temperature and -50 <= measurement.temperature <= 100:
-        if measurement.temperature > TEMP_THRESH:
-            triggers.append(f"CRITICAL TEMP: {measurement.temperature}°C (Limit: {TEMP_THRESH}°C)")
+        if measurement.temperature > CRITICAL_TEMP:
+             triggers.append(f"⛔ CRITICAL SAFETY OVERRIDE: Temp {measurement.temperature}°C exceeded HARD LIMIT ({CRITICAL_TEMP}°C)")
+        elif measurement.temperature > TEMP_THRESH:
+             triggers.append(f"⚠️ High Temp: {measurement.temperature}°C (User Limit: {TEMP_THRESH}°C)")
     
-    # 2. Humidity Extremes -> Biological Stress
+    # 2. Humidity Extremes
     if measurement.humidity and 0 <= measurement.humidity <= 100:
         if measurement.humidity > HUM_MAX:
-            triggers.append(f"HIGH HUMIDITY: {measurement.humidity}% (Limit: {HUM_MAX}%)")
+            triggers.append(f"💧 High Humidity: {measurement.humidity}% (Limit: {HUM_MAX}%)")
         elif measurement.humidity < HUM_MIN:
-            triggers.append(f"LOW HUMIDITY: {measurement.humidity}% (Limit: {HUM_MIN}%)")
+            triggers.append(f"🌵 Low Humidity: {measurement.humidity}% (Limit: {HUM_MIN}%)")
 
-    # 3. High PM2.5 -> Hazardous Air
-    if measurement.pm2_5 and measurement.pm2_5 > PM25_THRESH:
-        triggers.append(f"HAZARDOUS AIR: PM2.5 is {measurement.pm2_5} µg/m³ (Limit: {PM25_THRESH})")
+    # 3. High PM2.5
+    if measurement.pm2_5:
+        if measurement.pm2_5 > CRITICAL_PM25:
+             triggers.append(f"⛔ CRITICAL AIR HAZARD: PM2.5 {measurement.pm2_5} (Hard Limit: {CRITICAL_PM25})")
+        elif measurement.pm2_5 > PM25_THRESH:
+             triggers.append(f"🌫️ Poor Air Quality: PM2.5 {measurement.pm2_5} (User Limit: {PM25_THRESH})")
         
-    # 4. High Wind Speed -> Physical Security Risk
+    # 4. High Wind Speed
     if measurement.wind_speed and measurement.wind_speed > WIND_THRESH:
-        triggers.append(f"HAZARDOUS WIND: {measurement.wind_speed} km/h (Limit: {WIND_THRESH} km/h)")
+        triggers.append(f"💨 High Wind: {measurement.wind_speed} km/h (Limit: {WIND_THRESH})")
 
-    # 5. Gas Leak Detection (Validate range 0-4095 for ESP32 ADC)
+    # 5. Gas Leak Detection
     if measurement.gas and 0 <= measurement.gas <= 4095:
-        if measurement.gas > GAS_THRESH:
-            triggers.append(f"GAS ALERT: {measurement.gas} (Limit: {GAS_THRESH})")
+        if measurement.gas > CRITICAL_GAS:
+            triggers.append(f"⛔ EXPLOSION RISK: Gas Level {measurement.gas} (Hard Limit: {CRITICAL_GAS})")
+        elif measurement.gas > GAS_THRESH:
+            triggers.append(f"⚠️ Gas Leak Detected: {measurement.gas} (Limit: {GAS_THRESH})")
 
     # 6. Rain Detection (Validate range 0-4095, threshold < 2000 usually means wet)
     if RAIN_ALERT_ENABLED and measurement.rain and 0 <= measurement.rain <= 4095:
@@ -464,6 +493,8 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
                 f"--------------------------------------------------\n"
                 f"{alert_msg}\n"
                 f"--------------------------------------------------\n\n"
+                f"🤖 AI INSIGHT:\n"
+                f"{measurement.smart_insight or 'No insight available.'}\n\n"
                 f"View live dashboard here:\n{dashboard_link}\n\n"
                 f"- EcoSync Sentinel"
             )
@@ -482,7 +513,7 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
             # ============================================
             try:
                 push_title = f"🚨 {device.name} Alert"
-                push_body = f"Threshold Violation: {alert_msg}"
+                push_body = f"{alert_msg}\n(AI: {measurement.smart_insight})"
                 push_payload = {
                      "title": push_title,
                      "body": push_body,
@@ -524,7 +555,63 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
              logger.warning("Alert triggered but no email recipients found (No users in DB).")
 
 
+# --- Compliance Log API ---
 
+class ViolationReport(BaseModel):
+    task_id: int
+    verifier_name: str
+
+@app.get("/api/compliance/logs", tags=["Compliance"])
+def get_compliance_logs(db: Session = Depends(get_db)):
+    today_str = dt.now().strftime("%Y-%m-%d")
+    
+    # 1. Check if logs exist for today
+    logs = db.query(models.SafetyLog).filter(models.SafetyLog.date == today_str).all()
+    
+    # 2. If not, generate defaults
+    if not logs:
+        default_tasks = [
+            "Morning Grounding Check",
+            "Mixing Room Humidity Audit",
+            "Chemical Waste Disposal",
+            "Fire Extinguisher Pressure",
+            "End-of-Shift Inventory Lock"
+        ]
+        new_logs = []
+        for task in default_tasks:
+            log = models.SafetyLog(
+                task_name=task,
+                date=today_str,
+                status="PENDING",
+                shift="A" # Simplification for now
+            )
+            db.add(log)
+            new_logs.append(log)
+        db.commit()
+        logs = new_logs
+        # Refresh to get IDs
+        for log in logs: db.refresh(log)
+
+    return logs
+
+@app.post("/api/compliance/verify", tags=["Compliance"])
+def verify_compliance_task(report: ViolationReport, db: Session = Depends(get_db)):
+    log = db.query(models.SafetyLog).filter(models.SafetyLog.id == report.task_id).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="Log not found")
+    
+    # Toggle Logic
+    if log.status == "PENDING":
+        log.status = "COMPLETED"
+        log.verified_by = report.verifier_name
+        log.verified_at = dt.now()
+    else:
+        log.status = "PENDING"
+        log.verified_by = None
+        log.verified_at = None
+        
+    db.commit()
+    return {"status": "success", "task_id": log.id, "new_status": log.status}
 
 # --- IoT Ingestion Endpoint ---
 class IoTSensorData(BaseModel):

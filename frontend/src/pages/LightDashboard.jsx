@@ -1,24 +1,34 @@
 import React, { useState, useMemo } from 'react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line } from 'recharts';
-import { Bell, Wifi, Activity, Droplets, Thermometer, Wind, Zap, Map as MapIcon, Newspaper, User, Menu, X, Leaf, Shield, Cpu, ExternalLink, CloudRain, Brain, ShieldCheck, FlaskConical, AlertTriangle, Gauge } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line, Legend } from 'recharts';
+import { Bell, Wifi, Activity, Droplets, Thermometer, Wind, Zap, Map as MapIcon, Newspaper, User, Menu, X, Leaf, Shield, Cpu, ExternalLink, CloudRain, Brain, ShieldCheck, FlaskConical, AlertTriangle, Gauge, Info, Phone, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useEsp32Stream } from '../hooks/useEsp32Stream';
-import NewsComponent from '../components/NewsComponent';
+import ComplianceLog from '../components/ComplianceLog';
 
 // Phase 2 Components
 import RiskPanel from '../components/RiskPanel';
 import ExplainableAlert from '../components/ExplainableAlert';
 import RestrictedActivity from '../components/RestrictedActivity';
 import SensorHealth from '../components/SensorHealth';
-import TrendGraph from '../components/TrendGraph';
 
-const LightDashboard = ({ onToggle }) => {
+// Internal Pages
+import SafetyHub from './SafetyHub';
+import AboutProject from './AboutProject';
+import ContactSupport from './ContactSupport';
+
+import TrendGraph from '../components/TrendGraph';
+import SettingsDialog from '../components/dashboard/shared/SettingsDialog'; // [NEW]
+
+const LightDashboard = ({ onToggle, initialView = 'overview' }) => {
+    const navigate = useNavigate();
     const { logout, userProfile, currentUser } = useAuth();
     const { data: latestReading, history: sensorData, connected: connectionStatus, connectSerial } = useEsp32Stream('light');
 
-    const [activeView, setActiveView] = useState('overview');
+    const [activeView, setActiveView] = useState(initialView);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isDeviceConfigOpen, setIsDeviceConfigOpen] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false); // [NEW]
 
     // Memoized Data
     const latestData = useMemo(() => (sensorData && sensorData.length > 0) ? sensorData[sensorData.length - 1] : {}, [sensorData]);
@@ -31,14 +41,24 @@ const LightDashboard = ({ onToggle }) => {
     const gas = useMemo(() => latestData.gas != null ? latestData.gas.toFixed(0) : '---', [latestData]);
     const gasRaw = useMemo(() => latestData.mq_raw != null ? latestData.mq_raw.toFixed(0) : '---', [latestData]);
 
-    const motion = useMemo(() => latestData.motion === 1 ? 'DETECTED' : 'CLEAR', [latestData]);
-    const rain = useMemo(() => latestData.rain != null ? latestData.rain.toFixed(0) : '0', [latestData]);
+    const motion = useMemo(() => {
+        if (!connectionStatus) return '---';
+        if (latestData.motion == null) return '---';
+        return latestData.motion === 1 ? 'DETECTED' : 'CLEAR';
+    }, [latestData, connectionStatus]);
+
+    const rain = useMemo(() => {
+        if (!connectionStatus) return null;
+        return latestData.rain != null ? latestData.rain.toFixed(0) : null;
+    }, [latestData, connectionStatus]);
+
     const rainStatus = useMemo(() => {
+        if (!connectionStatus || rain === null) return '---';
         const val = parseInt(rain);
         if (val < 1000) return 'RAINING';
         if (val < 2000) return 'DAMP';
         return 'DRY';
-    }, [rain]);
+    }, [rain, connectionStatus]);
 
     // Smart Metrics extraction
     const smartMetrics = latestData.smart_metrics || {};
@@ -98,7 +118,11 @@ const LightDashboard = ({ onToggle }) => {
             {/* Top Row: Risk Panel & Alert Banner */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-1">
-                    <RiskPanel riskLevel={riskLevel} />
+                    {/* Calculate Risk Score based on data */}
+                    <RiskPanel
+                        riskLevel={riskLevel}
+                        score={anomaly ? 78 : (latestData.temperature > 35 ? 45 : 12)}
+                    />
                 </div>
                 <div className="md:col-span-2 space-y-4">
                     {/* Smart Insight Banner */}
@@ -179,77 +203,37 @@ const LightDashboard = ({ onToggle }) => {
                     </div>
                 </div>
 
-                {/* 3. Trends Graph (Bottom) */}
-                <TrendGraph data={sensorData} className="h-[350px]" />
+                {/* 3. Trends Graph (Replaced with Kalman Analysis) */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <KalmanChart
+                        sensorData={sensorData}
+                        title="Temperature Analysis"
+                        rawKey="temp_raw"
+                        filteredKey="temperature"
+                        color="amber"
+                        icon={Thermometer}
+                    />
+                    <KalmanChart
+                        sensorData={sensorData}
+                        title="Humidity Trends"
+                        rawKey="hum_raw"
+                        filteredKey="humidity"
+                        color="blue"
+                        icon={Wind}
+                    />
+                    <KalmanChart
+                        sensorData={sensorData}
+                        title="Gas Level Analysis"
+                        rawKey="mq_raw"
+                        filteredKey="gas"
+                        color="emerald"
+                        icon={Activity}
+                    />
+                </div>
             </div>
 
             {/* Analysis Charts Grid (Original) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl">
-                    <div className="flex items-center justify-between mb-6">
-                        <div>
-                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                <Activity className="text-emerald-500" size={20} />
-                                Temperature Analysis (Kalman Filter)
-                            </h3>
-                            <p className="text-slate-400 text-sm">Real-time noise reduction vs Raw input</p>
-                        </div>
-                    </div>
-                    <div className="h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={sensorData}>
-                                <defs>
-                                    <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                                <XAxis dataKey="timestamp" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                                <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
-                                <Tooltip
-                                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#f8fafc' }}
-                                    itemStyle={{ color: '#f8fafc' }}
-                                />
-                                <Area type="monotone" dataKey="temp_raw" stroke="#64748b" strokeWidth={1} fill="transparent" strokeDasharray="5 5" name="Raw Sensor" />
-                                <Area type="monotone" dataKey="temperature" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorTemp)" name="Filtered" />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
 
-                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl">
-                    <div className="flex items-center justify-between mb-6">
-                        <div>
-                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                <Wind className="text-indigo-500" size={20} />
-                                Humidity Trends
-                            </h3>
-                            <p className="text-slate-400 text-sm">Environmental moisture tracking</p>
-                        </div>
-                    </div>
-                    <div className="h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={sensorData}>
-                                <defs>
-                                    <linearGradient id="colorHum" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                                <XAxis dataKey="timestamp" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                                <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
-                                <Tooltip
-                                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#f8fafc' }}
-                                    itemStyle={{ color: '#f8fafc' }}
-                                />
-                                <Area type="monotone" dataKey="humidity" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorHum)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-            </div >
         </div >
     );
 
@@ -259,11 +243,14 @@ const LightDashboard = ({ onToggle }) => {
                 <div className="mb-12"><Leaf className="text-emerald-400" size={24} /></div>
                 <div className="flex-1 w-full space-y-4 px-4">
                     {[
-                        { id: 'overview', icon: Activity, label: 'Monitor' },
-                        { id: 'news', icon: Newspaper, label: 'Eco-Intel' }
+                        { id: 'overview', icon: Activity, label: 'Monitor', action: () => setActiveView('overview'), active: activeView === 'overview' },
+                        { id: 'news', icon: Newspaper, label: 'Compliance Log', action: () => setActiveView('news'), active: activeView === 'news' },
+                        { id: 'safety', icon: ShieldCheck, label: 'Safety Hub', action: () => setActiveView('safety'), active: activeView === 'safety' },
+                        { id: 'about', icon: Info, label: 'About Project', action: () => setActiveView('about'), active: activeView === 'about' },
+                        { id: 'support', icon: Phone, label: 'Contact Support', action: () => setActiveView('support'), active: activeView === 'support' },
                     ].map(item => (
-                        <button key={item.id} onClick={() => setActiveView(item.id)} className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all ${activeView === item.id ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-500 hover:text-emerald-200'}`}>
-                            <item.icon size={24} className="min-w-[24px]" />
+                        <button key={item.id} onClick={item.action} className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all ${item.active ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-500 hover:text-emerald-200'}`}>
+                            {item.icon && <item.icon size={24} className="min-w-[24px]" />}
                             <span className="lg:opacity-0 lg:group-hover:opacity-100 font-bold whitespace-nowrap transition-opacity">{item.label}</span>
                         </button>
                     ))}
@@ -279,7 +266,7 @@ const LightDashboard = ({ onToggle }) => {
                     <div className="flex items-center gap-4">
                         <button className="lg:hidden text-white" onClick={() => setIsSidebarOpen(!isSidebarOpen)}><Menu /></button>
                         <div>
-                            <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500"> 🌥️ S4 LITE</h1>
+                            <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500"> 🌥️ S4 LITE - UPDATED</h1>
                             <p className="text-[10px] text-emerald-500/60 font-bold"></p>
                         </div>
                     </div>
@@ -300,12 +287,22 @@ const LightDashboard = ({ onToggle }) => {
                                 </span>
                             )}
                         </div>
+                        <button
+                            onClick={() => setIsSettingsOpen(true)}
+                            className="p-2 border border-slate-700 text-slate-400 rounded-lg hover:bg-slate-800 transition-colors ml-2"
+                            title="System Settings"
+                        >
+                            <Settings size={20} />
+                        </button>
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto p-6">
+                <main className={`flex-1 overflow-y-auto ${['safety', 'about', 'support'].includes(activeView) ? '' : 'p-6'}`}>
                     {activeView === 'overview' && renderOverview()}
-                    {activeView === 'news' && <div className="h-full"><NewsComponent /></div>}
+                    {activeView === 'news' && <div className="h-full"><ComplianceLog /></div>}
+                    {activeView === 'safety' && <div className="h-full"><SafetyHub /></div>}
+                    {activeView === 'about' && <div className="h-full"><AboutProject /></div>}
+                    {activeView === 'support' && <div className="h-full"><ContactSupport /></div>}
                 </main>
 
                 {isDeviceConfigOpen && (
@@ -316,66 +313,56 @@ const LightDashboard = ({ onToggle }) => {
                         connectionStatus={connectionStatus}
                     />
                 )}
+
+                <SettingsDialog isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
             </div>
         </div>
     );
 };
 
-const AnalysisCard = ({ title, data, dataKey, rawKey, color, icon: Icon, unit }) => {
-    return (
-        <div className="glass-panel p-6 border-t-2 border-t-emerald-500/20 h-80 flex flex-col relative overflow-hidden group">
-            <div className={`absolute top-0 right-0 p-8 bg-${color}-500/5 rounded-full -mr-4 -mt-4 blur-3xl`} />
-            <div className="flex justify-between items-center mb-6 relative z-10">
-                <h3 className="text-slate-200 text-sm font-bold flex items-center gap-2 uppercase tracking-widest">
-                    <Icon size={16} className={`text-${color}-400`} /> {title} Analysis
-                </h3>
+const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-slate-900 border border-slate-700 p-3 rounded-lg shadow-xl text-xs font-mono">
+                <p className="text-slate-400 mb-2">{label}</p>
+                {payload.map((pld, index) => (
+                    <div key={index} style={{ color: pld.color }} className="flex justify-between gap-4 mb-1">
+                        <span>{pld.name}:</span>
+                        <span className="font-bold">{pld.value}</span>
+                    </div>
+                ))}
+                {payload[1] && payload[0] && (
+                    <div className="mt-2 pt-2 border-t border-slate-800 text-slate-500">
+                        Correction: {(payload[1].value - payload[0].value).toFixed(2)}
+                    </div>
+                )}
             </div>
-
-            <div className="flex-1 min-h-0 relative z-10">
-                <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={data}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#064e3b" vertical={false} opacity={0.5} />
-                        <XAxis dataKey="timestamp" hide />
-                        <YAxis stroke="#34d399" fontSize={10} tick={false} axisLine={false} domain={['auto', 'auto']} />
-                        <Tooltip
-                            contentStyle={{ backgroundColor: '#022c22', borderColor: '#065f46', borderRadius: '12px', border: '1px solid rgba(16,185,129,0.2)' }}
-                            itemStyle={{ fontSize: '10px', fontWeight: 'bold' }}
-                            labelStyle={{ display: 'none' }}
-                        />
-                        <Line
-                            type="monotone"
-                            dataKey={dataKey}
-                            stroke={color === 'amber' ? '#fbbf24' : color === 'blue' ? '#3b82f6' : '#10b981'}
-                            strokeWidth={3}
-                            dot={false}
-                            name="Filtered"
-                            isAnimationActive={false}
-                        />
-                        <Line
-                            type="monotone"
-                            dataKey={rawKey}
-                            stroke="#ffffff"
-                            strokeWidth={1}
-                            strokeOpacity={0.2}
-                            dot={false}
-                            name="Raw (Noisy)"
-                            isAnimationActive={false}
-                        />
-                    </LineChart>
-                </ResponsiveContainer>
-            </div>
-
-            <div className="flex justify-start gap-6 mt-6 pt-4 border-t border-slate-800 text-[9px] font-black tracking-[0.2em] uppercase relative z-10">
-                <span className="flex items-center gap-2 text-slate-200">
-                    <div className={`w-3 h-0.5 ${color === 'amber' ? 'bg-amber-400' : color === 'blue' ? 'bg-blue-500' : 'bg-emerald-500'}`} /> Filtered
-                </span>
-                <span className="flex items-center gap-2 text-slate-500">
-                    <div className="w-3 h-0.5 bg-slate-600" /> Raw (Noisy)
-                </span>
-            </div>
-        </div>
-    );
+        );
+    }
+    return null;
 };
+
+const KalmanChart = ({ sensorData, title, rawKey, filteredKey, color, icon: Icon }) => (
+    <div className="glass-panel p-6 border-t-2 border-t-emerald-500/20 flex flex-col bg-slate-900/40 h-80 relative overflow-hidden group">
+        <div className={`absolute top-0 right-0 p-8 bg-${color}-500/5 rounded-full -mr-4 -mt-4 blur-3xl`} />
+        <h3 className="text-slate-200 text-sm font-bold flex items-center gap-2 uppercase tracking-widest mb-4 relative z-10">
+            <Icon size={16} className={`text-${color}-400`} /> {title} Analysis
+        </h3>
+        <div className="flex-1 min-h-0 relative z-10">
+            <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={sensorData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#064e3b" vertical={false} opacity={0.5} />
+                    <XAxis dataKey="timestamp" hide />
+                    <YAxis stroke="#34d399" fontSize={10} tick={false} axisLine={false} domain={['auto', 'auto']} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Line type="monotone" dataKey={rawKey} stroke="#94a3b8" strokeOpacity={0.4} name={`Raw (Noisy)`} dot={false} strokeWidth={1} />
+                    <Line type="monotone" dataKey={filteredKey} stroke={color === 'amber' ? '#fbbf24' : color === 'blue' ? '#3b82f6' : '#10b981'} strokeWidth={3} name={`Filtered`} dot={false} />
+                </LineChart>
+            </ResponsiveContainer>
+        </div>
+    </div>
+);
 
 const SetupDeviceModal = ({ isOpen, onClose, onPair, connectionStatus }) => {
     const [step, setStep] = useState(1);

@@ -1,56 +1,56 @@
 import React from 'react';
-import { Newspaper, Globe, AlertTriangle, Wind, Thermometer, Droplets, TrendingUp, ExternalLink, Leaf, Sprout } from 'lucide-react';
+import { Newspaper, Globe, AlertTriangle, Wind, Thermometer, Droplets, TrendingUp, ExternalLink, Leaf, Sprout, Zap, CloudRain } from 'lucide-react';
 
 const NEWS_DATA = [
     {
         id: 1,
-        title: "Extreme Heatwave Sector 7",
-        summary: "Satellite confirm sustained thermal pockets exceeding 45°C in southern equatorial zones. Advisory issued for operative deployment.",
-        source: "Global Sat-Link",
-        timestamp: "2m ago",
-        category: "CRITICAL",
-        icon: Thermometer,
+        title: "Rule Update: Mixing Room",
+        summary: "New safety rule: Keep humidity under control in mixing areas. Check your sensors daily.",
+        source: "Safety Board",
+        timestamp: "Today",
+        category: "IMPORTANT",
+        icon: AlertTriangle,
         color: "red"
     },
     {
         id: 2,
-        title: "AQI Spike in Industrial Belt",
-        summary: "PM2.5 levels detected at 400% above safe thresholds. Local sensors indicate potential unauthorized emissions.",
-        source: "Eco-Watch Network",
-        timestamp: "15m ago",
-        category: "WARNING",
-        icon: Wind,
+        title: "Material Price Rising",
+        summary: "Aluminum Powder & Chemical prices may go up by 15% next week. Plan your stock.",
+        source: "Market News",
+        timestamp: "Yesterday",
+        category: "MONEY",
+        icon: TrendingUp,
         color: "yellow"
     },
     {
         id: 3,
-        title: "New Environmental Protocol",
-        summary: "International summit ratifies 'Green Sky' initiative. Impact on sensor calibration expected by Q3.",
-        source: "Policy Wire",
-        timestamp: "1h ago",
-        category: "INFO",
-        icon: Globe,
-        color: "teal"
+        title: "High Fire Risk Warning",
+        summary: "Air is very dry today. Static sparks can cause fires. Wet the ground near drying yards.",
+        source: "Fire Dept",
+        timestamp: "4h ago",
+        category: "DANGER",
+        icon: Zap,
+        color: "orange"
     },
     {
         id: 4,
-        title: "Organic Sensor Tech Breakthrough",
-        summary: "Bio-material upgrades allow for 50% more efficient particulate detection using synthetic algae films.",
-        source: "R&D Division",
-        timestamp: "3h ago",
-        category: "TECH",
-        icon: Sprout,
-        color: "lime"
+        title: "Green Cracker Guide",
+        summary: "New simple formula approved for small factories. Less smoke, same sound. Ask association for details.",
+        source: "Association",
+        timestamp: "2d ago",
+        category: "INFO",
+        icon: Leaf,
+        color: "emerald"
     },
     {
         id: 5,
-        title: "Flash Flood Warning",
-        summary: "Atmospheric shifts suggest imminent heavy rainfall in Sector 4. Drainage systems on high alert.",
-        source: "Met-Station Alpha",
-        timestamp: "4h ago",
-        category: "WARNING",
-        icon: Droplets,
-        color: "yellow"
+        title: "Rain Alert: Protect Stock",
+        summary: "Heavy rain expected tomorrow. Move all drying crackers indoors before evening.",
+        source: "Weather App",
+        timestamp: "1d ago",
+        category: "WEATHER",
+        icon: CloudRain,
+        color: "blue"
     }
 ];
 

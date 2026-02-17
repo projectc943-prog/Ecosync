@@ -42,8 +42,15 @@ const ProDashboard = ({ onToggle }) => {
     const wind = useMemo(() => latestData.wind_speed != null ? latestData.wind_speed.toFixed(1) : '--', [latestData]);
     const rawWind = useMemo(() => latestData.raw_wind_speed != null ? latestData.raw_wind_speed.toFixed(1) : '--', [latestData]);
 
-    const rain = useMemo(() => latestData.rain < 2000 ? 'RAINING' : 'DRY', [latestData]);
-    const motion = useMemo(() => latestData.motion === 1 ? 'DETECTED' : 'CLEAR', [latestData]);
+    const rain = useMemo(() => {
+        if (latestData.rain == null) return '---';
+        return latestData.rain < 2000 ? 'RAINING' : 'DRY';
+    }, [latestData]);
+
+    const motion = useMemo(() => {
+        if (latestData.motion == null) return '---';
+        return latestData.motion === 1 ? 'DETECTED' : 'CLEAR';
+    }, [latestData]);
 
 
     // Local Prediction Logic (Fallback)
@@ -256,8 +263,8 @@ const ProDashboard = ({ onToggle }) => {
                             <Cloud size={14} /> CLOUD SYNC
                         </button>
                         <div className={`px-3 py-1 rounded-full text-[10px] font-black border tracking-widest ${(sensorData && sensorData.length > 0 && (Date.now() - new Date(latestData.timestamp).getTime() < 60000))
-                                ? 'bg-blue-500/20 border-blue-500 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)]'
-                                : 'bg-red-500/20 border-red-500 text-red-400'
+                            ? 'bg-blue-500/20 border-blue-500 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)]'
+                            : 'bg-red-500/20 border-red-500 text-red-400'
                             }`}>
                             {(sensorData && sensorData.length > 0 && (Date.now() - new Date(latestData.timestamp).getTime() < 60000)) ? 'ONLINE (BRIDGE)' : 'OFFLINE'}
                         </div>
