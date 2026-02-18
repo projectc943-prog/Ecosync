@@ -22,7 +22,7 @@ class KalmanFilter:
         self.x = self.x + K @ (measurement - self.H @ self.x)
         self.P = (np.eye(2) - K @ self.H) @ self.P
 
-        return self.x[0, 0], np.sqrt(self.P[0, 0])
+        return float(self.x[0, 0]), float(np.sqrt(self.P[0, 0]))
 
     def filter_humidity(self, measurement):
         """Apply Kalman filter to humidity data"""
@@ -36,7 +36,7 @@ class KalmanFilter:
         self.x = self.x + K @ (measurement - self.H @ self.x)
         self.P = (np.eye(2) - K @ self.H) @ self.P
 
-        return self.x[0, 0], np.sqrt(self.P[0, 0])
+        return float(self.x[0, 0]), float(np.sqrt(self.P[0, 0]))
 
     def filter_pm25(self, measurement):
         """Apply Kalman filter to PM2.5 data"""
@@ -50,7 +50,7 @@ class KalmanFilter:
         self.x = self.x + K @ (measurement - self.H @ self.x)
         self.P = (np.eye(2) - K @ self.H) @ self.P
 
-        return self.x[0, 0], np.sqrt(self.P[0, 0])
+        return float(self.x[0, 0]), float(np.sqrt(self.P[0, 0]))
 
     def clean_mq_data(self, raw_value):
         """Clean and filter MQ gas sensor data"""
@@ -73,9 +73,9 @@ class KalmanFilter:
         is_outlier = abs(z_score) > 2
 
         return {
-            "smoothed": smoothed_value,
-            "is_outlier": is_outlier,
-            "z_score": z_score
+            "smoothed": float(smoothed_value),
+            "is_outlier": bool(is_outlier),
+            "z_score": float(z_score)
         }
 
 # Initialize Kalman filter instance

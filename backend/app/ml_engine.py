@@ -1,3 +1,15 @@
+import os
+from datetime import datetime
+
+# Shared Alert Logger (same as main.py)
+ALERT_LOG_FILE = os.path.join(os.path.dirname(__file__), "alert_system.log")
+def log_ml_activity(message: str):
+    try:
+        with open(ALERT_LOG_FILE, "a", encoding="utf-8") as f:
+            ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+            f.write(f"[{ts}] [ML] {message}\n")
+    except: pass
+
 import numpy as np
 from filterpy.kalman import KalmanFilter
 from sklearn.ensemble import IsolationForest
@@ -89,7 +101,7 @@ class TrustScoreCalculator:
         self.history.append(reading)
         if len(self.history) > 20: self.history.pop(0)
             
-        return max(0.0, min(100.0, score))
+        return float(max(0.0, min(100.0, score)))
 
 
 class RiskLevelCalculator:
@@ -172,25 +184,34 @@ class SmartInsightGenerator:
         self.history_buffer = []
 
     def generate_full_report(self, reading: dict, anomalies: list):
+        log_ml_activity(f"Starting report for {reading.get('temp', 'N/A')}")
         # Update history
         self.history_buffer.append(reading)
         if len(self.history_buffer) > 20: self.history_buffer.pop(0)
         
         # Calculate Metrics
-        risk = self.risk_calc.calculate_risk(reading, anomalies)
-        health = self.health_mon.check_health(self.history_buffer)
-        prediction = self.predictor.predict_next_10_mins(self.history_buffer)
-        
-        # Generate Text Insight
-        insight_text = self._generate_text(reading, anomalies, risk)
-        
-        return {
-            "insight": insight_text,
-            "risk_level": risk,
-            "sensor_health": health,
-            "prediction": prediction,
-            "baseline": self._get_mock_baseline(reading)
-        }
+        try:
+            risk = self.risk_calc.calculate_risk(reading, anomalies)
+            log_ml_activity(f"Risk calc: {risk}")
+            health = self.health_mon.check_health(self.history_buffer)
+            log_ml_activity("Health check done")
+            prediction = self.predictor.predict_next_10_mins(self.history_buffer)
+            log_ml_activity("Prediction done")
+            
+            # Generate Text Insight
+            insight_text = self._generate_text(reading, anomalies, risk)
+            log_ml_activity("Text generation done")
+            
+            return {
+                "insight": insight_text,
+                "risk_level": risk,
+                "sensor_health": health,
+                "prediction": prediction,
+                "baseline": self._get_mock_baseline(reading)
+            }
+        except Exception as e:
+            log_ml_activity(f"❌ ML ENGINE ERROR: {e}")
+            raise e
 
     def _get_mock_baseline(self, reading):
         # Returns a 'normal' value slightly different from current for demo
@@ -341,7 +362,7 @@ class IoTAnomalyDetector:
         if self.is_fitted:
             prediction = self.model.predict([scaled_features])[0]
             score = self.model.decision_function([scaled_features])[0]
-            return prediction == -1, score # True if anomaly
+            return bool(prediction == -1), float(score) # True if anomaly
         
         return False, 0.0
 

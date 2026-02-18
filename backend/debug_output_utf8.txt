@@ -1,0 +1,36 @@
+﻿Loading environment from: C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\.env.local
+--- DATABASE INITIALIZATION ---
+URL: aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require
+--- DEBUGGING ALERT FOR skunthal@gitam.in ---
+2026-02-18 15:18:10,121 INFO sqlalchemy.engine.Engine select pg_catalog.version()
+2026-02-18 15:18:10,121 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-02-18 15:18:10,214 INFO sqlalchemy.engine.Engine select current_schema()
+2026-02-18 15:18:10,214 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-02-18 15:18:10,301 INFO sqlalchemy.engine.Engine show standard_conforming_strings
+2026-02-18 15:18:10,301 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-02-18 15:18:10,388 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-18 15:18:10,391 INFO sqlalchemy.engine.Engine SELECT users.id AS users_id, users.email AS users_email, users.hashed_password AS users_hashed_password, users.first_name AS users_first_name, users.last_name AS users_last_name, users.plan AS users_plan, users.location_name AS users_location_name, users.location_lat AS users_location_lat, users.location_lon AS users_location_lon, users.mobile AS users_mobile, users.is_verified AS users_is_verified, users.otp_secret AS users_otp_secret, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users 
+WHERE users.email = %(email_1)s 
+ LIMIT %(param_1)s
+2026-02-18 15:18:10,391 INFO sqlalchemy.engine.Engine [generated in 0.00015s] {'email_1': 'skunthal@gitam.in', 'param_1': 1}
+USER FOUND: ID:6, Email:skunthal@gitam.in
+2026-02-18 15:18:10,488 INFO sqlalchemy.engine.Engine SELECT alert_settings.id AS alert_settings_id, alert_settings.user_email AS alert_settings_user_email, alert_settings.temp_threshold AS alert_settings_temp_threshold, alert_settings.humidity_min AS alert_settings_humidity_min, alert_settings.humidity_max AS alert_settings_humidity_max, alert_settings.pm25_threshold AS alert_settings_pm25_threshold, alert_settings.wind_threshold AS alert_settings_wind_threshold, alert_settings.gas_threshold AS alert_settings_gas_threshold, alert_settings.rain_alert AS alert_settings_rain_alert, alert_settings.motion_alert AS alert_settings_motion_alert, alert_settings.is_active AS alert_settings_is_active, alert_settings.created_at AS alert_settings_created_at, alert_settings.updated_at AS alert_settings_updated_at 
+FROM alert_settings 
+WHERE alert_settings.user_email = %(user_email_1)s 
+ LIMIT %(param_1)s
+2026-02-18 15:18:10,488 INFO sqlalchemy.engine.Engine [generated in 0.00016s] {'user_email_1': 'skunthal@gitam.in', 'param_1': 1}
+SETTINGS FOUND: Temp Thresh:21.0, Active:True
+2026-02-18 15:18:10,536 INFO sqlalchemy.engine.Engine SELECT devices.id AS devices_id, devices.name AS devices_name, devices.connector_type AS devices_connector_type, devices.lat AS devices_lat, devices.lon AS devices_lon, devices.status AS devices_status, devices.last_seen AS devices_last_seen, devices.user_id AS devices_user_id 
+FROM devices 
+WHERE devices.id = %(id_1)s 
+ LIMIT %(param_1)s
+2026-02-18 15:18:10,537 INFO sqlalchemy.engine.Engine [generated in 0.00014s] {'id_1': 'DASHBOARD_skunthal_gitam_in', 'param_1': 1}
+DEVICE FOUND: ID:DASHBOARD_skunthal_gitam_in, Name:Sector Explorer (skunthal@gitam.in), Last Seen:2026-02-18 09:48:10.294527+00:00
+2026-02-18 15:18:10,592 INFO sqlalchemy.engine.Engine SELECT sensor_data.id AS sensor_data_id, sensor_data.device_id AS sensor_data_device_id, sensor_data.timestamp AS sensor_data_timestamp, sensor_data.temperature AS sensor_data_temperature, sensor_data.humidity AS sensor_data_humidity, sensor_data.pressure AS sensor_data_pressure, sensor_data.wind_speed AS sensor_data_wind_speed, sensor_data.pm2_5 AS sensor_data_pm2_5, sensor_data.pm10 AS sensor_data_pm10, sensor_data.mq_raw AS sensor_data_mq_raw, sensor_data.gas AS sensor_data_gas, sensor_data.rain AS sensor_data_rain, sensor_data.motion AS sensor_data_motion, sensor_data.ph AS sensor_data_ph, sensor_data.trust_score AS sensor_data_trust_score, sensor_data.anomaly_label AS sensor_data_anomaly_label, sensor_data.smart_insight AS sensor_data_smart_insight, sensor_data.user_id AS sensor_data_user_id 
+FROM sensor_data 
+WHERE sensor_data.device_id = %(device_id_1)s OR sensor_data.device_id = %(device_id_2)s ORDER BY sensor_data.timestamp DESC 
+ LIMIT %(param_1)s
+2026-02-18 15:18:10,592 INFO sqlalchemy.engine.Engine [generated in 0.00016s] {'device_id_1': 'DASHBOARD_skunthal_gitam_in', 'device_id_2': 'ESP32_MAIN', 'param_1': 1}
+NO READINGS FOUND
+2026-02-18 15:18:10,641 INFO sqlalchemy.engine.Engine ROLLBACK

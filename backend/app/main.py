@@ -1,9 +1,23 @@
 import asyncio
 import logging
 import os
-from datetime import datetime as dt, timedelta
-from typing import List, Optional
+from datetime import datetime as dt, timedelta, datetime
+from typing import List, Optional, Dict
 import math
+
+# Global State for Alerts
+alert_cooldowns = {}
+
+# Persistent Alert Logger
+ALERT_LOG_FILE = os.path.join(os.path.dirname(__file__), "alert_system.log")
+def log_alert_activity(message: str):
+    try:
+        with open(ALERT_LOG_FILE, "a", encoding="utf-8") as f:
+            ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+            f.write(f"[{ts}] {message}\n")
+    except: pass
+
+log_alert_activity("--- ALERT SYSTEM REBOOTED ---")
 # print(f"LOADING MAIN FROM {__file__}")
 
 
@@ -314,139 +328,82 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 
 
 def check_alerts(db: Session, device: models.Device, measurement: models.SensorData, user_email: Optional[str] = None):
-    """Rule-based alerting with Email Notification (Dynamic Thresholds)"""
+    """Rule-based alerting with Email Notification (Checks ALL active user settings)"""
     
-    # Fetch Settings: Try user-specific first, then fall back to default
-    settings = None
-    if user_email:
-        settings = db.query(models.AlertSettings).filter(
-            models.AlertSettings.user_email == user_email,
-            models.AlertSettings.is_active == True
-        ).first()
+    current_ts = dt.utcnow()
+    temp = float(measurement.temperature) if measurement.temperature is not None else 0.0
+    hum = float(measurement.humidity) if measurement.humidity is not None else 0.0
+    pm25 = float(measurement.pm2_5) if measurement.pm2_5 is not None else 0.0
+    gas = float(measurement.gas) if measurement.gas is not None else 0.0
+    rain = float(measurement.rain) if measurement.rain is not None else 4095.0
     
-    if not settings:
-        settings = db.query(models.AlertSettings).filter(models.AlertSettings.is_active == True).first()
-    
-    # Defaults if no settings found
-    USER_TEMP_THRESH = settings.temp_threshold if settings else 45.0
-    USER_HUM_MIN = settings.humidity_min if settings else 20.0
-    USER_HUM_MAX = settings.humidity_max if settings else 80.0
-    USER_PM25_THRESH = settings.pm25_threshold if settings else 150.0
-    USER_WIND_THRESH = settings.wind_threshold if settings else 30.0
-    
-    # --- CRITICAL SAFETY OVERRIDES (HARD LIMITS) ---
-    # These cannot be relaxed by users. We take the LOWER of (User Setting, Hard Limit) for safety
-    # Actually, for alerts, we want to trigger if EITHER User Limit OR Hard Limit is breached.
-    # So effectively, the threshold is min(User, Critical)? No.
-    # If User says "Alert at 80C" and Critical is 70C, we want to alert at 70C. So yes, min().
-    # If User says "Alert at 30C" and Critical is 70C, we want to alert at 30C.
-    
-    # --- CRITICAL SAFETY OVERRIDES DISABLED FOR USER TESTING ---
-    # CRITICAL_TEMP = 70.0 
-    
-    # Effective Thresholds (User Setting ONLY)
-    TEMP_THRESH = USER_TEMP_THRESH
-    PM25_THRESH = USER_PM25_THRESH
-    
-    HUM_MIN = USER_HUM_MIN
-    HUM_MAX = USER_HUM_MAX
-    WIND_THRESH = USER_WIND_THRESH
-    GAS_THRESH = settings.gas_threshold if settings and settings.gas_threshold else 2000.0
+    risk_level = getattr(measurement, 'risk_level', 'SAFE')
+    smart_insight = getattr(measurement, 'smart_insight', 'Normal environment detected.')
 
-    print(f"DEBUG: Check Alerts for {user_email}")
-    print(f"DEBUG: Settings Loaded: {settings is not None}")
-    print(f"DEBUG: Active Threshold -> Temp: {TEMP_THRESH} (User Configured)")
-    
-    RAIN_ALERT_ENABLED = settings.rain_alert if settings else True
-    MOTION_ALERT_ENABLED = settings.motion_alert if settings else True
+    log_alert_activity(f"CHECK: {device.id} | T:{temp}, H:{hum}, G:{gas}, Risk:{risk_level}")
 
-    # --- NEW SAFETY REPORT LOGIC (Comprehensive) ---
-    # Trigger if Risk is NOT SAFE or if user thresholds are breached
-    
-    report = insight_generator.generate_full_report(current_data, anomalies_list)
-    risk_level = report["risk_level"]
-    insight_text = report["insight"]
-    
-    # Determine if we should send a report
-    should_send_report = False
-    
-    # 1. Check Risk Level
-    if risk_level in ["CRITICAL", "MODERATE"]:
-        should_send_report = True
+    # 1. Fetch ALL active alert settings
+    try:
+        all_settings = db.query(models.AlertSettings).filter(models.AlertSettings.is_active == True).all()
+        log_alert_activity(f"Found {len(all_settings)} active alert configs.")
+    except Exception as e:
+        log_alert_activity(f"DB Error fetching settings: {e}")
+        return {"status": "error", "message": "DB Error"}
+
+    for settings in all_settings:
+        target_email = settings.user_email
+        if not target_email: continue
+
+        # Thresholds
+        T_MAX = settings.temp_threshold or 45.0
+        H_MIN = settings.humidity_min or 20.0
+        H_MAX = settings.humidity_max or 80.0
+        G_MAX = settings.gas_threshold or 2000.0
         
-    # 2. Check User Thresholds (Explicit User Preferences)
-    if measurement.temperature > TEMP_THRESH: should_send_report = True
-    if measurement.pm2_5 > PM25_THRESH: should_send_report = True
-    if measurement.humidity > HUM_MAX or measurement.humidity < HUM_MIN: should_send_report = True
-    if measurement.wind_speed > WIND_THRESH: should_send_report = True
-    if measurement.rain < 2000 and RAIN_ALERT_ENABLED: should_send_report = True # Active rain usually < 2000 analog
+        breaches = []
+        if temp > T_MAX: breaches.append(f"Temperature Breach ({temp}°C > {T_MAX}°C)")
+        if gas > G_MAX: breaches.append(f"Air Quality Breach ({gas} > {G_MAX})")
+        if hum > H_MAX or hum < H_MIN: breaches.append(f"Humidity Out of Range ({hum}%)")
 
-    # Cooldown Logic (Prevent spamming)
-    current_time = dt.utcnow()
-    last_sent = alert_cooldowns.get(device.id)
-    
-    if should_send_report:
-        # 1-minute cooldown for test/dev mode
-        if last_sent and (current_time - last_sent) < timedelta(minutes=1):
-            logger.info(f"⏳ Cooldown active for {device.id}. Skipping report.")
-        else:
-            logger.warning(f"🚨 TRIGGERING SAFETY REPORT for {device.name}!")
+        should_alert = (risk_level in ["CRITICAL", "MODERATE"]) or (len(breaches) > 0)
+        
+        if should_alert:
+            cooldown_key = f"{device.id}_{target_email}"
+            last_sent = alert_cooldowns.get(cooldown_key)
             
-            # Prepare Alert Data for Email Table
-            alert_payload = [
-                {"metric": "Temperature", "value": f"{measurement.temperature}°C", "limit": f"{TEMP_THRESH}°C", "status": "CRITICAL" if measurement.temperature > TEMP_THRESH else "SAFE"},
-                {"metric": "Humidity", "value": f"{measurement.humidity}%", "limit": f"{HUM_MAX}%", "status": "CRITICAL" if measurement.humidity > HUM_MAX else "SAFE"},
-                {"metric": "Gas Level", "value": f"{measurement.gas} ppm", "limit": f"{GAS_THRESH} ppm", "status": "CRITICAL" if measurement.gas > GAS_THRESH else "SAFE"},
-                {"metric": "Rain", "value": "DETECTED" if measurement.rain < 2000 else "Clear", "limit": "2000", "status": "WARNING" if measurement.rain < 2000 else "SAFE"},
-                {"metric": "Risk Level", "value": risk_level, "limit": "SAFE", "status": risk_level}
-            ]
+            if last_sent and (current_ts - last_sent) < timedelta(minutes=5):
+                log_alert_activity(f"SKIP (Cooldown): {target_email} has active cooldown.")
+                continue
+
+            log_alert_activity(f"🔥 TRIGGERING EMAIL to {target_email} | Breaches: {breaches}")
             
-            # Determine Recipients
-            recipients = set()
-            if user_email: recipients.add(user_email)
-            if settings and settings.user_email: recipients.add(settings.user_email)
-            
-            if recipients:
+            try:
+                alert_payload = [
+                    {"metric": "Temperature", "value": f"{temp}°C", "limit": f"{T_MAX}°C", "status": "CRITICAL" if temp > T_MAX else "SAFE"},
+                    {"metric": "Humidity", "value": f"{hum}%", "limit": f"{H_MAX}%", "status": "CRITICAL" if (hum > H_MAX or hum < H_MIN) else "SAFE"},
+                    {"metric": "Gas Level", "value": f"{gas} ppm", "limit": f"{G_MAX} ppm", "status": "CRITICAL" if gas > G_MAX else "SAFE"},
+                ]
+                
                 from .services.email_service import email_notifier
                 success = email_notifier.send_alert(
-                    recipients=list(recipients),
+                    recipients=[target_email],
                     device_name=device.name,
                     timestamp=current_ts.strftime("%Y-%m-%d %H:%M:%S UTC"),
                     alert_data=alert_payload,
-                    ai_insight=insight_text,
+                    ai_insight=smart_insight,
                     dashboard_link="http://localhost:5173/dashboard",
-                    title="🛡️ EcoSync Safety Report"
+                    title="🛡️ EcoSync Critical Alert"
                 )
                 
                 if success:
-                    alert_cooldowns[device.id] = current_time
-                    logger.info(f"✅ Safety Report Sent to {recipients}")
+                    alert_cooldowns[cooldown_key] = current_ts
+                    log_alert_activity(f"📧 SUCCESS: Email delivered to {target_email}")
                 else:
-                    logger.error("❌ Failed to send Safety Report email")
-            else:
-                logger.warning("❌ No recipients found for Safety Report")
+                    log_alert_activity(f"❌ SMTP FAILURE for {target_email}")
+            except Exception as smtp_err:
+                log_alert_activity(f"❌ SMTP CRASH for {target_email}: {smtp_err}")
     
-    # 3. Store in DB (Standard Logging)
-    try:
-        new_reading = models.SensorData(
-            device_id=device.id,
-            temperature=measurement.temperature,
-            humidity=measurement.humidity,
-            pm2_5=measurement.pm2_5,
-            pressure=measurement.pressure,
-            wind_speed=measurement.wind_speed,
-            gas=measurement.gas,
-            rain=measurement.rain,
-            motion=measurement.motion,
-            ph=measurement.ph,
-            timestamp=current_ts
-        )
-        db.add(new_reading)
-        db.commit()
-    except Exception as e:
-        logger.error(f"Error saving to DB: {e}")
-
-    return {"status": "success", "message": "Data processed", "risk": risk_level}
+    return {"status": "success"}
 
 
 # --- Compliance Log API ---
@@ -532,11 +489,9 @@ class IoTSensorData(BaseModel):
 
 @app.post("/iot/data", tags=["IoT"])
 async def receive_iot_data(data: IoTSensorData, db: Session = Depends(get_db)):
-    """
-    Receives sensor data from ESP32, applies Kalman filtering, saves to DB, and broadcasts via WebSocket.
-    """
+    """Receives data from ESP32, applies Kalman filter, checks anomalies and alerts."""
+    log_alert_activity(f"RECEIVE_IOT_DATA ENTRY - Email: {data.user_email}")
     try:
-        print(f"📡 DATA INGEST: {data.dict()}") # DEBUG Payload
         current_ts = dt.utcnow()
         
         # 1. Kalman Filtering & Cleaning
@@ -579,15 +534,19 @@ async def receive_iot_data(data: IoTSensorData, db: Session = Depends(get_db)):
         else:
              device_id = "ESP32_MAIN"
         
-        print(f"DEBUG: Using Device ID: {device_id} for email: {data.user_email}")
+        log_alert_activity(f"Target Device: {device_id}")
         
         device = db.query(models.Device).filter(models.Device.id == device_id).first()
+        log_alert_activity(f"Device query done. Found={device is not None}")
         if not device:
+            # Find the actual user record to link
+            user = db.query(models.User).filter(models.User.email == data.user_email).first()
             device = models.Device(
                 id=device_id, name=f"Sector Explorer ({data.user_email or 'Public'})", 
                 connector_type="esp32",
                 lat=data.lat or 0.0, lon=data.lon or 0.0, 
-                status="online", last_seen=current_ts
+                status="online", last_seen=current_ts,
+                user_id=user.id if user else None
             )
             db.add(device)
             db.commit()
@@ -595,13 +554,18 @@ async def receive_iot_data(data: IoTSensorData, db: Session = Depends(get_db)):
         else:
             device.last_seen = current_ts
             device.status = "online"
-            # Update location if provided
+            # Link user if not already linked
+            if not device.user_id and data.user_email:
+                user = db.query(models.User).filter(models.User.email == data.user_email).first()
+                if user:
+                    device.user_id = user.id
             if data.lat and data.lon:
                 device.lat = data.lat
                 device.lon = data.lon
             db.commit()
 
         # New Smart Alert Logic (Phase 2) - Calculated for EVERY request
+        log_alert_activity(f"Calling generate_full_report for {data.user_email}")
         smart_report = insight_generator.generate_full_report(
             {
                 "temperature": data.temperature,
@@ -621,23 +585,23 @@ async def receive_iot_data(data: IoTSensorData, db: Session = Depends(get_db)):
 
         # 3. Store Filtered Data with proper transaction handling
         try:
-            mq_norm = min(100, max(0, (mq_cleaned["smoothed"] - 200) / 6))
+            mq_norm = float(min(100, max(0, (mq_cleaned["smoothed"] - 200) / 6)))
             measurement = models.SensorData(
                 device_id=device.id,
                 user_id=device.user_id,
                 timestamp=current_ts,
-                temperature=filtered_temp,
-                humidity=filtered_hum,
-                pressure=data.pressure,
-                wind_speed=0.0,
-                pm2_5=filtered_pm25,
-                pm10=0.0, # Using as placeholder for PM10
-                mq_raw=data.mq_raw,
-                gas=data.gas or mq_cleaned["smoothed"],
-                rain=data.rain,
-                motion=data.motion,
-                ph=data.ph,
-                trust_score=trust_score,
+                temperature=float(filtered_temp),
+                humidity=float(filtered_hum),
+                pressure=float(data.pressure),
+                wind_speed=float(data.wind_speed),
+                pm2_5=float(filtered_pm25),
+                pm10=float(mq_cleaned["z_score"]), # Using z-score for now
+                mq_raw=float(data.mq_raw),
+                gas=float(data.gas) if data.gas is not None else float(mq_cleaned["smoothed"]),
+                rain=float(data.rain),
+                motion=int(data.motion),
+                ph=float(data.ph),
+                trust_score=float(trust_score),
                 anomaly_label=",".join(anomalies_list) if anomalies_list else "Normal",
                 smart_insight=smart_insight
             )
@@ -651,13 +615,16 @@ async def receive_iot_data(data: IoTSensorData, db: Session = Depends(get_db)):
             db.commit()
 
             # 4. Alert Check with proper session management
-            # Use the same session to avoid race conditions
             try:
+                # Ensure objects are fresh after first commit
+                db.refresh(device)
+                db.refresh(measurement)
+                
                 check_alerts(db, device, measurement, data.user_email)
                 db.commit()
             except Exception as alert_error:
+                log_alert_activity(f"⚠️ Alert check CRASH: {alert_error}")
                 logger.error(f"Alert check failed: {alert_error}")
-                # Don't fail the entire request due to alert issues
 
             # 5. WebSocket Broadcast with error handling
             try:
@@ -703,18 +670,16 @@ async def receive_iot_data(data: IoTSensorData, db: Session = Depends(get_db)):
                 logger.error(f"WebSocket broadcast failed: {ws_error}")
                 # Don't fail the entire request due to WebSocket issues
 
-            # Save wind speed to DB
-            measurement.wind_speed = data.wind_speed
-            db.commit()
-
             return {"status": "ok", "message": "Data processed successfully", "device_id": device_id}
 
         except Exception as e:
+            log_alert_activity(f"❌ IoT Data Error: {e}")
             logger.error(f"IoT Data Error: {e}")
             return {"status": "error", "detail": str(e)}
             
     except Exception as e:
-        logger.error(f"IoT Data Error: {e}")
+        log_alert_activity(f"❌ IoT Processing Error: {e}")
+        logger.error(f"IoT Processing Error: {e}")
         return {"status": "error", "detail": str(e)}
 
 
@@ -727,8 +692,8 @@ def get_historical_data(limit: int = 100, db: Session = Depends(get_db)):
     return data
 
 @app.get("/api/filtered/latest", tags=["IoT"])
-async def get_filtered_iot_data(db: Session = Depends(get_db)):
-    """Returns latest Kalman-filtered data with AQI and health recommendations."""
+async def get_filtered_iot_data(user_email: Optional[str] = None, db: Session = Depends(get_db)):
+    """Returns latest Kalman-filtered data with user-aware thresholds."""
     # Debug: Try ESP32_MAIN first
     reading = db.query(models.SensorData).filter(
         models.SensorData.device_id == "ESP32_MAIN"
@@ -738,27 +703,9 @@ async def get_filtered_iot_data(db: Session = Depends(get_db)):
         # Debug: Try ANY device
         last_any = db.query(models.SensorData).order_by(models.SensorData.timestamp.desc()).first()
         if last_any:
-             print(f"DEBUG: Found data for {last_any.device_id} but not ESP32_MAIN")
-             return {
-                 "status": "partial",
-                 "message": f"Data found for {last_any.device_id}",
-                 "timestamp": last_any.timestamp,
-                 "filtered": {
-                     "temperature": last_any.temperature,
-                     "humidity": last_any.humidity,
-                     "pm25": last_any.pm2_5,
-                     "mq_smoothed": last_any.gas
-                 },
-                 "smart_metrics": {
-                        "trust_score": last_any.trust_score,
-                        "smart_insight": last_any.smart_insight,
-                        "anomaly_label": last_any.anomaly_label,
-                        "ph": last_any.ph,
-                        "prediction": "From Backup Device"
-                 }
-             }
-
-        return {"status": "no_data", "message": "No ESP32 data available"}
+             reading = last_any
+        else:
+             return {"status": "no_data", "message": "No ESP32 data available"}
     
     # Calculate AQI
     aqi_result = aqi_calculator.calculate_overall_aqi({"pm25": reading.pm2_5})
@@ -772,11 +719,26 @@ async def get_filtered_iot_data(db: Session = Depends(get_db)):
         reading.wind_speed or 0.0, 
         reading.pressure or 1013.0
     )
+
+    # User-Specific Threshold Breaches
+    user_breaches = []
+    if user_email:
+        settings = db.query(models.AlertSettings).filter(
+            models.AlertSettings.user_email == user_email,
+            models.AlertSettings.is_active == True
+        ).first()
+        if settings:
+            temp = reading.temperature or 0.0
+            gas = reading.gas or 0.0
+            if temp > (settings.temp_threshold or 45.0):
+                user_breaches.append(f"Temperature exceeds your limit ({temp}°C > {settings.temp_threshold}°C)")
+            if gas > (settings.gas_threshold or 2000.0):
+                user_breaches.append(f"Gas level exceeds your limit ({gas} > {settings.gas_threshold})")
     
     return {
         "status": "ok",
         "timestamp": reading.timestamp.isoformat(),
-        "deviceId": "ESP32_MAIN",
+        "deviceId": reading.device_id,
         "filtered": {
             "temperature": reading.temperature,
             "humidity": reading.humidity,
@@ -797,7 +759,9 @@ async def get_filtered_iot_data(db: Session = Depends(get_db)):
             "trust_score": reading.trust_score,
             "anomaly_label": reading.anomaly_label,
             "insight": reading.smart_insight,
-            "ph": reading.ph
+            "ph": reading.ph,
+            "risk_level": "CRITICAL" if len(user_breaches) > 0 else "SAFE",
+            "user_breaches": user_breaches
         }
     }
 

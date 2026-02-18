@@ -1,0 +1,100 @@
+﻿Loading environment from: C:\Users\sreek\OneDrive\Desktop\IOT_PROJECT\Ecosync\backend\.env.local
+--- DATABASE INITIALIZATION ---
+URL: aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require
+2026-02-18 15:25:22,338 INFO sqlalchemy.engine.Engine select pg_catalog.version()
+2026-02-18 15:25:22,338 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-02-18 15:25:22,423 INFO sqlalchemy.engine.Engine select current_schema()
+2026-02-18 15:25:22,424 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-02-18 15:25:22,519 INFO sqlalchemy.engine.Engine show standard_conforming_strings
+2026-02-18 15:25:22,519 INFO sqlalchemy.engine.Engine [raw sql] {}
+--- SCHEMA INSPECTION: sensor_data ---
+2026-02-18 15:25:22,602 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-18 15:25:22,602 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_attribute.attname AS name, pg_catalog.format_type(pg_catalog.pg_attribute.atttypid, pg_catalog.pg_attribute.atttypmod) AS format_type, (SELECT pg_catalog.pg_get_expr(pg_catalog.pg_attrdef.adbin, pg_catalog.pg_attrdef.adrelid) AS pg_get_expr_1 
+FROM pg_catalog.pg_attrdef 
+WHERE pg_catalog.pg_attrdef.adrelid = pg_catalog.pg_attribute.attrelid AND pg_catalog.pg_attrdef.adnum = pg_catalog.pg_attribute.attnum AND pg_catalog.pg_attribute.atthasdef) AS "default", pg_catalog.pg_attribute.attnotnull AS not_null, pg_catalog.pg_class.relname AS table_name, pg_catalog.pg_description.description AS comment, pg_catalog.pg_attribute.attgenerated AS generated, (SELECT json_build_object(%(json_build_object_2)s, pg_catalog.pg_attribute.attidentity = %(attidentity_1)s, %(json_build_object_3)s, pg_catalog.pg_sequence.seqstart, %(json_build_object_4)s, pg_catalog.pg_sequence.seqincrement, %(json_build_object_5)s, pg_catalog.pg_sequence.seqmin, %(json_build_object_6)s, pg_catalog.pg_sequence.seqmax, %(json_build_object_7)s, pg_catalog.pg_sequence.seqcache, %(json_build_object_8)s, pg_catalog.pg_sequence.seqcycle) AS json_build_object_1 
+FROM pg_catalog.pg_sequence 
+WHERE pg_catalog.pg_attribute.attidentity != %(attidentity_2)s AND pg_catalog.pg_sequence.seqrelid = CAST(CAST(pg_catalog.pg_get_serial_sequence(CAST(CAST(pg_catalog.pg_attribute.attrelid AS REGCLASS) AS TEXT), pg_catalog.pg_attribute.attname) AS REGCLASS) AS OID)) AS identity_options, CASE WHEN (pg_catalog.pg_attribute.attcollation != %(attcollation_1)s AND (SELECT pg_catalog.pg_type.typcollation 
+FROM pg_catalog.pg_type 
+WHERE pg_catalog.pg_type.oid = pg_catalog.pg_attribute.atttypid) != pg_catalog.pg_attribute.attcollation) THEN (SELECT pg_catalog.pg_collation.collname 
+FROM pg_catalog.pg_collation 
+WHERE pg_catalog.pg_collation.oid = pg_catalog.pg_attribute.attcollation) ELSE NULL END AS collation 
+FROM pg_catalog.pg_class LEFT OUTER JOIN pg_catalog.pg_attribute ON pg_catalog.pg_class.oid = pg_catalog.pg_attribute.attrelid AND pg_catalog.pg_attribute.attnum > %(attnum_1)s AND NOT pg_catalog.pg_attribute.attisdropped LEFT OUTER JOIN pg_catalog.pg_description ON pg_catalog.pg_description.objoid = pg_catalog.pg_attribute.attrelid AND pg_catalog.pg_description.objsubid = pg_catalog.pg_attribute.attnum JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relkind = ANY (ARRAY[%(param_1)s, %(param_2)s, %(param_3)s, %(param_4)s, %(param_5)s]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != %(nspname_1)s AND pg_catalog.pg_class.relname IN (%(filter_names_1)s) ORDER BY pg_catalog.pg_class.relname, pg_catalog.pg_attribute.attnum
+2026-02-18 15:25:22,602 INFO sqlalchemy.engine.Engine [generated in 0.00032s] {'json_build_object_2': 'always', 'attidentity_1': 'a', 'json_build_object_3': 'start', 'json_build_object_4': 'increment', 'json_build_object_5': 'minvalue', 'json_build_object_6': 'maxvalue', 'json_build_object_7': 'cache', 'json_build_object_8': 'cycle', 'attidentity_2': '', 'attcollation_1': 0, 'attnum_1': 0, 'param_1': 'r', 'param_2': 'p', 'param_3': 'f', 'param_4': 'v', 'param_5': 'm', 'nspname_1': 'pg_catalog', 'filter_names_1': 'sensor_data'}
+2026-02-18 15:25:22,816 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_type.typname AS name, pg_catalog.format_type(pg_catalog.pg_type.typbasetype, pg_catalog.pg_type.typtypmod) AS attype, NOT pg_catalog.pg_type.typnotnull AS nullable, pg_catalog.pg_type.typdefault AS "default", pg_catalog.pg_type_is_visible(pg_catalog.pg_type.oid) AS visible, pg_catalog.pg_namespace.nspname AS schema, domain_constraints.condefs, domain_constraints.connames, pg_catalog.pg_collation.collname 
+FROM pg_catalog.pg_type JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_type.typnamespace LEFT OUTER JOIN pg_catalog.pg_collation ON pg_catalog.pg_type.typcollation = pg_catalog.pg_collation.oid LEFT OUTER JOIN (SELECT pg_catalog.pg_constraint.contypid AS contypid, array_agg(pg_catalog.pg_get_constraintdef(pg_catalog.pg_constraint.oid, %(pg_get_constraintdef_1)s)) AS condefs, array_agg(CAST(pg_catalog.pg_constraint.conname AS TEXT)) AS connames 
+FROM pg_catalog.pg_constraint 
+WHERE pg_catalog.pg_constraint.contypid != %(contypid_1)s GROUP BY pg_catalog.pg_constraint.contypid) AS domain_constraints ON pg_catalog.pg_type.oid = domain_constraints.contypid 
+WHERE pg_catalog.pg_type.typtype = %(typtype_1)s ORDER BY pg_catalog.pg_namespace.nspname, pg_catalog.pg_type.typname
+2026-02-18 15:25:22,816 INFO sqlalchemy.engine.Engine [generated in 0.00035s] {'pg_get_constraintdef_1': True, 'contypid_1': 0, 'typtype_1': 'd'}
+2026-02-18 15:25:22,913 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_type.typname AS name, pg_catalog.pg_type_is_visible(pg_catalog.pg_type.oid) AS visible, pg_catalog.pg_namespace.nspname AS schema, lbl_agg.labels AS labels 
+FROM pg_catalog.pg_type JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_type.typnamespace LEFT OUTER JOIN (SELECT pg_catalog.pg_enum.enumtypid AS enumtypid, array_agg(CAST(pg_catalog.pg_enum.enumlabel AS TEXT) ORDER BY pg_catalog.pg_enum.enumsortorder) AS labels 
+FROM pg_catalog.pg_enum GROUP BY pg_catalog.pg_enum.enumtypid) AS lbl_agg ON pg_catalog.pg_type.oid = lbl_agg.enumtypid 
+WHERE pg_catalog.pg_type.typtype = %(typtype_1)s ORDER BY pg_catalog.pg_namespace.nspname, pg_catalog.pg_type.typname
+2026-02-18 15:25:22,913 INFO sqlalchemy.engine.Engine [generated in 0.00016s] {'typtype_1': 'e'}
+2026-02-18 15:25:22,971 INFO sqlalchemy.engine.Engine ROLLBACK
+Column: id, Type: INTEGER, Nullable: False
+Column: timestamp, Type: TIMESTAMP, Nullable: True
+Column: owner_id, Type: INTEGER, Nullable: True
+Column: device_id, Type: TEXT, Nullable: True
+Column: temperature, Type: DOUBLE PRECISION, Nullable: True
+Column: humidity, Type: DOUBLE PRECISION, Nullable: True
+Column: pressure, Type: DOUBLE PRECISION, Nullable: True
+Column: vibration, Type: DOUBLE PRECISION, Nullable: True
+Column: wind_speed, Type: DOUBLE PRECISION, Nullable: True
+Column: uv_index, Type: DOUBLE PRECISION, Nullable: True
+Column: soil_temp, Type: DOUBLE PRECISION, Nullable: True
+Column: soil_moisture, Type: DOUBLE PRECISION, Nullable: True
+Column: pm2_5, Type: DOUBLE PRECISION, Nullable: True
+Column: pm10, Type: DOUBLE PRECISION, Nullable: True
+Column: no2, Type: DOUBLE PRECISION, Nullable: True
+Column: solar_radiation, Type: DOUBLE PRECISION, Nullable: True
+Column: kalman_temp, Type: DOUBLE PRECISION, Nullable: True
+Column: kalman_press, Type: DOUBLE PRECISION, Nullable: True
+Column: kalman_hum, Type: DOUBLE PRECISION, Nullable: True
+Column: anomaly_score, Type: DOUBLE PRECISION, Nullable: True
+Column: is_anomaly, Type: BOOLEAN, Nullable: True
+Column: ph, Type: DOUBLE PRECISION, Nullable: True
+Column: trust_score, Type: DOUBLE PRECISION, Nullable: True
+Column: anomaly_label, Type: VARCHAR(255), Nullable: True
+Column: smart_insight, Type: TEXT, Nullable: True
+Column: gas, Type: DOUBLE PRECISION, Nullable: True
+Column: rain, Type: DOUBLE PRECISION, Nullable: True
+Column: motion, Type: INTEGER, Nullable: True
+Column: user_id, Type: INTEGER, Nullable: True
+Column: mq_raw, Type: DOUBLE PRECISION, Nullable: True
+
+--- SCHEMA INSPECTION: alert_settings ---
+2026-02-18 15:25:23,014 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-18 15:25:23,014 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_attribute.attname AS name, pg_catalog.format_type(pg_catalog.pg_attribute.atttypid, pg_catalog.pg_attribute.atttypmod) AS format_type, (SELECT pg_catalog.pg_get_expr(pg_catalog.pg_attrdef.adbin, pg_catalog.pg_attrdef.adrelid) AS pg_get_expr_1 
+FROM pg_catalog.pg_attrdef 
+WHERE pg_catalog.pg_attrdef.adrelid = pg_catalog.pg_attribute.attrelid AND pg_catalog.pg_attrdef.adnum = pg_catalog.pg_attribute.attnum AND pg_catalog.pg_attribute.atthasdef) AS "default", pg_catalog.pg_attribute.attnotnull AS not_null, pg_catalog.pg_class.relname AS table_name, pg_catalog.pg_description.description AS comment, pg_catalog.pg_attribute.attgenerated AS generated, (SELECT json_build_object(%(json_build_object_2)s, pg_catalog.pg_attribute.attidentity = %(attidentity_1)s, %(json_build_object_3)s, pg_catalog.pg_sequence.seqstart, %(json_build_object_4)s, pg_catalog.pg_sequence.seqincrement, %(json_build_object_5)s, pg_catalog.pg_sequence.seqmin, %(json_build_object_6)s, pg_catalog.pg_sequence.seqmax, %(json_build_object_7)s, pg_catalog.pg_sequence.seqcache, %(json_build_object_8)s, pg_catalog.pg_sequence.seqcycle) AS json_build_object_1 
+FROM pg_catalog.pg_sequence 
+WHERE pg_catalog.pg_attribute.attidentity != %(attidentity_2)s AND pg_catalog.pg_sequence.seqrelid = CAST(CAST(pg_catalog.pg_get_serial_sequence(CAST(CAST(pg_catalog.pg_attribute.attrelid AS REGCLASS) AS TEXT), pg_catalog.pg_attribute.attname) AS REGCLASS) AS OID)) AS identity_options, CASE WHEN (pg_catalog.pg_attribute.attcollation != %(attcollation_1)s AND (SELECT pg_catalog.pg_type.typcollation 
+FROM pg_catalog.pg_type 
+WHERE pg_catalog.pg_type.oid = pg_catalog.pg_attribute.atttypid) != pg_catalog.pg_attribute.attcollation) THEN (SELECT pg_catalog.pg_collation.collname 
+FROM pg_catalog.pg_collation 
+WHERE pg_catalog.pg_collation.oid = pg_catalog.pg_attribute.attcollation) ELSE NULL END AS collation 
+FROM pg_catalog.pg_class LEFT OUTER JOIN pg_catalog.pg_attribute ON pg_catalog.pg_class.oid = pg_catalog.pg_attribute.attrelid AND pg_catalog.pg_attribute.attnum > %(attnum_1)s AND NOT pg_catalog.pg_attribute.attisdropped LEFT OUTER JOIN pg_catalog.pg_description ON pg_catalog.pg_description.objoid = pg_catalog.pg_attribute.attrelid AND pg_catalog.pg_description.objsubid = pg_catalog.pg_attribute.attnum JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
+WHERE pg_catalog.pg_class.relkind = ANY (ARRAY[%(param_1)s, %(param_2)s, %(param_3)s, %(param_4)s, %(param_5)s]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != %(nspname_1)s AND pg_catalog.pg_class.relname IN (%(filter_names_1)s) ORDER BY pg_catalog.pg_class.relname, pg_catalog.pg_attribute.attnum
+2026-02-18 15:25:23,014 INFO sqlalchemy.engine.Engine [cached since 0.4117s ago] {'json_build_object_2': 'always', 'attidentity_1': 'a', 'json_build_object_3': 'start', 'json_build_object_4': 'increment', 'json_build_object_5': 'minvalue', 'json_build_object_6': 'maxvalue', 'json_build_object_7': 'cache', 'json_build_object_8': 'cycle', 'attidentity_2': '', 'attcollation_1': 0, 'attnum_1': 0, 'param_1': 'r', 'param_2': 'p', 'param_3': 'f', 'param_4': 'v', 'param_5': 'm', 'nspname_1': 'pg_catalog', 'filter_names_1': 'alert_settings'}
+2026-02-18 15:25:23,117 INFO sqlalchemy.engine.Engine ROLLBACK
+Column: id, Type: INTEGER, Nullable: False
+Column: user_email, Type: VARCHAR, Nullable: True
+Column: temp_threshold, Type: DOUBLE PRECISION, Nullable: True
+Column: humidity_min, Type: DOUBLE PRECISION, Nullable: True
+Column: humidity_max, Type: DOUBLE PRECISION, Nullable: True
+Column: pm25_threshold, Type: DOUBLE PRECISION, Nullable: True
+Column: wind_threshold, Type: DOUBLE PRECISION, Nullable: True
+Column: gas_threshold, Type: DOUBLE PRECISION, Nullable: True
+Column: rain_alert, Type: BOOLEAN, Nullable: True
+Column: motion_alert, Type: BOOLEAN, Nullable: True
+Column: is_active, Type: BOOLEAN, Nullable: True
+Column: created_at, Type: TIMESTAMP, Nullable: True
+Column: updated_at, Type: TIMESTAMP, Nullable: True
+
+--- TEST INSERT: sensor_data ---
+2026-02-18 15:25:23,176 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-18 15:25:23,179 INFO sqlalchemy.engine.Engine INSERT INTO sensor_data (device_id, timestamp, temperature, humidity, pressure, wind_speed, pm2_5, pm10, mq_raw, gas, rain, motion, ph, trust_score, anomaly_label, smart_insight, user_id) VALUES (%(device_id)s, %(timestamp)s, %(temperature)s, %(humidity)s, %(pressure)s, %(wind_speed)s, %(pm2_5)s, %(pm10)s, %(mq_raw)s, %(gas)s, %(rain)s, %(motion)s, %(ph)s, %(trust_score)s, %(anomaly_label)s, %(smart_insight)s, %(user_id)s) RETURNING sensor_data.id
+2026-02-18 15:25:23,179 INFO sqlalchemy.engine.Engine [generated in 0.00028s] {'device_id': 'ESP32_MAIN', 'timestamp': datetime.datetime(2026, 2, 18, 9, 55, 23, 179185), 'temperature': 25.0, 'humidity': 50.0, 'pressure': None, 'wind_speed': None, 'pm2_5': 10.0, 'pm10': None, 'mq_raw': 100.0, 'gas': 100.0, 'rain': None, 'motion': None, 'ph': None, 'trust_score': None, 'anomaly_label': None, 'smart_insight': None, 'user_id': None}
+2026-02-18 15:25:23,294 INFO sqlalchemy.engine.Engine COMMIT

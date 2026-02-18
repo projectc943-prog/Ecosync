@@ -213,8 +213,33 @@ const LightDashboard = ({ onToggle, initialView = 'overview' }) => {
                     />
                 </div>
                 <div className="md:col-span-2 space-y-4">
-                    {/* Smart Insight Banner */}
-                    {(insight || anomaly) && (
+                    {/* Server-Driven Alert Banner */}
+                    {(riskLevel === 'CRITICAL' || smartMetrics.user_breaches?.length > 0) && (
+                        <div className="w-full p-4 rounded-xl border flex items-center gap-4 animate-bounce bg-red-500/20 border-red-500/50 text-red-100 shadow-[0_0_20px_rgba(239,68,68,0.3)]">
+                            <div className="p-3 bg-red-500/40 rounded-full text-white animate-pulse">
+                                <AlertTriangle size={24} />
+                            </div>
+                            <div className="flex-1">
+                                <h4 className="font-black text-sm uppercase tracking-[0.2em] mb-1 flex items-center gap-2">
+                                    <Shield size={16} className="text-red-400" />
+                                    PERSONALIZED THRESHOLD BREACH
+                                </h4>
+                                <div className="space-y-1">
+                                    {smartMetrics.user_breaches?.map((msg, idx) => (
+                                        <p key={idx} className="text-xs font-bold leading-relaxed">🔥 {msg}</p>
+                                    ))}
+                                    {(!smartMetrics.user_breaches || smartMetrics.user_breaches.length === 0) && (
+                                        <p className="text-xs font-bold font-mono uppercase tracking-widest">
+                                            {insight || "Critical risk detected by EcoSync AI Sentinel."}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Standard Smart Insight Banner (If no user breach) */}
+                    {!(riskLevel === 'CRITICAL' || smartMetrics.user_breaches?.length > 0) && (insight || anomaly) && (
                         <div className={`w-full p-4 rounded-xl border flex items-center gap-4 animate-in slide-in-from-top-2 ${anomaly ? 'bg-red-500/10 border-red-500/30 text-red-100' : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-100'}`}>
                             <div className={`p-2 rounded-lg ${anomaly ? 'bg-red-500/20 text-red-400' : 'bg-indigo-500/20 text-indigo-400'}`}>
                                 {anomaly ? <AlertTriangle size={20} /> : <Brain size={20} />}

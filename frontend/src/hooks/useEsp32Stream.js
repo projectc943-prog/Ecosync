@@ -108,7 +108,10 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                     // LIGHT MODE: If Serial is NOT connected, poll backend for demo/simulated data
                     if (health.status !== 'ONLINE') {
                         try {
-                            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/filtered/latest`);
+                            const url = userEmail
+                                ? `${import.meta.env.VITE_API_BASE_URL}/api/filtered/latest?user_email=${encodeURIComponent(userEmail)}`
+                                : `${import.meta.env.VITE_API_BASE_URL}/api/filtered/latest`;
+                            const response = await fetch(url);
                             if (response.ok) {
                                 const latest = await response.json();
                                 if (latest.status === 'no_data') {
