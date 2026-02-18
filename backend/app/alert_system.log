@@ -43160,3 +43160,119 @@ server closed the connection unexpectedly
 [2026-02-18 10:49:48] SKIP (Cooldown): gsrujana456@gmail.com has active cooldown.
 [2026-02-18 10:49:48] SKIP (Cooldown): skunthal@gitam.in has active cooldown.
 [2026-02-18 10:49:48] RECEIVE_IOT_DATA ENTRY - Email: skunthal@gitam.in
+[2026-02-18 10:49:48] Target Device: DASHBOARD_skunthal_gitam_in
+[2026-02-18 10:49:48] Device query done. Found=True
+[2026-02-18 10:49:48] Calling generate_full_report for skunthal@gitam.in
+[2026-02-18 10:49:48] [ML] Starting report for N/A
+[2026-02-18 10:49:48] [ML] Risk calc: CRITICAL
+[2026-02-18 10:49:48] [ML] Health check done
+[2026-02-18 10:49:48] [ML] Prediction done
+[2026-02-18 10:49:48] [ML] Text generation done
+[2026-02-18 10:49:49] CHECK: DASHBOARD_skunthal_gitam_in | T:23.0083344964301, H:42.9251341654863, G:751.4, Risk:CRITICAL
+[2026-02-18 10:49:49] Found 2 active alert configs.
+[2026-02-18 10:49:49] SKIP (Cooldown): gsrujana456@gmail.com has active cooldown.
+[2026-02-18 10:49:49] SKIP (Cooldown): skunthal@gitam.in has active cooldown.
+[2026-02-18 10:49:49] RECEIVE_IOT_DATA ENTRY - Email: skunthal@gitam.in
+[2026-02-18 10:49:49] Target Device: DASHBOARD_skunthal_gitam_in
+[2026-02-18 10:49:49] Device query done. Found=True
+[2026-02-18 10:49:49] Calling generate_full_report for skunthal@gitam.in
+[2026-02-18 10:49:49] [ML] Starting report for N/A
+[2026-02-18 10:49:49] [ML] Risk calc: CRITICAL
+[2026-02-18 10:49:49] [ML] Health check done
+[2026-02-18 10:49:49] [ML] Prediction done
+[2026-02-18 10:49:49] [ML] Text generation done
+[2026-02-18 10:49:49] CHECK: DASHBOARD_skunthal_gitam_in | T:23.0083344964301, H:42.9251341654863, G:751.6, Risk:CRITICAL
+[2026-02-18 10:49:49] Found 2 active alert configs.
+[2026-02-18 10:49:49] SKIP (Cooldown): gsrujana456@gmail.com has active cooldown.
+[2026-02-18 10:49:49] SKIP (Cooldown): skunthal@gitam.in has active cooldown.
+[2026-02-18 10:49:49] RECEIVE_IOT_DATA ENTRY - Email: skunthal@gitam.in
+[2026-02-18 10:49:49] Target Device: DASHBOARD_skunthal_gitam_in
+[2026-02-18 10:49:49] Device query done. Found=True
+[2026-02-18 10:49:49] Calling generate_full_report for skunthal@gitam.in
+[2026-02-18 10:49:49] [ML] Starting report for N/A
+[2026-02-18 10:49:49] [ML] Risk calc: CRITICAL
+[2026-02-18 10:49:49] [ML] Health check done
+[2026-02-18 10:49:49] [ML] Prediction done
+[2026-02-18 10:49:49] [ML] Text generation done
+[2026-02-18 10:49:50] CHECK: DASHBOARD_skunthal_gitam_in | T:23.0083344964301, H:42.9251341654863, G:751.8, Risk:CRITICAL
+[2026-02-18 10:49:50] Found 2 active alert configs.
+[2026-02-18 10:49:50] SKIP (Cooldown): gsrujana456@gmail.com has active cooldown.
+[2026-02-18 10:49:50] SKIP (Cooldown): skunthal@gitam.in has active cooldown.
+[2026-02-18 10:49:50] RECEIVE_IOT_DATA ENTRY - Email: skunthal@gitam.in
+[2026-02-18 10:49:50] Target Device: DASHBOARD_skunthal_gitam_in
+[2026-02-18 10:49:50] Device query done. Found=True
+[2026-02-18 10:49:50] Calling generate_full_report for skunthal@gitam.in
+[2026-02-18 10:49:50] [ML] Starting report for N/A
+[2026-02-18 10:49:50] [ML] Risk calc: CRITICAL
+[2026-02-18 10:49:50] [ML] Health check done
+[2026-02-18 10:49:50] [ML] Prediction done
+[2026-02-18 10:49:50] [ML] Text generation done
+[2026-02-18 10:49:50] CHECK: DASHBOARD_skunthal_gitam_in | T:23.0083344964301, H:42.9251341654863, G:752.2, Risk:CRITICAL
+[2026-02-18 10:49:50] Found 2 active alert configs.
+[2026-02-18 10:49:50] SKIP (Cooldown): gsrujana456@gmail.com has active cooldown.
+[2026-02-18 10:49:50] SKIP (Cooldown): skunthal@gitam.in has active cooldown.
+[2026-02-18 10:49:50] RECEIVE_IOT_DATA ENTRY - Email: skunthal@gitam.in
+[2026-02-18 10:49:50] Target Device: DASHBOARD_skunthal_gitam_in
+[2026-02-18 10:49:50] Device query done. Found=True
+[2026-02-18 10:49:50] Calling generate_full_report for skunthal@gitam.in
+[2026-02-18 10:49:50] [ML] Starting report for N/A
+[2026-02-18 10:49:50] [ML] Risk calc: CRITICAL
+[2026-02-18 10:49:50] [ML] Health check done
+[2026-02-18 10:49:50] [ML] Prediction done
+[2026-02-18 10:49:50] [ML] Text generation done
+[2026-02-18 10:49:50] CHECK: DASHBOARD_skunthal_gitam_in | T:23.0083344964301, H:42.9251341654863, G:752.2, Risk:CRITICAL
+[2026-02-18 10:49:50] Found 2 active alert configs.
+[2026-02-18 10:49:50] SKIP (Cooldown): gsrujana456@gmail.com has active cooldown.
+[2026-02-18 10:49:50] SKIP (Cooldown): skunthal@gitam.in has active cooldown.
+[2026-02-18 10:49:50] RECEIVE_IOT_DATA ENTRY - Email: skunthal@gitam.in
+[2026-02-18 10:49:50] Target Device: DASHBOARD_skunthal_gitam_in
+[2026-02-18 10:49:50] Device query done. Found=True
+[2026-02-18 10:49:51] Calling generate_full_report for skunthal@gitam.in
+[2026-02-18 10:49:51] [ML] Starting report for N/A
+[2026-02-18 10:49:51] [ML] Risk calc: CRITICAL
+[2026-02-18 10:49:51] [ML] Health check done
+[2026-02-18 10:49:51] [ML] Prediction done
+[2026-02-18 10:49:51] [ML] Text generation done
+[2026-02-18 10:49:51] CHECK: DASHBOARD_skunthal_gitam_in | T:23.0083344964301, H:42.9251341654863, G:752.2, Risk:CRITICAL
+[2026-02-18 10:49:51] Found 2 active alert configs.
+[2026-02-18 10:49:51] SKIP (Cooldown): gsrujana456@gmail.com has active cooldown.
+[2026-02-18 10:49:51] SKIP (Cooldown): skunthal@gitam.in has active cooldown.
+[2026-02-18 10:49:51] RECEIVE_IOT_DATA ENTRY - Email: skunthal@gitam.in
+[2026-02-18 10:49:51] Target Device: DASHBOARD_skunthal_gitam_in
+[2026-02-18 10:49:51] Device query done. Found=True
+[2026-02-18 10:49:51] Calling generate_full_report for skunthal@gitam.in
+[2026-02-18 10:49:51] [ML] Starting report for N/A
+[2026-02-18 10:49:51] [ML] Risk calc: CRITICAL
+[2026-02-18 10:49:51] [ML] Health check done
+[2026-02-18 10:49:51] [ML] Prediction done
+[2026-02-18 10:49:51] [ML] Text generation done
+[2026-02-18 10:49:51] CHECK: DASHBOARD_skunthal_gitam_in | T:23.0083344964301, H:42.9251341654863, G:752.2, Risk:CRITICAL
+[2026-02-18 10:49:51] Found 2 active alert configs.
+[2026-02-18 10:49:51] SKIP (Cooldown): gsrujana456@gmail.com has active cooldown.
+[2026-02-18 10:49:51] SKIP (Cooldown): skunthal@gitam.in has active cooldown.
+[2026-02-18 10:49:51] RECEIVE_IOT_DATA ENTRY - Email: skunthal@gitam.in
+[2026-02-18 10:49:51] Target Device: DASHBOARD_skunthal_gitam_in
+[2026-02-18 10:49:51] Device query done. Found=True
+[2026-02-18 10:49:51] Calling generate_full_report for skunthal@gitam.in
+[2026-02-18 10:49:51] [ML] Starting report for N/A
+[2026-02-18 10:49:51] [ML] Risk calc: CRITICAL
+[2026-02-18 10:49:51] [ML] Health check done
+[2026-02-18 10:49:51] [ML] Prediction done
+[2026-02-18 10:49:51] [ML] Text generation done
+[2026-02-18 10:49:52] CHECK: DASHBOARD_skunthal_gitam_in | T:23.0083344964301, H:42.9251341654863, G:752.2, Risk:CRITICAL
+[2026-02-18 10:49:52] Found 2 active alert configs.
+[2026-02-18 10:49:52] SKIP (Cooldown): gsrujana456@gmail.com has active cooldown.
+[2026-02-18 10:49:52] SKIP (Cooldown): skunthal@gitam.in has active cooldown.
+[2026-02-18 10:49:52] RECEIVE_IOT_DATA ENTRY - Email: skunthal@gitam.in
+[2026-02-18 10:49:52] Target Device: DASHBOARD_skunthal_gitam_in
+[2026-02-18 10:49:52] Device query done. Found=True
+[2026-02-18 10:49:52] Calling generate_full_report for skunthal@gitam.in
+[2026-02-18 10:49:52] [ML] Starting report for N/A
+[2026-02-18 10:49:52] [ML] Risk calc: CRITICAL
+[2026-02-18 10:49:52] [ML] Health check done
+[2026-02-18 10:49:52] [ML] Prediction done
+[2026-02-18 10:49:52] [ML] Text generation done
+[2026-02-18 10:49:52] CHECK: DASHBOARD_skunthal_gitam_in | T:23.0083344964301, H:42.9251341654863, G:751.8, Risk:CRITICAL
+[2026-02-18 10:49:52] Found 2 active alert configs.
+[2026-02-18 10:49:52] SKIP (Cooldown): gsrujana456@gmail.com has active cooldown.
+[2026-02-18 10:49:52] SKIP (Cooldown): skunthal@gitam.in has active cooldown.
