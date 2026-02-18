@@ -542,7 +542,7 @@ async def receive_iot_data(data: IoTSensorData, db: Session = Depends(get_db)):
             # Find the actual user record to link
             user = db.query(models.User).filter(models.User.email == data.user_email).first()
             device = models.Device(
-                id=device_id, name=f"Sector Explorer ({data.user_email or 'Public'})", 
+                id=device_id, name="EcoSync Node", 
                 connector_type="esp32",
                 lat=data.lat or 0.0, lon=data.lon or 0.0, 
                 status="online", last_seen=current_ts,
