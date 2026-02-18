@@ -17977,3 +17977,62 @@ LINE 1: ...tam_in', '2026-02-18T10:17:01.261296'::timestamp, np.float64...
 [2026-02-18 10:23:51] [ML] Health check done
 [2026-02-18 10:23:51] [ML] Prediction done
 [2026-02-18 10:23:51] [ML] Text generation done
+[2026-02-18 10:23:52] CHECK: DASHBOARD_skunthal_gitam_in | T:23.0602014129192, H:47.6834591445597, G:832.4, Risk:MODERATE
+[2026-02-18 10:23:52] Found 2 active alert configs.
+[2026-02-18 10:23:52] SKIP (Cooldown): gsrujana456@gmail.com has active cooldown.
+[2026-02-18 10:23:52] SKIP (Cooldown): skunthal@gitam.in has active cooldown.
+[2026-02-18 10:23:52] RECEIVE_IOT_DATA ENTRY - Email: skunthal@gitam.in
+[2026-02-18 10:23:52] Target Device: DASHBOARD_skunthal_gitam_in
+[2026-02-18 10:23:52] Device query done. Found=True
+[2026-02-18 10:23:52] Calling generate_full_report for skunthal@gitam.in
+[2026-02-18 10:23:52] [ML] Starting report for N/A
+[2026-02-18 10:23:52] [ML] Risk calc: MODERATE
+[2026-02-18 10:23:52] [ML] Health check done
+[2026-02-18 10:23:52] [ML] Prediction done
+[2026-02-18 10:23:52] [ML] Text generation done
+[2026-02-18 10:23:53] CHECK: DASHBOARD_skunthal_gitam_in | T:23.0602014129192, H:47.6834591445597, G:832.0, Risk:MODERATE
+[2026-02-18 10:23:53] Found 2 active alert configs.
+[2026-02-18 10:23:53] SKIP (Cooldown): gsrujana456@gmail.com has active cooldown.
+[2026-02-18 10:23:53] SKIP (Cooldown): skunthal@gitam.in has active cooldown.
+[2026-02-18 10:23:53] RECEIVE_IOT_DATA ENTRY - Email: skunthal@gitam.in
+[2026-02-18 10:23:53] Target Device: DASHBOARD_skunthal_gitam_in
+[2026-02-18 10:23:53] Device query done. Found=True
+[2026-02-18 10:23:53] Calling generate_full_report for skunthal@gitam.in
+[2026-02-18 10:23:53] [ML] Starting report for N/A
+[2026-02-18 10:23:53] [ML] Risk calc: MODERATE
+[2026-02-18 10:23:53] [ML] Health check done
+[2026-02-18 10:23:53] [ML] Prediction done
+[2026-02-18 10:23:53] [ML] Text generation done
+[2026-02-18 10:23:54] CHECK: DASHBOARD_skunthal_gitam_in | T:23.0602014129192, H:47.6834591445597, G:831.6, Risk:MODERATE
+[2026-02-18 10:23:54] Found 2 active alert configs.
+[2026-02-18 10:23:54] SKIP (Cooldown): gsrujana456@gmail.com has active cooldown.
+[2026-02-18 10:23:54] SKIP (Cooldown): skunthal@gitam.in has active cooldown.
+[2026-02-18 10:23:54] RECEIVE_IOT_DATA ENTRY - Email: skunthal@gitam.in
+[2026-02-18 10:23:54] Target Device: DASHBOARD_skunthal_gitam_in
+[2026-02-18 10:23:54] Device query done. Found=True
+[2026-02-18 10:23:54] Calling generate_full_report for skunthal@gitam.in
+[2026-02-18 10:23:54] [ML] Starting report for N/A
+[2026-02-18 10:23:54] [ML] Risk calc: MODERATE
+[2026-02-18 10:23:54] [ML] Health check done
+[2026-02-18 10:23:54] [ML] Prediction done
+[2026-02-18 10:23:54] [ML] Text generation done
+[2026-02-18 10:23:55] CHECK: DASHBOARD_skunthal_gitam_in | T:23.0602014129192, H:47.6834591445597, G:831.4, Risk:MODERATE
+[2026-02-18 10:23:55] Found 2 active alert configs.
+[2026-02-18 10:23:55] SKIP (Cooldown): gsrujana456@gmail.com has active cooldown.
+[2026-02-18 10:23:55] SKIP (Cooldown): skunthal@gitam.in has active cooldown.
+[2026-02-18 10:23:55] RECEIVE_IOT_DATA ENTRY - Email: skunthal@gitam.in
+[2026-02-18 10:23:55] Target Device: DASHBOARD_skunthal_gitam_in
+[2026-02-18 10:23:55] Device query done. Found=True
+[2026-02-18 10:23:55] Calling generate_full_report for skunthal@gitam.in
+[2026-02-18 10:23:55] [ML] Starting report for N/A
+[2026-02-18 10:23:55] [ML] Risk calc: MODERATE
+[2026-02-18 10:23:55] [ML] Health check done
+[2026-02-18 10:23:55] [ML] Prediction done
+[2026-02-18 10:23:55] [ML] Text generation done
+[2026-02-18 10:23:56] CHECK: DASHBOARD_skunthal_gitam_in | T:23.0602014129192, H:47.6834591445597, G:831.8, Risk:MODERATE
+[2026-02-18 10:23:56] Found 2 active alert configs.
+[2026-02-18 10:23:56] SKIP (Cooldown): gsrujana456@gmail.com has active cooldown.
+[2026-02-18 10:23:56] SKIP (Cooldown): skunthal@gitam.in has active cooldown.
+[2026-02-18 10:23:56] RECEIVE_IOT_DATA ENTRY - Email: skunthal@gitam.in
+[2026-02-18 10:23:56] Target Device: DASHBOARD_skunthal_gitam_in
+[2026-02-18 10:23:56] Device query done. Found=True
