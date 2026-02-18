@@ -61,7 +61,7 @@ const LandingPage = () => {
                     {/* Links Section */}
                     <div className="hidden md:flex items-center gap-6 text-xs font-bold tracking-widest text-emerald-100/60 uppercase">
                         <a href="/" className="hover:text-emerald-400 transition-colors">Home</a>
-                        <a href="mailto:contact@ecosync.io" className="hover:text-emerald-400 transition-colors">Contact</a>
+                        <a href="/contact" className="hover:text-emerald-400 transition-colors">Contact</a>
                         <a href="#about" className="hover:text-emerald-400 transition-colors">About</a>
                         <a href="https://github.com/projectc943-prog/Ecosync" target="_blank" rel="noreferrer" className="hover:text-emerald-400 transition-colors">Github</a>
                     </div>
@@ -166,6 +166,74 @@ const LandingPage = () => {
 
                 </div>
             </header>
+
+            {/* --- INDUSTRIAL USE CASE (FIRECRACKER) --- */}
+            <div id="about" className="py-20 bg-[#022c22] relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent"></div>
+
+                <div className="max-w-7xl mx-auto px-6 relative z-10">
+                    <div className="text-center mb-16">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-950/30 border border-orange-500/20 text-xs font-bold tracking-widest text-orange-400 uppercase mb-4">
+                            <Shield size={12} />
+                            <span>Industry Focus</span>
+                        </div>
+                        <h2 className="text-4xl md:text-5xl font-black text-white mb-6">
+                            BUILT FOR <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">FIRECRACKER</span> INDUSTRIES
+                        </h2>
+                        <p className="text-slate-400 max-w-2xl mx-auto text-lg leading-relaxed">
+                            Engineered to mitigate the unique high-risk factors of explosive manufacturing.
+                            Replacing expensive PLCs with affordable, intelligent, and scalable IoT nodes.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {/* Card 1: Toxic Gas & Fire Safety */}
+                        <div className="bg-[#031f18]/80 backdrop-blur-sm border border-emerald-500/10 rounded-2xl p-8 hover:border-orange-500/30 transition-all group">
+                            <div className="w-14 h-14 bg-orange-500/10 rounded-xl flex items-center justify-center mb-6 text-orange-400 group-hover:scale-110 transition-transform">
+                                <Wind size={28} />
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-3">Gas & Fire Prevention</h3>
+                            <p className="text-slate-400 text-sm leading-relaxed mb-4">
+                                continuous monitoring of smoke, LPG, and combustible gases combined with critical temperature alerts to prevent accidental ignition.
+                            </p>
+                            <ul className="text-xs text-slate-500 space-y-2 font-mono">
+                                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>SMOKE/GAS SENSOR (MQ-135)</li>
+                                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>HIGH TEMP ALERTS</li>
+                            </ul>
+                        </div>
+
+                        {/* Card 2: Environmental Storage */}
+                        <div className="bg-[#031f18]/80 backdrop-blur-sm border border-emerald-500/10 rounded-2xl p-8 hover:border-blue-500/30 transition-all group">
+                            <div className="w-14 h-14 bg-blue-500/10 rounded-xl flex items-center justify-center mb-6 text-blue-400 group-hover:scale-110 transition-transform">
+                                <Activity size={28} />
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-3">Storage Safety Control</h3>
+                            <p className="text-slate-400 text-sm leading-relaxed mb-4">
+                                Maintain optimal humidity to prevent static electricity build-up and detect rain exposure to protect raw material integrity.
+                            </p>
+                            <ul className="text-xs text-slate-500 space-y-2 font-mono">
+                                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>HUMIDITY MONITORING</li>
+                                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>RAIN DETECTION</li>
+                            </ul>
+                        </div>
+
+                        {/* Card 3: Security & Compliance */}
+                        <div className="bg-[#031f18]/80 backdrop-blur-sm border border-emerald-500/10 rounded-2xl p-8 hover:border-emerald-500/30 transition-all group">
+                            <div className="w-14 h-14 bg-emerald-500/10 rounded-xl flex items-center justify-center mb-6 text-emerald-400 group-hover:scale-110 transition-transform">
+                                <Terminal size={28} />
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-3">Security & Logs</h3>
+                            <p className="text-slate-400 text-sm leading-relaxed mb-4">
+                                Automated motion detection for restricted zones and secure digital logging of all sensor data for safety audits and compliance.
+                            </p>
+                            <ul className="text-xs text-slate-500 space-y-2 font-mono">
+                                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>MOTION SURVEILLANCE</li>
+                                <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>DIGITAL SAFETY LOGS</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             {/* --- FEATURES STRIP --- */}
             <div className="border-y border-white/5 bg-[#022c22]/50 backdrop-blur-sm py-16 text-emerald-100">

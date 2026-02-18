@@ -113,6 +113,20 @@ function AppContent() {
           </Suspense>
         } />
 
+
+
+        <Route path="/about" element={
+          <Suspense fallback={<PageLoader />}>
+            <AboutProject />
+          </Suspense>
+        } />
+
+        <Route path="/contact" element={
+          <Suspense fallback={<PageLoader />}>
+            <ContactSupport />
+          </Suspense>
+        } />
+
         {/* Protected Routes */}
         <Route path="/dashboard" element={
           <ProtectedRoute>

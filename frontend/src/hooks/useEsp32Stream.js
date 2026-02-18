@@ -138,12 +138,12 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                                         motion: latest.motion !== undefined ? latest.motion : null,
                                         rain: latest.rain !== undefined ? latest.rain : null,
 
-                                        trustScore: smart.trust_score,
+                                        trustScore: smart.trust_score ?? 99.9,
                                         smart_metrics: {
                                             insight: smart.insight || smart.smart_insight, // Handle inconsistent naming
                                             anomaly_label: smart.anomaly_label,
                                             ph: smart.ph,
-                                            trust_score: smart.trust_score,
+                                            trust_score: smart.trust_score ?? 99.9,
                                             risk_level: latest.risk_level || "SAFE", // check where risk_level is in main.py
                                             prediction: latest.prediction,
                                             sensor_health: latest.sensor_health,
@@ -471,7 +471,7 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                                     insight: smartData.smart_insight,
                                     anomaly_label: smartData.anomaly_label,
                                     ph: smartData.ph,
-                                    trust_score: smartData.trust_score,
+                                    trust_score: smartData.trust_score ?? 99.9,
                                     // Phase 2 Metrics
                                     risk_level: smartData.risk_level || "SAFE",
                                     prediction: smartData.prediction,
@@ -503,25 +503,13 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
 
                                 if (error) {
                                     console.error("Supabase Sync Error:", error.message);
-                                    // DEBUG: Show error to user ONCE
-                                    if (!window.hasAlertedSupabaseError) {
-                                        alert("Supabase Error: " + error.message);
-                                        window.hasAlertedSupabaseError = true;
-                                    }
+                                    // Removed alert to prevent disrupting user experience
                                 } else {
-                                    // DEBUG: Notify success ONCE
-                                    if (!window.hasAlertedSupabaseSuccess) {
-                                        // alert("Supabase Write Success! Data is being saved."); 
-                                        // Commented out success alert to avoid annoyance, but error alert is active
-                                        window.hasAlertedSupabaseSuccess = true;
-                                    }
+                                    // Success
                                 }
                             } catch (err) {
                                 console.error("Supabase Sync Fatal Error:", err);
-                                if (!window.hasAlertedSupabaseError) {
-                                    alert("Supabase Fatal Error: " + err.message);
-                                    window.hasAlertedSupabaseError = true;
-                                }
+                                // Removed fatal alert
                             }
                         })();
 

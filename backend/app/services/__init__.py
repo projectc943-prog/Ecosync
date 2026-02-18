@@ -6,4 +6,4 @@ from . import external_apis
 from . import api_cache
 from . import websocket_manager
 from . import ai_service
-from . import email_service
+from .email_service import email_notifier

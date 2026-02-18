@@ -1,9 +1,11 @@
 import React from 'react';
 import { ShieldCheck, AlertTriangle, AlertOctagon } from 'lucide-react';
 
-const RiskPanel = ({ riskLevel, score = 12 }) => {
+const RiskPanel = ({ riskLevel, score = 12, isConnected = true, confidence = 99.9, riskFactors = [] }) => {
     // Determine configuration based on risk level or score
     const getRiskConfig = (level) => {
+        if (!isConnected) return { color: 'slate', icon: ShieldCheck, label: 'WAITING', desc: 'Connect Device to Monitor' };
+
         switch (level) {
             case 'CRITICAL':
                 return { color: 'red', icon: AlertOctagon, label: 'CRITICAL', desc: 'Evacuate Immediately' };
@@ -23,8 +25,10 @@ const RiskPanel = ({ riskLevel, score = 12 }) => {
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (score / 100) * circumference;
 
+    const [showFactors, setShowFactors] = React.useState(false);
+
     return (
-        <div className={`relative overflow-hidden rounded-xl border border-${config.color}-500/30 bg-slate-900/80 p-6 flex items-center justify-between shadow-[0_0_20px_rgba(0,0,0,0.3)]`}>
+        <div className={`relative rounded-xl border border-${config.color}-500/30 bg-slate-900/80 p-6 flex items-center justify-between shadow-[0_0_20px_rgba(0,0,0,0.3)]`}>
 
             {/* Left Side: Status Text */}
             <div className="z-10">
@@ -43,12 +47,39 @@ const RiskPanel = ({ riskLevel, score = 12 }) => {
                     {config.desc}
                 </p>
 
-                {/* AI Confidence Badge */}
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-800 rounded-full border border-slate-700">
-                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full shadow-[0_0_5px_#60a5fa]" />
-                    <span className="text-[10px] text-slate-300 font-bold tracking-wider">
-                        AI CONFIDENCE: <span className="text-white">98.2%</span>
-                    </span>
+                {/* AI Confidence Badge - Interactive */}
+                <div
+                    className="relative inline-flex flex-col"
+                    onMouseEnter={() => setShowFactors(true)}
+                    onMouseLeave={() => setShowFactors(false)}
+                    onClick={() => setShowFactors(!showFactors)} // Mobile support
+                >
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-800 rounded-full border border-slate-700 cursor-pointer hover:bg-slate-750 hover:border-blue-500/50 transition-colors">
+                        <div className={`w-1.5 h-1.5 rounded-full shadow-[0_0_5px] ${confidence > 80 ? 'bg-emerald-400 shadow-emerald-400' : 'bg-blue-400 shadow-blue-400'}`} />
+                        <span className="text-[10px] text-slate-300 font-bold tracking-wider">
+                            AI CONFIDENCE: <span className="text-white">{confidence}%</span>
+                        </span>
+                    </div>
+
+                    {/* Factors Tooltip/Popover */}
+                    {showFactors && isConnected && riskFactors.length > 0 && (
+                        <div className="absolute bottom-full left-0 mb-3 w-64 bg-slate-950/95 backdrop-blur-md border border-slate-700 rounded-xl p-4 shadow-2xl z-[100] animate-in slide-in-from-bottom-2 fade-in duration-200">
+                            <div className="flex items-center justify-between mb-2 border-b border-slate-800 pb-2">
+                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Risk Analysis</h4>
+                                <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold ${config.color === 'emerald' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                                    LIVE
+                                </span>
+                            </div>
+                            <ul className="space-y-2">
+                                {riskFactors.map((factor, i) => (
+                                    <li key={i} className="text-[11px] text-slate-200 flex items-start gap-2">
+                                        <span className={`mt-1 w-1.5 h-1.5 rounded-full ${config.color === 'emerald' ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                                        <span className="leading-tight">{factor}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -79,7 +110,7 @@ const RiskPanel = ({ riskLevel, score = 12 }) => {
 
                 {/* Center Content */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className={`text-3xl font-black text-white`}>{score}%</span>
+                    <span className={`text-3xl font-black text-white`}>{isConnected ? score : '--'}%</span>
                     <span className={`text-[8px] text-${config.color}-400 uppercase tracking-widest font-bold`}>RISK</span>
                 </div>
 
@@ -89,9 +120,11 @@ const RiskPanel = ({ riskLevel, score = 12 }) => {
                 </div>
             </div>
 
-            {/* Background Effects */}
-            <div className={`absolute -right-10 -bottom-10 w-48 h-48 bg-${config.color}-500/10 blur-3xl rounded-full pointer-events-none`} />
-            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none mix-blend-overlay"></div>
+            {/* Background Effects Container */}
+            <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
+                <div className={`absolute -right-10 -bottom-10 w-48 h-48 bg-${config.color}-500/10 blur-3xl rounded-full`} />
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+            </div>
         </div>
     );
 };

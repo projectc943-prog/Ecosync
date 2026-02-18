@@ -16,7 +16,9 @@ const SettingsDialog = ({ isOpen, onClose }) => {
     React.useEffect(() => {
         if (isOpen && currentUser?.email) {
             // Fetch settings for CURRENT user
-            const url = new URL(`${API_BASE_URL}/api/settings/alerts`);
+            // Fetch settings for CURRENT user
+            // Fix: Handle relative API_BASE_URL by providing window.location.origin as base
+            const url = new URL(`${API_BASE_URL}/api/settings/alerts`, window.location.origin);
             url.searchParams.append('email', currentUser.email);
 
             fetch(url)
@@ -36,7 +38,7 @@ const SettingsDialog = ({ isOpen, onClose }) => {
         if (!currentUser?.email) return;
         setLoading(true);
         try {
-            await fetch(`${API_BASE_URL}/api/settings/alerts`, {
+            const response = await fetch(`${API_BASE_URL}/api/settings/alerts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -49,11 +51,16 @@ const SettingsDialog = ({ isOpen, onClose }) => {
                     is_active: true
                 })
             });
+            console.log("Settings Save Response:", response.status);
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Server Error: ${response.status} - ${text}`);
+            }
             setSaved(true);
             setTimeout(() => setSaved(false), 2000);
         } catch (err) {
-            console.error(err);
-            alert("Failed to save settings");
+            console.error("Save Settings Error:", err);
+            alert(`Failed to save settings: ${err.message}`);
         }
         setLoading(false);
     };

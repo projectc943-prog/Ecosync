@@ -41,11 +41,15 @@ from .services.websocket_manager import manager
 from .services.api_cache import refresh_map_cache, get_cached_markers
 
 # --- Logging Configuration ---
+# --- Logging Configuration ---
+import sys
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)]
 )
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("app.main")
+logger.setLevel(logging.INFO)
 
 # --- App Initialization ---
 app = FastAPI(
@@ -358,6 +362,11 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
     # Gas is usually not user-configurable in basic settings, but if it were:
     GAS_THRESH = min(settings.gas_threshold if settings and settings.gas_threshold else 600.0, CRITICAL_GAS)
     
+    print(f"DEBUG: Check Alerts for {user_email}")
+    print(f"DEBUG: Settings Loaded: {settings is not None}")
+    print(f"DEBUG: Thresholds -> Temp: {TEMP_THRESH} (User: {USER_TEMP_THRESH}), PM2.5: {PM25_THRESH}")
+    print(f"DEBUG: Measurement -> Temp: {measurement.temperature}, PM2.5: {measurement.pm2_5}, Gas: {measurement.gas}")
+    
     RAIN_ALERT_ENABLED = settings.rain_alert if settings else True
     MOTION_ALERT_ENABLED = settings.motion_alert if settings else True
     # Logic change: We will fetch ALL users below instead of just one recipient
@@ -412,7 +421,8 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
         # --- COOLDOWN CHECK ---
         # Prevent spamming alerts every second. Check if an alert was sent in the last 15 minutes.
         try:
-             cutoff_time = dt.utcnow() - timedelta(minutes=15)
+             # DEBUG: Set to 30 seconds for easier user testing
+             cutoff_time = dt.utcnow() - timedelta(minutes=0.5) 
              recent_alert = db.query(models.Alert).filter(
                  models.Alert.message == alert_msg, # Same alert type
                  models.Alert.timestamp >= cutoff_time
@@ -434,10 +444,17 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
         if user_email:
             recipients.add(user_email)
             logger.info(f"Targeting Primary User: {user_email}")
-            
+        else:
+            logger.warning("⚠️ No Primary User Email associated with this data packet.")
+
         # 2. Add fallback/admin from settings (Safety Net)
         if settings and settings.user_email:
             recipients.add(settings.user_email)
+            logger.info(f"Targeting Settings Admin: {settings.user_email}")
+        else:
+             logger.warning("⚠️ No Safety Net Admin Email found in settings.")
+            
+        logger.info(f"📋 Final Recipient List: {recipients}")
             
         # 3. Geofencing (The "Sentinel" Broadcast)
         if device.lat and device.lon:
@@ -465,93 +482,65 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
             dashboard_link = f"http://localhost:5173/dashboard?device={device.id}"
             
             # ============================================
-            # PRIMARY ALERT: CONSOLE NOTIFICATION (Always Works)
+            # PRIMARY ALERT: CONSOLE NOTIFICATION 
             # ============================================
             print("\n" + "="*80)
             print("🚨 CRITICAL ALERT - THRESHOLD VIOLATION DETECTED 🚨")
             print("="*80)
             print(f"Device: {device.name}")
-            print(f"Location: {device.lat}, {device.lon}")
             print(f"Time: {timestamp_str}")
-            print(f"\nVIOLATIONS:")
-            for trigger in triggers:
-                print(f"  ⚠️  {trigger}")
-            print(f"\nRecipients: {', '.join(recipients)}")
-            print(f"Dashboard: {dashboard_link}")
+            print(f"Recipients: {', '.join(recipients)}")
             print("="*80 + "\n")
             
             # ============================================
-            # SECONDARY ALERT: EMAIL (Optional - May Fail)
+            # NEW: RICH EMAIL ALERT
             # ============================================
-            body = (
-                f"🚨 EcoSync Alert System\n\n"
-                f"Source: {device.name}\n"
-                f"Location: {device.lat}, {device.lon}\n"
-                f"Time: {timestamp_str}\n\n"
-                f"The following threshold violations were detected:\n"
-                f"--------------------------------------------------\n"
-                f"{alert_msg}\n"
-                f"--------------------------------------------------\n\n"
-                f"🤖 AI INSIGHT:\n"
-                f"{measurement.smart_insight or 'No insight available.'}\n\n"
-                f"View live dashboard here:\n{dashboard_link}\n\n"
-                f"- EcoSync Sentinel"
-            )
+            from app.services import email_notifier
             
-            # Track email sending success
-            emails_sent_successfully = 0
-            logger.info(f"📧 Attempting to send email alerts to {len(recipients)} recipients...")
-            
-            for email in recipients:
-                success = send_email_alert(f"Alert: {device.name} - Action Required", body, recipient=email)
-                if success:
-                    emails_sent_successfully += 1
-            
-            # ============================================
-            # TERTIARY ALERT: PUSH NOTIFICATION
-            # ============================================
-            try:
-                push_title = f"🚨 {device.name} Alert"
-                push_body = f"{alert_msg}\n(AI: {measurement.smart_insight})"
-                push_payload = {
-                     "title": push_title,
-                     "body": push_body,
-                     "icon": "/warning.png",
-                     "tag": "ecosync-alert",
-                     "data": {"url": dashboard_link}
-                }
+            # Prepare Structured Data for UI
+            formatted_alerts = []
+            for t in triggers:
+                parts = t.split(":")
+                metric = parts[0].strip()
+                val_msg = parts[1].strip() if len(parts) > 1 else "DETECTED"
                 
-                # Send to all nearby users found in 'nearby_users' scope
-                # Note: 'nearby_users' var might not be available here if we didn't enter that block
-                # Better strategy: Get IDs of recipients
+                status_label = "CRITICAL" if "EXPLOSION" in t or "CRITICAL" in t else "WARNING"
                 
-                # Fetch user objects for recipients to send push
-                target_users = db.query(models.User).filter(models.User.email.in_(recipients)).all()
-                for user in target_users:
-                     sent_push = send_push_notification_to_user(user.id, push_payload, db)
-                     if sent_push:
-                         logger.info(f"Push notification sent to {user.email}")
-            except Exception as e:
-                logger.error(f"Failed to send push notifications: {e}")
-            
-            # Save to DB with email status
-            email_status = emails_sent_successfully > 0
-            db.add(models.Alert(
-                metric="multi",
-                value=0.0,
-                message=alert_msg,
-                recipient_email=f"BROADCAST_{len(recipients)}_RECIPIENTS",
-                email_sent=email_status
-            ))
-            
-            # Log final status
-            if email_status:
-                logger.info(f"Alert emails sent successfully to {emails_sent_successfully}/{len(recipients)} recipients")
+                formatted_alerts.append({
+                    "metric": metric,
+                    "value": val_msg,
+                    "limit": "Threshold Exceeded",
+                    "status": status_label
+                })
+
+            # AI Insight
+            ai_insight = measurement.smart_insight or "Multiple threshold violations detected. Verify sensor environment immediately."
+
+            # Send Email (Async or blocking, here blocking for simplicity but fast via SMTP)
+            if formatted_alerts:
+                logger.info(f"📧 Sending Rich Email to {len(recipients)} recipients...")
+                success = email_notifier.send_alert(
+                    recipients=list(recipients),
+                    device_name=device.name,
+                    timestamp=timestamp_str,
+                    alert_data=formatted_alerts,
+                    ai_insight=ai_insight,
+                    dashboard_link=dashboard_link
+                )
+                
+                # DB Status Update
+                db.add(models.Alert(
+                    metric="multi",
+                    value=0.0,
+                    message=alert_msg,
+                    recipient_email=f"RICH_BROADCAST_{len(recipients)}",
+                    email_sent=success
+                ))
             else:
-                logger.warning(f"Email delivery failed, but CONSOLE ALERT was displayed above")
-                logger.warning(f"Check the terminal output for alert details")
+                logger.warning("Alert triggered but no formatted data matched. Skipping email.")
+
         else:
-             logger.warning("Alert triggered but no email recipients found (No users in DB).")
+             logger.warning("Alert triggered but no email recipients found.")
 
 
 # --- Compliance Log API ---
@@ -561,8 +550,12 @@ class ViolationReport(BaseModel):
     verifier_name: str
 
 @app.get("/api/compliance/logs", tags=["Compliance"])
-def get_compliance_logs(db: Session = Depends(get_db)):
+def get_compliance_logs(history: bool = False, db: Session = Depends(get_db)):
     today_str = dt.now().strftime("%Y-%m-%d")
+
+    if history:
+        # Return last 50 logs ordered by date desc
+        return db.query(models.SafetyLog).order_by(models.SafetyLog.date.desc(), models.SafetyLog.id).limit(50).all()
     
     # 1. Check if logs exist for today
     logs = db.query(models.SafetyLog).filter(models.SafetyLog.date == today_str).all()

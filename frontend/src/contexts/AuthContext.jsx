@@ -99,7 +99,7 @@ export const AuthProvider = ({ children }) => {
 
             // Timeout logic
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s Timeout
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s Timeout
 
             console.log("AuthContext: Login POST to", `${API_BASE_URL}/token`);
             const response = await fetch(`${API_BASE_URL}/token`, {
