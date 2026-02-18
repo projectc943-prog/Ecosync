@@ -93,14 +93,8 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "http://localhost:8009",
-    "http://127.0.0.1:8009",
     "http://localhost:5174",
-    "http://127.0.0.1:5174",
-    "http://localhost:5175",
-    "http://127.0.0.1:5175",
-    "http://localhost:5176",
-    "http://127.0.0.1:5176"
+    "http://127.0.0.1:5174"
 ]
 
 app.add_middleware(
@@ -112,10 +106,10 @@ app.add_middleware(
 )
 
 # --- Security Headers ---
-app.add_middleware(
-    TrustedHostMiddleware, 
-    allowed_hosts=["localhost", "127.0.0.1", "your-production-domain.com"]
-)
+# app.add_middleware(
+#     TrustedHostMiddleware, 
+#     allowed_hosts=["localhost", "127.0.0.1", "your-production-domain.com"]
+# )
 
 # Redirect to HTTPS in production
 if ENVIRONMENT == "production":
@@ -347,200 +341,112 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
     # If User says "Alert at 80C" and Critical is 70C, we want to alert at 70C. So yes, min().
     # If User says "Alert at 30C" and Critical is 70C, we want to alert at 30C.
     
-    CRITICAL_TEMP = 70.0 # Fire Risk
-    CRITICAL_GAS = 2000.0 # Explosion Risk / Heavy Leak
-    CRITICAL_PM25 = 300.0 # Hazardous
+    # --- CRITICAL SAFETY OVERRIDES DISABLED FOR USER TESTING ---
+    # CRITICAL_TEMP = 70.0 
     
-    # Effective Thresholds (The stricter of the two)
-    TEMP_THRESH = min(USER_TEMP_THRESH, CRITICAL_TEMP)
-    PM25_THRESH = min(USER_PM25_THRESH, CRITICAL_PM25)
+    # Effective Thresholds (User Setting ONLY)
+    TEMP_THRESH = USER_TEMP_THRESH
+    PM25_THRESH = USER_PM25_THRESH
     
     HUM_MIN = USER_HUM_MIN
     HUM_MAX = USER_HUM_MAX
     WIND_THRESH = USER_WIND_THRESH
-    
-    # Gas is usually not user-configurable in basic settings, but if it were:
-    GAS_THRESH = min(settings.gas_threshold if settings and settings.gas_threshold else 600.0, CRITICAL_GAS)
-    
+    GAS_THRESH = settings.gas_threshold if settings and settings.gas_threshold else 2000.0
+
     print(f"DEBUG: Check Alerts for {user_email}")
     print(f"DEBUG: Settings Loaded: {settings is not None}")
-    print(f"DEBUG: Thresholds -> Temp: {TEMP_THRESH} (User: {USER_TEMP_THRESH}), PM2.5: {PM25_THRESH}")
-    print(f"DEBUG: Measurement -> Temp: {measurement.temperature}, PM2.5: {measurement.pm2_5}, Gas: {measurement.gas}")
+    print(f"DEBUG: Active Threshold -> Temp: {TEMP_THRESH} (User Configured)")
     
     RAIN_ALERT_ENABLED = settings.rain_alert if settings else True
     MOTION_ALERT_ENABLED = settings.motion_alert if settings else True
-    # Logic change: We will fetch ALL users below instead of just one recipient
+
+    # --- NEW SAFETY REPORT LOGIC (Comprehensive) ---
+    # Trigger if Risk is NOT SAFE or if user thresholds are breached
     
-    triggers = []
+    report = insight_generator.generate_full_report(current_data, anomalies_list)
+    risk_level = report["risk_level"]
+    insight_text = report["insight"]
     
-    # 1. High Temperature -> Fire Risk
-    if measurement.temperature and -50 <= measurement.temperature <= 100:
-        if measurement.temperature > CRITICAL_TEMP:
-             triggers.append(f"⛔ CRITICAL SAFETY OVERRIDE: Temp {measurement.temperature}°C exceeded HARD LIMIT ({CRITICAL_TEMP}°C)")
-        elif measurement.temperature > TEMP_THRESH:
-             triggers.append(f"⚠️ High Temp: {measurement.temperature}°C (User Limit: {TEMP_THRESH}°C)")
+    # Determine if we should send a report
+    should_send_report = False
     
-    # 2. Humidity Extremes
-    if measurement.humidity and 0 <= measurement.humidity <= 100:
-        if measurement.humidity > HUM_MAX:
-            triggers.append(f"💧 High Humidity: {measurement.humidity}% (Limit: {HUM_MAX}%)")
-        elif measurement.humidity < HUM_MIN:
-            triggers.append(f"🌵 Low Humidity: {measurement.humidity}% (Limit: {HUM_MIN}%)")
-
-    # 3. High PM2.5
-    if measurement.pm2_5:
-        if measurement.pm2_5 > CRITICAL_PM25:
-             triggers.append(f"⛔ CRITICAL AIR HAZARD: PM2.5 {measurement.pm2_5} (Hard Limit: {CRITICAL_PM25})")
-        elif measurement.pm2_5 > PM25_THRESH:
-             triggers.append(f"🌫️ Poor Air Quality: PM2.5 {measurement.pm2_5} (User Limit: {PM25_THRESH})")
+    # 1. Check Risk Level
+    if risk_level in ["CRITICAL", "MODERATE"]:
+        should_send_report = True
         
-    # 4. High Wind Speed
-    if measurement.wind_speed and measurement.wind_speed > WIND_THRESH:
-        triggers.append(f"💨 High Wind: {measurement.wind_speed} km/h (Limit: {WIND_THRESH})")
+    # 2. Check User Thresholds (Explicit User Preferences)
+    if measurement.temperature > TEMP_THRESH: should_send_report = True
+    if measurement.pm2_5 > PM25_THRESH: should_send_report = True
+    if measurement.humidity > HUM_MAX or measurement.humidity < HUM_MIN: should_send_report = True
+    if measurement.wind_speed > WIND_THRESH: should_send_report = True
+    if measurement.rain < 2000 and RAIN_ALERT_ENABLED: should_send_report = True # Active rain usually < 2000 analog
 
-    # 5. Gas Leak Detection
-    if measurement.gas and 0 <= measurement.gas <= 4095:
-        if measurement.gas > CRITICAL_GAS:
-            triggers.append(f"⛔ EXPLOSION RISK: Gas Level {measurement.gas} (Hard Limit: {CRITICAL_GAS})")
-        elif measurement.gas > GAS_THRESH:
-            triggers.append(f"⚠️ Gas Leak Detected: {measurement.gas} (Limit: {GAS_THRESH})")
-
-    # 6. Rain Detection (Validate range 0-4095, threshold < 2000 usually means wet)
-    if RAIN_ALERT_ENABLED and measurement.rain and 0 <= measurement.rain <= 4095:
-        if measurement.rain < 2000:
-            triggers.append(f"RAIN DETECTED: {measurement.rain}")
-
-    # 7. Motion Detection
-    if MOTION_ALERT_ENABLED and measurement.motion == 1:
-        triggers.append(f"MOTION DETECTED")
-
-    if triggers:
-        alert_msg = " | ".join(triggers)
-        logger.warning(f"ALERT TRIGGERED: {alert_msg} on {device.name}")
-        
-        # --- COOLDOWN CHECK ---
-        # Prevent spamming alerts every second. Check if an alert was sent in the last 15 minutes.
-        try:
-             # DEBUG: Set to 30 seconds for easier user testing
-             cutoff_time = dt.utcnow() - timedelta(minutes=0.5) 
-             recent_alert = db.query(models.Alert).filter(
-                 models.Alert.message == alert_msg, # Same alert type
-                 models.Alert.timestamp >= cutoff_time
-             ).first()
-             
-             if recent_alert:
-                 if recent_alert.timestamp: # Ensure timestamp exists
-                     time_diff = (dt.utcnow() - recent_alert.timestamp).total_seconds() / 60
-                     logger.info(f"⏳ Alert Cooldown Active: Last alert sent {time_diff:.1f} mins ago. Skipping.")
-                     return
-        except Exception as e:
-             logger.error(f"Error checking alert cooldown: {e}")
-             # Proceed safely if cooldown check fails
-        
-        # Targeted Email Logic
-        recipients = set()
-        
-        # 1. Add the user who sent the data (Primary Target)
-        if user_email:
-            recipients.add(user_email)
-            logger.info(f"Targeting Primary User: {user_email}")
+    # Cooldown Logic (Prevent spamming)
+    current_time = dt.utcnow()
+    last_sent = alert_cooldowns.get(device.id)
+    
+    if should_send_report:
+        # 1-minute cooldown for test/dev mode
+        if last_sent and (current_time - last_sent) < timedelta(minutes=1):
+            logger.info(f"⏳ Cooldown active for {device.id}. Skipping report.")
         else:
-            logger.warning("⚠️ No Primary User Email associated with this data packet.")
-
-        # 2. Add fallback/admin from settings (Safety Net)
-        if settings and settings.user_email:
-            recipients.add(settings.user_email)
-            logger.info(f"Targeting Settings Admin: {settings.user_email}")
-        else:
-             logger.warning("⚠️ No Safety Net Admin Email found in settings.")
+            logger.warning(f"🚨 TRIGGERING SAFETY REPORT for {device.name}!")
             
-        logger.info(f"📋 Final Recipient List: {recipients}")
+            # Prepare Alert Data for Email Table
+            alert_payload = [
+                {"metric": "Temperature", "value": f"{measurement.temperature}°C", "limit": f"{TEMP_THRESH}°C", "status": "CRITICAL" if measurement.temperature > TEMP_THRESH else "SAFE"},
+                {"metric": "Humidity", "value": f"{measurement.humidity}%", "limit": f"{HUM_MAX}%", "status": "CRITICAL" if measurement.humidity > HUM_MAX else "SAFE"},
+                {"metric": "Gas Level", "value": f"{measurement.gas} ppm", "limit": f"{GAS_THRESH} ppm", "status": "CRITICAL" if measurement.gas > GAS_THRESH else "SAFE"},
+                {"metric": "Rain", "value": "DETECTED" if measurement.rain < 2000 else "Clear", "limit": "2000", "status": "WARNING" if measurement.rain < 2000 else "SAFE"},
+                {"metric": "Risk Level", "value": risk_level, "limit": "SAFE", "status": risk_level}
+            ]
             
-        # 3. Geofencing (The "Sentinel" Broadcast)
-        if device.lat and device.lon:
-            try:
-                nearby_users = db.query(models.User).filter(
-                    models.User.is_verified == True,
-                    models.User.location_lat != None,
-                    models.User.location_lon != None
-                ).all()
-                
-                logger.info(f"Sentinel Scan: Checking {len(nearby_users)} active users near Sector {device.lat},{device.lon}")
-                
-                for u in nearby_users:
-                    dist = calculate_distance(device.lat, device.lon, u.location_lat, u.location_lon)
-                    if dist <= 50.0: # 50km Sector Radius
-                        recipients.add(u.email)
-                        logger.info(f"Targeting Nearby User: {u.email} (Location: {u.location_name or 'Unknown'}, Distance: {dist:.1f}km)")
-            except Exception as geo_error:
-                logger.warning(f"Geofencing disabled (DB schema pending): {geo_error}")
-                # Fallback: Just send to the primary user
-                pass
-
-        if recipients:
-            timestamp_str = measurement.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC")
-            dashboard_link = f"http://localhost:5173/dashboard?device={device.id}"
+            # Determine Recipients
+            recipients = set()
+            if user_email: recipients.add(user_email)
+            if settings and settings.user_email: recipients.add(settings.user_email)
             
-            # ============================================
-            # PRIMARY ALERT: CONSOLE NOTIFICATION 
-            # ============================================
-            print("\n" + "="*80)
-            print("🚨 CRITICAL ALERT - THRESHOLD VIOLATION DETECTED 🚨")
-            print("="*80)
-            print(f"Device: {device.name}")
-            print(f"Time: {timestamp_str}")
-            print(f"Recipients: {', '.join(recipients)}")
-            print("="*80 + "\n")
-            
-            # ============================================
-            # NEW: RICH EMAIL ALERT
-            # ============================================
-            from app.services import email_notifier
-            
-            # Prepare Structured Data for UI
-            formatted_alerts = []
-            for t in triggers:
-                parts = t.split(":")
-                metric = parts[0].strip()
-                val_msg = parts[1].strip() if len(parts) > 1 else "DETECTED"
-                
-                status_label = "CRITICAL" if "EXPLOSION" in t or "CRITICAL" in t else "WARNING"
-                
-                formatted_alerts.append({
-                    "metric": metric,
-                    "value": val_msg,
-                    "limit": "Threshold Exceeded",
-                    "status": status_label
-                })
-
-            # AI Insight
-            ai_insight = measurement.smart_insight or "Multiple threshold violations detected. Verify sensor environment immediately."
-
-            # Send Email (Async or blocking, here blocking for simplicity but fast via SMTP)
-            if formatted_alerts:
-                logger.info(f"📧 Sending Rich Email to {len(recipients)} recipients...")
+            if recipients:
+                from .services.email_service import email_notifier
                 success = email_notifier.send_alert(
                     recipients=list(recipients),
                     device_name=device.name,
-                    timestamp=timestamp_str,
-                    alert_data=formatted_alerts,
-                    ai_insight=ai_insight,
-                    dashboard_link=dashboard_link
+                    timestamp=current_ts.strftime("%Y-%m-%d %H:%M:%S UTC"),
+                    alert_data=alert_payload,
+                    ai_insight=insight_text,
+                    dashboard_link="http://localhost:5173/dashboard",
+                    title="🛡️ EcoSync Safety Report"
                 )
                 
-                # DB Status Update
-                db.add(models.Alert(
-                    metric="multi",
-                    value=0.0,
-                    message=alert_msg,
-                    recipient_email=f"RICH_BROADCAST_{len(recipients)}",
-                    email_sent=success
-                ))
+                if success:
+                    alert_cooldowns[device.id] = current_time
+                    logger.info(f"✅ Safety Report Sent to {recipients}")
+                else:
+                    logger.error("❌ Failed to send Safety Report email")
             else:
-                logger.warning("Alert triggered but no formatted data matched. Skipping email.")
+                logger.warning("❌ No recipients found for Safety Report")
+    
+    # 3. Store in DB (Standard Logging)
+    try:
+        new_reading = models.SensorData(
+            device_id=device.id,
+            temperature=measurement.temperature,
+            humidity=measurement.humidity,
+            pm2_5=measurement.pm2_5,
+            pressure=measurement.pressure,
+            wind_speed=measurement.wind_speed,
+            gas=measurement.gas,
+            rain=measurement.rain,
+            motion=measurement.motion,
+            ph=measurement.ph,
+            timestamp=current_ts
+        )
+        db.add(new_reading)
+        db.commit()
+    except Exception as e:
+        logger.error(f"Error saving to DB: {e}")
 
-        else:
-             logger.warning("Alert triggered but no email recipients found.")
+    return {"status": "success", "message": "Data processed", "risk": risk_level}
 
 
 # --- Compliance Log API ---
@@ -630,6 +536,7 @@ async def receive_iot_data(data: IoTSensorData, db: Session = Depends(get_db)):
     Receives sensor data from ESP32, applies Kalman filtering, saves to DB, and broadcasts via WebSocket.
     """
     try:
+        print(f"📡 DATA INGEST: {data.dict()}") # DEBUG Payload
         current_ts = dt.utcnow()
         
         # 1. Kalman Filtering & Cleaning

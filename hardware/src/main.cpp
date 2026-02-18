@@ -328,7 +328,7 @@ void loop() {
       doc["motion_detected"] = (pirValue == HIGH);
       doc["ir_detected"] = (irValue == LOW);
       doc["pm25"] = pm25_kalman;
-      doc["pressure"] = 1013;
+      // doc["pressure"] = 1013; // Hardcoded standard sea-level pressure
       String jsonPayload;
       serializeJson(doc, jsonPayload);
       http.POST(jsonPayload);

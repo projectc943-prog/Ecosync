@@ -820,14 +820,14 @@ const ProView = () => {
                     <div className="text-[10px] text-gray-500">Dew Point: 22°</div>
                 </Card>
 
-                {/* Pressure */}
+                {/* Pressure
                 <Card className="flex flex-col justify-between h-24">
                     <div className="flex items-center gap-2 text-gray-400 text-[10px] uppercase font-bold">
                         <Activity size={14} /> Pressure
                     </div>
                     <div className="text-2xl font-bold text-white">1013</div>
                     <div className="text-[10px] text-gray-500">hPa</div>
-                </Card>
+                </Card> */}
 
                 {/* Visibility */}
                 <Card className="flex flex-col justify-between h-24">

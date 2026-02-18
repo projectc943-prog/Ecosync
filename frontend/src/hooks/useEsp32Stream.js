@@ -111,62 +111,66 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                             const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/filtered/latest`);
                             if (response.ok) {
                                 const latest = await response.json();
-                                if (latest) {
-                                    // Fix: Access nested objects from API response
-                                    const filtered = latest.filtered || {};
-                                    const smart = latest.smart_metrics || {};
-
-                                    const now = Date.now();
-                                    const packet = {
-                                        ts: now,
-                                        timestamp: latest.timestamp ? new Date(latest.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString(),
-
-                                        temperature: filtered.temperature,
-                                        temp_raw: filtered.temperature,
-
-                                        humidity: filtered.humidity,
-                                        hum_raw: filtered.humidity,
-
-                                        gas: filtered.mq_smoothed,
-                                        mq_raw: filtered.mq_smoothed,
-
-                                        pm25: filtered.pm25,
-
-                                        // Add Pressure (for 8th card)
-                                        pressure: filtered.pressure || 1013,
-
-                                        motion: latest.motion !== undefined ? latest.motion : null,
-                                        rain: latest.rain !== undefined ? latest.rain : null,
-
-                                        trustScore: smart.trust_score ?? 99.9,
-                                        smart_metrics: {
-                                            insight: smart.insight || smart.smart_insight, // Handle inconsistent naming
-                                            anomaly_label: smart.anomaly_label,
-                                            ph: smart.ph,
-                                            trust_score: smart.trust_score ?? 99.9,
-                                            risk_level: latest.risk_level || "SAFE", // check where risk_level is in main.py
-                                            prediction: latest.prediction,
-                                            sensor_health: latest.sensor_health,
-                                            baseline: latest.baseline
-                                        }
-                                    };
-
-                                    // Update Stream State
-                                    bufferRef.current = [...bufferRef.current, packet].slice(-50);
-                                    setStream({
-                                        connected: false, // Not physically connected
-                                        lastSeen: now,
-                                        data: packet,
-                                        history: bufferRef.current,
-                                        alerts: []
-                                    });
+                                if (latest.status === 'no_data') {
+                                    // Reset state if no data
+                                    setStream(prev => ({
+                                        ...prev,
+                                        connected: false,
+                                        data: null
+                                    }));
+                                    return;
                                 }
+
+                                // Fix: Access nested objects from API response
+                                const filtered = latest.filtered || {};
+                                const smart = latest.smart_metrics || {};
+
+                                const now = Date.now();
+                                const packet = {
+                                    ts: now,
+                                    timestamp: latest.timestamp ? new Date(latest.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString(),
+
+                                    temperature: filtered.temperature,
+                                    temp_raw: filtered.temperature,
+
+                                    humidity: filtered.humidity,
+                                    hum_raw: filtered.humidity,
+
+                                    gas: filtered.mq_smoothed,
+                                    mq_raw: filtered.mq_smoothed,
+
+                                    pm25: filtered.pm25,
+
+                                    motion: latest.motion !== undefined ? latest.motion : null,
+                                    rain: latest.rain !== undefined ? latest.rain : null,
+
+                                    trustScore: smart.trust_score,
+                                    smart_metrics: {
+                                        insight: smart.insight || smart.smart_insight, // Handle inconsistent naming
+                                        anomaly_label: smart.anomaly_label,
+                                        trust_score: smart.trust_score,
+                                        risk_level: latest.risk_level || "SAFE",
+                                        prediction: latest.prediction,
+                                        sensor_health: latest.sensor_health,
+                                        baseline: latest.baseline
+                                    }
+                                };
+
+                                // Update Stream State
+                                bufferRef.current = [...bufferRef.current, packet].slice(-50);
+                                setStream({
+                                    connected: false, // Not physically connected
+                                    lastSeen: now,
+                                    data: packet,
+                                    history: bufferRef.current,
+                                    alerts: []
+                                });
                             }
                         } catch (e) {
                             console.warn("Demo Data Poll Error:", e);
                         }
                     }
-                    return; // Exit fetchData if in lite/light mode and handled
+                    return; // Exit fetchData if in lite/light mode
                 }
 
                 // PRO MODE: Advanced Simulation + Real Data Wrapper
@@ -179,13 +183,11 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                 // 1. HARWARE BIAS (Simulating Uncalibrated Sensors)
                 const BIAS = { temp: 2.1, hum: -4.5, aqi: 15, wind: 1.2 };
 
-
                 // Base Values (Ground Truth from API)
                 const truthTemp = base.loaded ? base.temp : (24 + Math.sin(now / 10000) * 2);
                 const truthHum = base.loaded ? base.hum : (45 + Math.sin(now / 20000) * 5);
                 const truthWind = base.loaded ? base.wind : (5 + Math.sin(now / 30000) * 2);
                 const truthAqi = base.loaded ? base.aqi : (12 + Math.cos(now / 15000) * 3);
-
 
                 // Raw Readings = Truth + Bias + Noise
                 const rawTemp = truthTemp + BIAS.temp + ((Math.random() - 0.5) * 0.5);
@@ -193,13 +195,11 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                 const rawWind = truthWind + BIAS.wind + ((Math.random() - 0.5) * 0.8);
                 const rawAqi = truthAqi + BIAS.aqi + ((Math.random() - 0.5) * 2.0);
 
-
                 // 2. CALIBRATION (Software Correction)
                 const calTemp = rawTemp - BIAS.temp;
                 const calHum = rawHum - BIAS.hum;
                 const calWind = rawWind - BIAS.wind;
                 const calAqi = rawAqi - BIAS.aqi;
-
 
                 // 3. KALMAN FILTER (Noise Reduction)
                 const lastPacket = bufferRef.current[bufferRef.current.length - 1];
@@ -207,36 +207,24 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                 const filteredTemp = lastPacket ? (lastPacket.temperature * 0.85 + calTemp * 0.15) : calTemp;
                 const filteredHum = lastPacket ? (lastPacket.humidity * 0.85 + calHum * 0.15) : calHum;
                 const filteredWind = lastPacket ? (lastPacket.wind_speed * 0.85 + calWind * 0.15) : calWind;
-                const filteredAqi = lastPacket ? (lastPacket.mq_ppm * 0.85 + calAqi * 0.15) : calAqi;
-
+                const filteredAqi = lastPacket ? (lastPacket.pm25 * 0.85 + calAqi * 0.15) : calAqi;
 
                 const packet = {
                     ts: now,
                     timestamp: new Date().toLocaleTimeString(),
-
-                    // Temperature
                     temperature: Number(filteredTemp.toFixed(1)),
                     raw_temperature: Number(rawTemp.toFixed(1)),
-
-                    // Humidity
                     humidity: Number(filteredHum.toFixed(1)),
                     raw_humidity: Number(rawHum.toFixed(1)),
-
-                    // Air Quality
-                    mq_ppm: Number(filteredAqi.toFixed(0)), // PM2.5
+                    mq_ppm: Number(filteredAqi.toFixed(0)),
                     raw_mq_ppm: Number(rawAqi.toFixed(0)),
                     mq_raw: 400 + Math.random() * 50,
-                    gas: Number(filteredAqi.toFixed(0)), // Add gas field for Pro Dashboard compatibility
-
-                    // Wind Speed
+                    gas: Number(filteredAqi.toFixed(0)),
                     wind_speed: Number(filteredWind.toFixed(1)),
                     raw_wind_speed: Number(rawWind.toFixed(1)),
-
                     trustScore: 99.9,
                     deviceId: "ESP32_MAIN"
                 };
-
-
 
                 // --- CLOUD PERSISTENCE & ALERTS ---
                 const localTime = new Date(now - (new Date().getTimezoneOffset() * 60000)).toISOString();
@@ -252,7 +240,6 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                             temperature: Number(filteredTemp.toFixed(2)),
                             humidity: Number(filteredHum.toFixed(2)),
                             pm25: Number(filteredAqi.toFixed(2)),
-                            pressure: 1013,
                             mq_raw: packet.mq_raw,
                             wind_speed: Number(filteredWind.toFixed(2)),
                             user_email: userEmail,
@@ -273,9 +260,7 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                 packet.smart_metrics = {
                     insight: smartData.smart_insight,
                     anomaly_label: smartData.anomaly_label || "Normal",
-                    ph: smartData.ph,
                     trust_score: smartData.trust_score,
-                    // Phase 2 Metrics
                     risk_level: smartData.risk_level || "SAFE",
                     prediction: smartData.prediction,
                     sensor_health: smartData.sensor_health,
@@ -447,7 +432,11 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
 
                         // --- BACKEND SYNC & SMART METRICS FETCH ---
                         try {
-                            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/iot/data`, {
+                            const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"; // Fallback
+                            // console.log("🚀 SERIAL PUSH: Sending to", API_URL);
+                            // console.log("👤 User:", userEmail);
+
+                            const response = await fetch(`${API_URL}/iot/data`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
@@ -459,10 +448,12 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                                     motion: packet.motion,
                                     screen: packet.screen,
                                     user_email: userEmail,
-                                    lat: coordinates[0],
-                                    lon: coordinates[1]
+                                    lat: coordinates ? coordinates[0] : null,
+                                    lon: coordinates ? coordinates[1] : null
                                 })
                             });
+
+                            // console.log("✅ SERIAL PUSH STATUS:", response.status);
 
                             if (response.ok) {
                                 const smartData = await response.json();
@@ -470,7 +461,7 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                                 packet.smart_metrics = {
                                     insight: smartData.smart_insight,
                                     anomaly_label: smartData.anomaly_label,
-                                    ph: smartData.ph,
+                                    // ph: smartData.ph,
                                     trust_score: smartData.trust_score ?? 99.9,
                                     // Phase 2 Metrics
                                     risk_level: smartData.risk_level || "SAFE",

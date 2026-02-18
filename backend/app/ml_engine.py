@@ -227,6 +227,20 @@ class SmartInsightGenerator:
                 insights.append("🧪 Acidic pH Detected: Check chemical storage.")
             elif ph > 8.5:
                 insights.append("🧪 Alkaline pH Detected: Check neutralization.")
+
+        # new: Humidity & Rain Insights (User Requested)
+        hum = reading.get('humidity', 0)
+        rain = reading.get('rain', 0)
+        
+        if hum > 70 and temp > 30:
+             insights.append("😓 Heat Stress Risk: High Humidity + Temp reduces body cooling. Stay hydrated.")
+        elif hum > 85:
+             insights.append("💧 High Humidity: Mold risk and equipment corrosion potential.")
+             
+        if rain > 500: # Analog value usually
+             insights.append("🌧️ Heavy Rain Detected: Flood risk in low-lying areas. Secure electricals.")
+        elif rain > 0: # Digital or low analog
+             insights.append("☔ Rain Detected: Slippery surfaces possible.")
         
         if anomalies:
              insights.append(f"⚠️ Anomaly Detected: {', '.join(anomalies)} behavior is unusual.")

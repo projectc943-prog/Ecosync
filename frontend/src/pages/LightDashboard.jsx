@@ -64,7 +64,7 @@ const LightDashboard = ({ onToggle, initialView = 'overview' }) => {
     // Smart Metrics extraction
     const smartMetrics = latestData.smart_metrics || {};
     const trustScore = useMemo(() => smartMetrics.trust_score != null ? Math.round(smartMetrics.trust_score) : 'N/A', [smartMetrics]);
-    const ph = useMemo(() => smartMetrics.ph != null ? smartMetrics.ph.toFixed(1) : 'N/A', [smartMetrics]);
+    // const ph = useMemo(() => smartMetrics.ph != null ? smartMetrics.ph.toFixed(1) : 'N/A', [smartMetrics]);
     const anomaly = smartMetrics.anomaly_label !== "Normal" ? smartMetrics.anomaly_label : null;
     const insight = smartMetrics.insight;
 
@@ -253,8 +253,8 @@ const LightDashboard = ({ onToggle, initialView = 'overview' }) => {
                 <StatCard title="Motion" value={motion} unit="" icon={Zap} color="amber" />
                 <StatCard title="Rain Sensor" value={rainStatus} unit="" icon={CloudRain} color="blue" />
                 <StatCard title="Trust Score" value={trustScore} unit="%" icon={ShieldCheck} color={trustScore > 80 ? 'emerald' : 'yellow'} />
-                <StatCard title="pH Level" value={ph} unit="pH" icon={FlaskConical} color="purple" />
-                <StatCard title="Pressure" value={latestData?.pressure || 1013} unit="hPa" icon={Gauge} color="cyan" />
+                {/* <StatCard title="pH Level" value={ph} unit="pH" icon={FlaskConical} color="purple" /> */}
+                {/* <StatCard title="Pressure" value={latestData?.pressure || 1013} unit="hPa" icon={Gauge} color="cyan" /> */}
             </div>
 
             {/* Safety & Trends Grid */}

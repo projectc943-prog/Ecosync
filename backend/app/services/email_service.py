@@ -13,12 +13,15 @@ class EmailService:
         self.smtp_server = "smtp.gmail.com"
         self.smtp_port = 587
         self.sender_email = os.getenv("EMAIL_USER")
-        self.sender_password = os.getenv("EMAIL_PASS")
+        self.sender_password = os.getenv("EMAIL_PASS").replace(" ", "") if os.getenv("EMAIL_PASS") else None
         
         if not self.sender_email or not self.sender_password:
             logger.warning("⚠️ Email Service: Credentials missing in .env")
+            print("⚠️ EMAIL SERVICE: Credentials MISSING!")
+        else:
+            print(f"✅ EMAIL SERVICE: Loaded credentials for {self.sender_email}")
 
-    def _get_html_template(self, device_name, timestamp, alert_data, ai_insight, dashboard_link):
+    def _get_html_template(self, device_name, timestamp, alert_data, ai_insight, dashboard_link, title="🚨 Safety Alert Triggered"):
         """
         Generates a rich HTML email template.
         alert_data: List of dicts { 'metric': 'Temperature', 'value': '45°C', 'limit': '40°C', 'status': 'CRITICAL' }
@@ -27,7 +30,7 @@ class EmailService:
         # Build Rows
         rows_html = ""
         for item in alert_data:
-            color = "#ef4444" if "CRITICAL" in item['status'] else "#f97316"
+            color = "#ef4444" if "CRITICAL" in item['status'] else ("#f97316" if "MODERATE" in item['status'] else "#22c55e")
             rows_html += f"""
             <tr style="border-bottom: 1px solid #e2e8f0;">
                 <td style="padding: 12px; font-weight: 600; color: #1e293b;">{item['metric']}</td>
@@ -60,13 +63,13 @@ class EmailService:
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>🚨 Safety Alert Triggered</h1>
+                    <h1>{title}</h1>
                     <p>{device_name} • {timestamp}</p>
                 </div>
                 
                 <div class="content">
                     <p style="color: #475569; margin-bottom: 20px;">
-                        <strong>Action Required:</strong> Critical thresholds have been exceeded. Review the data below and take immediate safety checks.
+                        <strong>Action Required:</strong> Environmental risks undetected. Review the analysis below.
                     </p>
 
                     <!-- Data Table -->
@@ -88,9 +91,9 @@ class EmailService:
 
                     <!-- AI Insight -->
                     <div class="insight-box">
-                        <span class="label" style="color: #3b82f6;">🤖 Explainable AI Insight</span>
+                        <span class="label" style="color: #3b82f6;">🤖 Risk Analysis & Harm Prevention</span>
                         <p style="margin: 5px 0 0; color: #1e40af; font-size: 14px; line-height: 1.5;">
-                            {ai_insight or "Analysis complete. Deviations detected requiring human verification."}
+                            {ai_insight or "Analysis complete."}
                         </p>
                     </div>
 
@@ -109,35 +112,40 @@ class EmailService:
         """
         return html
 
-    def send_alert(self, recipients, device_name, timestamp, alert_data, ai_insight, dashboard_link):
+    def send_alert(self, recipients, device_name, timestamp, alert_data, ai_insight, dashboard_link, title="🚨 Safety Alert Triggered"):
         if not self.sender_email or not self.sender_password:
             return False
 
         try:
             # Generate Body
-            html_body = self._get_html_template(device_name, timestamp, alert_data, ai_insight, dashboard_link)
+            html_body = self._get_html_template(device_name, timestamp, alert_data, ai_insight, dashboard_link, title)
             
             # Setup Message
             msg = MIMEMultipart('alternative')
             msg['From'] = self.sender_email
-            msg['Subject'] = f"🚨 ALERT: {device_name} - Action Required"
+            msg['Subject'] = f"{title}: {device_name}"
             msg.attach(MIMEText(html_body, 'html'))
 
             # Send
+            print(f"🔄 SMTP: Connecting to {self.smtp_server}:{self.smtp_port}...")
             server = smtplib.SMTP(self.smtp_server, self.smtp_port)
             server.starttls()
+            print("🔑 SMTP: Logging in...")
             server.login(self.sender_email, self.sender_password)
             
             for recipient in recipients:
                 msg['To'] = recipient
+                print(f"📨 SMTP: Sending to {recipient}...")
                 server.sendmail(self.sender_email, recipient, msg.as_string())
                 logger.info(f"📧 Rich Email sent to {recipient}")
+                print(f"✅ SMTP: Sent to {recipient}")
 
             server.quit()
             return True
 
         except Exception as e:
             logger.error(f"❌ Email Service Error: {e}")
+            print(f"❌ SMTP ERROR: {e}")
             return False
 
 # Singleton

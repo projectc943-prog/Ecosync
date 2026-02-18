@@ -37,7 +37,8 @@ engine = create_engine(
     connect_args=connect_args,
     pool_size=10,
     max_overflow=20,
-    pool_recycle=300
+    pool_recycle=300,
+    echo=True
 )
 
 # Create session
