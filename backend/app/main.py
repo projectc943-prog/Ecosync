@@ -365,32 +365,110 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
         if gas > G_MAX: breaches.append(f"Air Quality Breach ({gas} > {G_MAX})")
         if hum > H_MAX or hum < H_MIN: breaches.append(f"Humidity Out of Range ({hum}%)")
 
-        should_alert = (risk_level in ["CRITICAL", "MODERATE"]) or (len(breaches) > 0)
+        # Only alert on ACTUAL threshold breaches — not just elevated risk level
+        should_alert = len(breaches) > 0
         
         if should_alert:
             cooldown_key = f"{device.id}_{target_email}"
             last_sent = alert_cooldowns.get(cooldown_key)
             
-            if last_sent and (current_ts - last_sent) < timedelta(minutes=5):
-                log_alert_activity(f"SKIP (Cooldown): {target_email} has active cooldown.")
+            if last_sent and (current_ts - last_sent) < timedelta(minutes=10):
+                remaining = int(10 - (current_ts - last_sent).total_seconds() / 60)
+                log_alert_activity(f"SKIP (Cooldown): {target_email} — next alert in {remaining} min.")
                 continue
 
             log_alert_activity(f"🔥 TRIGGERING EMAIL to {target_email} | Breaches: {breaches}")
             
             try:
+                # Determine rain status from sensor value (lower = wetter)
+                rain_status = "RAINING" if rain < 1000 else ("DAMP" if rain < 2000 else "DRY")
+                rain_alert = rain < 1000  # Only alert if actively raining
+
                 alert_payload = [
-                    {"metric": "Temperature", "value": f"{temp}°C", "limit": f"{T_MAX}°C", "status": "CRITICAL" if temp > T_MAX else "SAFE"},
-                    {"metric": "Humidity", "value": f"{hum}%", "limit": f"{H_MAX}%", "status": "CRITICAL" if (hum > H_MAX or hum < H_MIN) else "SAFE"},
-                    {"metric": "Gas Level", "value": f"{gas} ppm", "limit": f"{G_MAX} ppm", "status": "CRITICAL" if gas > G_MAX else "SAFE"},
+                    {"metric": "Temperature", "value": f"{round(temp, 1)}°C", "limit": f"{T_MAX}°C", "status": "CRITICAL" if temp > T_MAX else "SAFE"},
+                    {"metric": "Humidity", "value": f"{round(hum, 1)}%", "limit": f"{H_MAX}%", "status": "CRITICAL" if (hum > H_MAX or hum < H_MIN) else "SAFE"},
+                    {"metric": "Gas Level", "value": f"{round(gas, 1)} ppm", "limit": f"{G_MAX} ppm", "status": "CRITICAL" if gas > G_MAX else "SAFE"},
+                    {"metric": "Rain Sensor", "value": rain_status, "limit": "DRY", "status": "MODERATE" if rain_alert else "SAFE"},
                 ]
-                
+
+                # --- Fetch Historical Context from DB ---
+                def _hist_snap(rows):
+                    if not rows: return None
+                    r = rows[0]
+                    return {
+                        "temperature": round(r.temperature, 1) if r.temperature is not None else None,
+                        "humidity": round(r.humidity, 1) if r.humidity is not None else None,
+                        "gas": round(r.gas, 1) if r.gas is not None else None,
+                        "anomaly_label": r.anomaly_label or "Normal",
+                        "smart_insight": r.smart_insight or "",
+                        "timestamp": r.timestamp.strftime("%Y-%m-%d %H:%M") if r.timestamp else "",
+                    }
+
+                lw_rows = db.query(models.SensorData).filter(
+                    models.SensorData.device_id == device.id,
+                    models.SensorData.timestamp >= current_ts - timedelta(days=7, minutes=30),
+                    models.SensorData.timestamp <= current_ts - timedelta(days=7) + timedelta(minutes=30)
+                ).order_by(models.SensorData.timestamp.desc()).limit(3).all()
+
+                yd_rows = db.query(models.SensorData).filter(
+                    models.SensorData.device_id == device.id,
+                    models.SensorData.timestamp >= current_ts - timedelta(days=1, minutes=30),
+                    models.SensorData.timestamp <= current_ts - timedelta(days=1) + timedelta(minutes=30)
+                ).order_by(models.SensorData.timestamp.desc()).limit(3).all()
+
+                week_rows = db.query(models.SensorData).filter(
+                    models.SensorData.device_id == device.id,
+                    models.SensorData.timestamp >= current_ts - timedelta(days=7)
+                ).all()
+
+                def _avg(rows, field):
+                    vals = [getattr(r, field) for r in rows if getattr(r, field) is not None]
+                    return round(sum(vals) / len(vals), 1) if vals else None
+
+                lw_snap = _hist_snap(lw_rows)
+                yd_snap = _hist_snap(yd_rows)
+                week_avg = {
+                    "temperature": _avg(week_rows, "temperature"),
+                    "humidity": _avg(week_rows, "humidity"),
+                    "gas": _avg(week_rows, "gas"),
+                }
+                last_week_day = (current_ts - timedelta(days=7)).strftime("%A")
+                time_str = current_ts.strftime("%I:%M %p")
+
+                historical_context = {
+                    "last_week": lw_snap,
+                    "yesterday": yd_snap,
+                    "week_averages": week_avg,
+                    "last_week_day": last_week_day,
+                    "time_str": time_str,
+                }
+
+                # Build AI Precautions with historical context
+                precautions = []
+                if temp > T_MAX:
+                    lw_note = f" Last {last_week_day} at this time it was {lw_snap['temperature']}°C." if lw_snap and lw_snap.get("temperature") else ""
+                    precautions.append(f"🌡️ High Temperature ({round(temp,1)}°C): Increase ventilation, avoid direct sun exposure, check cooling systems.{lw_note}")
+                if gas > G_MAX:
+                    lw_note = f" Last week gas was {lw_snap['gas']} ppm." if lw_snap and lw_snap.get("gas") else ""
+                    precautions.append(f"💨 Elevated Gas ({round(gas,1)} ppm): Evacuate the area immediately, open windows, avoid ignition sources.{lw_note}")
+                if hum > H_MAX:
+                    precautions.append(f"💧 High Humidity ({round(hum,1)}%): Run dehumidifiers, check for water leaks, prevent mold growth.")
+                elif hum < H_MIN:
+                    precautions.append(f"🏜️ Low Humidity ({round(hum,1)}%): Use a humidifier, stay hydrated, protect sensitive equipment.")
+                if rain_alert:
+                    precautions.append(f"🌧️ Rain Detected: Secure outdoor equipment, check drainage systems, avoid electrical hazards near water.")
+
+                precaution_text = " | ".join(precautions) if precautions else "No immediate action required."
+                full_insight = f"{smart_insight or 'AI Analysis complete.'}\n\n⚠️ Recommended Precautions: {precaution_text}"
+
                 from .services.email_service import email_notifier
                 success = email_notifier.send_alert(
                     recipients=[target_email],
                     device_name=device.name,
                     timestamp=current_ts.strftime("%Y-%m-%d %H:%M:%S UTC"),
                     alert_data=alert_payload,
-                    ai_insight=smart_insight,
+                    ai_insight=full_insight,
+                    historical_context=historical_context,
                     dashboard_link="http://localhost:5173/dashboard",
                     title="🛡️ EcoSync Critical Alert"
                 )
@@ -404,6 +482,33 @@ def check_alerts(db: Session, device: models.Device, measurement: models.SensorD
                 log_alert_activity(f"❌ SMTP CRASH for {target_email}: {smtp_err}")
     
     return {"status": "success"}
+
+
+# --- Alert Debug Endpoints ---
+
+@app.post("/api/debug/reset-cooldowns", tags=["Debug"])
+def reset_alert_cooldowns():
+    """Clears the in-memory alert cooldown dict so alerts can fire immediately."""
+    count = len(alert_cooldowns)
+    alert_cooldowns.clear()
+    log_alert_activity(f"🔄 Cooldowns manually reset ({count} entries cleared)")
+    return {"status": "ok", "cleared": count, "message": "Alert cooldowns cleared. Next threshold breach will trigger an email immediately."}
+
+@app.get("/api/debug/cooldown-status", tags=["Debug"])
+def get_cooldown_status():
+    """Shows current cooldown state for all devices."""
+    now = dt.utcnow()
+    status = {}
+    for key, last_sent in alert_cooldowns.items():
+        elapsed = (now - last_sent).total_seconds() / 60
+        remaining = max(0, 10 - elapsed)
+        status[key] = {
+            "last_sent": last_sent.isoformat(),
+            "elapsed_min": round(elapsed, 1),
+            "remaining_min": round(remaining, 1),
+            "blocked": remaining > 0
+        }
+    return {"cooldowns": status, "total": len(status)}
 
 
 # --- Compliance Log API ---
@@ -690,6 +795,130 @@ def get_historical_data(limit: int = 100, db: Session = Depends(get_db)):
     """
     data = db.query(models.SensorData).order_by(models.SensorData.timestamp.desc()).limit(limit).all()
     return data
+
+
+@app.get("/api/historical-context", tags=["Analytics"])
+def get_historical_context(user_email: Optional[str] = None, db: Session = Depends(get_db)):
+    """
+    Returns AI historical context: same-time last week readings, 7-day averages,
+    and a generated narrative comparing current vs historical conditions.
+    """
+    now = dt.utcnow()
+    
+    # Build device filter
+    device_id = None
+    if user_email:
+        id_sanitized = user_email.replace("@", "_").replace(".", "_")
+        device_id = f"DASHBOARD_{id_sanitized}"
+
+    def base_query():
+        q = db.query(models.SensorData)
+        if device_id:
+            q = q.filter(models.SensorData.device_id == device_id)
+        return q
+
+    # 1. Same time last week (±30 min window)
+    last_week_center = now - timedelta(days=7)
+    last_week_start = last_week_center - timedelta(minutes=30)
+    last_week_end = last_week_center + timedelta(minutes=30)
+    last_week_rows = base_query().filter(
+        models.SensorData.timestamp >= last_week_start,
+        models.SensorData.timestamp <= last_week_end
+    ).order_by(models.SensorData.timestamp.desc()).limit(5).all()
+
+    # 2. Same time yesterday (±30 min window)
+    yesterday_center = now - timedelta(days=1)
+    yesterday_start = yesterday_center - timedelta(minutes=30)
+    yesterday_end = yesterday_center + timedelta(minutes=30)
+    yesterday_rows = base_query().filter(
+        models.SensorData.timestamp >= yesterday_start,
+        models.SensorData.timestamp <= yesterday_end
+    ).order_by(models.SensorData.timestamp.desc()).limit(5).all()
+
+    # 3. 7-day averages
+    week_ago = now - timedelta(days=7)
+    week_rows = base_query().filter(
+        models.SensorData.timestamp >= week_ago
+    ).all()
+
+    def avg(rows, field):
+        vals = [getattr(r, field) for r in rows if getattr(r, field) is not None]
+        return round(sum(vals) / len(vals), 1) if vals else None
+
+    week_avg = {
+        "temperature": avg(week_rows, "temperature"),
+        "humidity": avg(week_rows, "humidity"),
+        "gas": avg(week_rows, "gas"),
+    }
+
+    # 4. Build snapshot helper
+    def snapshot(rows):
+        if not rows:
+            return None
+        r = rows[0]
+        return {
+            "timestamp": r.timestamp.isoformat() if r.timestamp else None,
+            "temperature": round(r.temperature, 1) if r.temperature is not None else None,
+            "humidity": round(r.humidity, 1) if r.humidity is not None else None,
+            "gas": round(r.gas, 1) if r.gas is not None else None,
+            "rain": r.rain,
+            "anomaly_label": r.anomaly_label,
+            "smart_insight": r.smart_insight,
+        }
+
+    last_week_snap = snapshot(last_week_rows)
+    yesterday_snap = snapshot(yesterday_rows)
+
+    # 5. Generate AI narrative
+    def generate_narrative(last_week_snap, yesterday_snap, week_avg, now):
+        lines = []
+        day_name = (now - timedelta(days=7)).strftime("%A")
+        time_str = now.strftime("%I:%M %p")
+
+        if last_week_snap and last_week_snap.get("temperature") is not None:
+            lw_temp = last_week_snap["temperature"]
+            lw_hum = last_week_snap.get("humidity", "N/A")
+            lw_gas = last_week_snap.get("gas", "N/A")
+            lw_anomaly = last_week_snap.get("anomaly_label") or "Normal"
+            lw_insight = last_week_snap.get("smart_insight") or ""
+            lines.append(
+                f"📅 Last {day_name} at {time_str}: Temperature was {lw_temp}°C, "
+                f"Humidity {lw_hum}%, Gas {lw_gas} ppm. "
+                f"Status: {lw_anomaly}."
+                + (f" AI noted: {lw_insight}" if lw_insight else "")
+            )
+        else:
+            lines.append(f"📅 No data recorded last {day_name} at this time.")
+
+        if yesterday_snap and yesterday_snap.get("temperature") is not None:
+            yd_temp = yesterday_snap["temperature"]
+            yd_hum = yesterday_snap.get("humidity", "N/A")
+            yd_anomaly = yesterday_snap.get("anomaly_label") or "Normal"
+            lines.append(
+                f"🕐 Yesterday at {time_str}: Temperature was {yd_temp}°C, "
+                f"Humidity {yd_hum}%. Status: {yd_anomaly}."
+            )
+        else:
+            lines.append(f"🕐 No data recorded yesterday at this time.")
+
+        if week_avg.get("temperature") is not None:
+            lines.append(
+                f"📊 7-Day Averages: Temperature {week_avg['temperature']}°C, "
+                f"Humidity {week_avg['humidity']}%, Gas {week_avg['gas']} ppm."
+            )
+
+        return " | ".join(lines)
+
+    narrative = generate_narrative(last_week_snap, yesterday_snap, week_avg, now)
+
+    return {
+        "last_week": last_week_snap,
+        "yesterday": yesterday_snap,
+        "week_averages": week_avg,
+        "narrative": narrative,
+        "generated_at": now.isoformat(),
+    }
+
 
 @app.get("/api/filtered/latest", tags=["IoT"])
 async def get_filtered_iot_data(user_email: Optional[str] = None, db: Session = Depends(get_db)):

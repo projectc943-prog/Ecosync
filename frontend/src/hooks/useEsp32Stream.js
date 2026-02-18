@@ -115,13 +115,32 @@ export const useEsp32Stream = (mode = 'light', coordinates = [17.3850, 78.4867],
                             if (response.ok) {
                                 const latest = await response.json();
                                 if (latest.status === 'no_data') {
-                                    // Reset state if no data
+                                    // Reset state if no data — also clear history so old values don't show
+                                    bufferRef.current = [];
                                     setStream(prev => ({
                                         ...prev,
                                         connected: false,
-                                        data: null
+                                        data: null,
+                                        history: []
                                     }));
                                     return;
+                                }
+
+                                // STALENESS CHECK: If data is older than 5 minutes, treat as disconnected
+                                if (latest.timestamp) {
+                                    const dataAge = Date.now() - new Date(latest.timestamp).getTime();
+                                    const FIVE_MINUTES = 5 * 60 * 1000;
+                                    if (dataAge > FIVE_MINUTES) {
+                                        console.log(`⚠️ Data is stale (${Math.round(dataAge / 60000)}min old) — hiding values until device reconnects`);
+                                        bufferRef.current = [];
+                                        setStream(prev => ({
+                                            ...prev,
+                                            connected: false,
+                                            data: null,
+                                            history: []
+                                        }));
+                                        return;
+                                    }
                                 }
 
                                 // Fix: Access nested objects from API response

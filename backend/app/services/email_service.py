@@ -21,112 +21,220 @@ class EmailService:
         else:
             print(f"✅ EMAIL SERVICE: Loaded credentials for {self.sender_email}")
 
-    def _get_html_template(self, device_name, timestamp, alert_data, ai_insight, dashboard_link, title="🚨 Safety Alert Triggered"):
-        """
-        Generates a rich HTML email template.
-        alert_data: List of dicts { 'metric': 'Temperature', 'value': '45°C', 'limit': '40°C', 'status': 'CRITICAL' }
-        """
-        
-        # Build Rows
-        rows_html = ""
+    def _get_html_template(self, device_name, timestamp, alert_data, ai_insight, dashboard_link, title="🚨 Safety Alert Triggered", historical_context=None):
+        # ── Parse AI insight + precautions ────────────────────────────────
+        ai_insight_text = ai_insight or "Analysis complete."
+        precaution_items = []
+        if ai_insight and "⚠️ Recommended Precautions:" in ai_insight:
+            parts = ai_insight.split("\n\n⚠️ Recommended Precautions:", 1)
+            ai_insight_text = parts[0].strip()
+            precaution_items = [p.strip() for p in parts[1].split(" | ") if p.strip()]
+
+        # ── Precautions HTML ───────────────────────────────────────────────
+        precautions_html = ""
+        if precaution_items:
+            items_html = "".join(
+                f"""<tr>
+                    <td style="padding: 10px 16px; border-bottom: 1px solid #d1fae5; font-size: 13px; color: #065f46; line-height: 1.5;">
+                        {item}
+                    </td>
+                </tr>"""
+                for item in precaution_items
+            )
+            precautions_html = f"""
+            <div style="margin-top: 24px; border-radius: 12px; overflow: hidden; border: 1px solid #6ee7b7;">
+                <div style="background: linear-gradient(90deg, #059669, #10b981); padding: 12px 16px; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 16px;">🛡️</span>
+                    <span style="color: white; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Recommended Precautions</span>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; background: #f0fdf4;">
+                    {items_html}
+                </table>
+            </div>"""
+
+        # ── Historical Context HTML ────────────────────────────────────────
+        historical_html = ""
+        if historical_context:
+            lw = historical_context.get("last_week")
+            yd = historical_context.get("yesterday")
+            wa = historical_context.get("week_averages", {})
+            lw_day = historical_context.get("last_week_day", "Last Week")
+            time_str = historical_context.get("time_str", "")
+
+            def hist_row(icon, label, snap):
+                if snap and snap.get("temperature") is not None:
+                    anomaly = snap.get("anomaly_label", "Normal")
+                    badge_color = "#ef4444" if anomaly not in ("Normal", "normal") else "#10b981"
+                    insight = snap.get("smart_insight", "")
+                    insight_row = f"""<tr><td colspan="5" style="padding: 2px 16px 10px; font-size: 11px; color: #6b7280; font-style: italic;">💬 {insight}</td></tr>""" if insight else ""
+                    return f"""
+                    <tr style="border-bottom: 1px solid #e0f2fe;">
+                        <td style="padding: 10px 16px; font-weight: 600; color: #0369a1; font-size: 13px; white-space: nowrap;">{icon} {label}</td>
+                        <td style="padding: 10px 8px; color: #0c4a6e; font-size: 13px; font-weight: 600;">{snap['temperature']}°C</td>
+                        <td style="padding: 10px 8px; color: #0c4a6e; font-size: 13px;">{snap.get('humidity', '—')}%</td>
+                        <td style="padding: 10px 8px; color: #0c4a6e; font-size: 13px;">{snap.get('gas', '—')} ppm</td>
+                        <td style="padding: 10px 16px;"><span style="background: {badge_color}20; color: {badge_color}; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 700;">{anomaly}</span></td>
+                    </tr>{insight_row}"""
+                return f"""<tr><td colspan="5" style="padding: 10px 16px; color: #9ca3af; font-size: 12px; font-style: italic;">{icon} No data recorded {label.lower()} at this time.</td></tr>"""
+
+            lw_row = hist_row("📅", f"Last {lw_day} at {time_str}", lw)
+            yd_row = hist_row("🕐", f"Yesterday at {time_str}", yd)
+
+            avg_cells = ""
+            for field, unit in [("temperature", "°C"), ("humidity", "%"), ("gas", " ppm")]:
+                v = wa.get(field)
+                avg_cells += f'<td style="padding: 10px 8px; color: #1e40af; font-size: 13px; font-weight: 700;">{v}{unit if v is not None else "—"}</td>'
+
+            historical_html = f"""
+            <div style="margin-top: 24px; border-radius: 12px; overflow: hidden; border: 1px solid #bae6fd;">
+                <div style="background: linear-gradient(90deg, #0284c7, #38bdf8); padding: 12px 16px;">
+                    <span style="color: white; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">📊 AI Historical Context</span>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; background: #f0f9ff;">
+                    <thead>
+                        <tr style="background: #e0f2fe;">
+                            <th style="padding: 8px 16px; text-align: left; font-size: 10px; color: #0369a1; text-transform: uppercase; letter-spacing: 0.5px;">Period</th>
+                            <th style="padding: 8px 8px; text-align: left; font-size: 10px; color: #0369a1; text-transform: uppercase; letter-spacing: 0.5px;">Temp</th>
+                            <th style="padding: 8px 8px; text-align: left; font-size: 10px; color: #0369a1; text-transform: uppercase; letter-spacing: 0.5px;">Humidity</th>
+                            <th style="padding: 8px 8px; text-align: left; font-size: 10px; color: #0369a1; text-transform: uppercase; letter-spacing: 0.5px;">Gas</th>
+                            <th style="padding: 8px 16px; text-align: left; font-size: 10px; color: #0369a1; text-transform: uppercase; letter-spacing: 0.5px;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {lw_row}
+                        {yd_row}
+                        <tr style="background: #dbeafe;">
+                            <td style="padding: 10px 16px; font-weight: 700; color: #1e40af; font-size: 13px;">📈 7-Day Average</td>
+                            {avg_cells}
+                            <td style="padding: 10px 16px;"><span style="background: #1e40af20; color: #1e40af; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 700;">BASELINE</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>"""
+
+        # ── Metric rows ────────────────────────────────────────────────────
+        metric_cards = ""
         for item in alert_data:
-            color = "#ef4444" if "CRITICAL" in item['status'] else ("#f97316" if "MODERATE" in item['status'] else "#22c55e")
-            rows_html += f"""
-            <tr style="border-bottom: 1px solid #e2e8f0;">
-                <td style="padding: 12px; font-weight: 600; color: #1e293b;">{item['metric']}</td>
-                <td style="padding: 12px; font-weight: 700; color: {color}; font-size: 16px;">{item['value']}</td>
-                <td style="padding: 12px; color: #64748b;">{item['limit']}</td>
-                <td style="padding: 12px;"><span style="background-color: {color}20; color: {color}; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;">{item['status']}</span></td>
-            </tr>
-            """
+            is_critical = "CRITICAL" in item['status']
+            is_moderate = "MODERATE" in item['status']
+            if is_critical:
+                card_bg, border_c, val_color, badge_bg, badge_color = "#fff5f5", "#fca5a5", "#dc2626", "#fee2e2", "#dc2626"
+            elif is_moderate:
+                card_bg, border_c, val_color, badge_bg, badge_color = "#fffbeb", "#fcd34d", "#d97706", "#fef3c7", "#d97706"
+            else:
+                card_bg, border_c, val_color, badge_bg, badge_color = "#f0fdf4", "#86efac", "#16a34a", "#dcfce7", "#16a34a"
 
-        html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9; margin: 0; padding: 0; }}
-                .container {{ max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }}
-                .header {{ background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); padding: 30px 20px; text-align: center; color: white; }}
-                .header h1 {{ margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }}
-                .header p {{ margin: 5px 0 0; opacity: 0.9; font-size: 14px; }}
-                .content {{ padding: 24px; }}
-                .card {{ background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px; }}
-                .label {{ font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 4px; display: block; }}
-                .value {{ font-size: 15px; color: #0f172a; font-weight: 600; }}
-                .btn {{ display: inline-block; background: #2563eb; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600; margin-top: 10px; }}
-                .footer {{ background: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; }}
-                table {{ width: 100%; border-collapse: collapse; }}
-                .insight-box {{ background: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 0 8px 8px 0; }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>{title}</h1>
-                    <p>{device_name} • {timestamp}</p>
+            metric_cards += f"""
+            <td style="width: 25%; padding: 6px;">
+                <div style="background: {card_bg}; border: 1px solid {border_c}; border-radius: 12px; padding: 16px; text-align: center;">
+                    <div style="font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; font-weight: 600;">{item['metric']}</div>
+                    <div style="font-size: 20px; font-weight: 800; color: {val_color}; margin-bottom: 4px;">{item['value']}</div>
+                    <div style="font-size: 10px; color: #9ca3af; margin-bottom: 8px;">Limit: {item['limit']}</div>
+                    <span style="background: {badge_bg}; color: {badge_color}; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700;">{item['status']}</span>
                 </div>
-                
-                <div class="content">
-                    <p style="color: #475569; margin-bottom: 20px;">
-                        <strong>Action Required:</strong> Environmental risks undetected. Review the analysis below.
-                    </p>
+            </td>"""
 
-                    <!-- Data Table -->
-                    <div style="margin-bottom: 24px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-                        <table>
-                            <thead style="background: #f8fafc;">
-                                <tr>
-                                    <th style="text-align: left; padding: 12px; font-size: 11px; color: #64748b; text-transform: uppercase;">Metric</th>
-                                    <th style="text-align: left; padding: 12px; font-size: 11px; color: #64748b; text-transform: uppercase;">Current</th>
-                                    <th style="text-align: left; padding: 12px; font-size: 11px; color: #64748b; text-transform: uppercase;">Limit</th>
-                                    <th style="text-align: left; padding: 12px; font-size: 11px; color: #64748b; text-transform: uppercase;">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rows_html}
-                            </tbody>
-                        </table>
-                    </div>
+        html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{title}</title>
+</head>
+<body style="margin: 0; padding: 0; background: #0f172a; font-family: 'Segoe UI', Arial, sans-serif;">
 
-                    <!-- AI Insight -->
-                    <div class="insight-box">
-                        <span class="label" style="color: #3b82f6;">🤖 Risk Analysis & Harm Prevention</span>
-                        <p style="margin: 5px 0 0; color: #1e40af; font-size: 14px; line-height: 1.5;">
-                            {ai_insight or "Analysis complete."}
-                        </p>
-                    </div>
+<table width="100%" cellpadding="0" cellspacing="0" style="background: #0f172a; padding: 32px 16px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
 
-                    <div style="text-align: center; margin-top: 30px;">
-                        <a href="{dashboard_link}" class="btn">View Live Dashboard</a>
-                    </div>
-                </div>
+    <!-- HEADER -->
+    <tr>
+        <td style="background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 50%, #b91c1c 100%); border-radius: 16px 16px 0 0; padding: 36px 32px; text-align: center;">
+            <div style="font-size: 40px; margin-bottom: 12px;">🛡️</div>
+            <h1 style="margin: 0; color: white; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">{title}</h1>
+            <p style="margin: 8px 0 0; color: #fca5a5; font-size: 13px; font-weight: 500;">
+                📡 {device_name} &nbsp;•&nbsp; 🕐 {timestamp}
+            </p>
+        </td>
+    </tr>
 
-                <div class="footer">
-                    EcoSync Sentinel System • Automated Safety Monitoring<br>
-                    Location: Unknown Sector
-                </div>
+    <!-- ALERT BANNER -->
+    <tr>
+        <td style="background: #1e293b; padding: 0 32px;">
+            <div style="background: linear-gradient(90deg, #7f1d1d20, #dc262610); border: 1px solid #dc262640; border-radius: 10px; padding: 14px 18px; margin: 20px 0; display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 18px;">⚠️</span>
+                <span style="color: #fca5a5; font-size: 13px; font-weight: 600;">Environmental threshold breach detected. Immediate review required.</span>
             </div>
-        </body>
-        </html>
-        """
+        </td>
+    </tr>
+
+    <!-- METRIC CARDS -->
+    <tr>
+        <td style="background: #1e293b; padding: 0 26px 20px;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>{metric_cards}</tr>
+            </table>
+        </td>
+    </tr>
+
+    <!-- AI INSIGHT -->
+    <tr>
+        <td style="background: #1e293b; padding: 0 32px 20px;">
+            <div style="background: #1e3a5f; border: 1px solid #3b82f680; border-radius: 12px; padding: 18px 20px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                    <span style="font-size: 18px;">🤖</span>
+                    <span style="font-size: 11px; color: #60a5fa; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">AI Risk Analysis</span>
+                </div>
+                <p style="margin: 0; color: #bfdbfe; font-size: 13px; line-height: 1.7;">{ai_insight_text}</p>
+            </div>
+        </td>
+    </tr>
+
+    <!-- PRECAUTIONS -->
+    {'<tr><td style="background: #1e293b; padding: 0 32px 20px;">' + precautions_html + '</td></tr>' if precautions_html else ''}
+
+    <!-- HISTORICAL CONTEXT -->
+    {'<tr><td style="background: #1e293b; padding: 0 32px 20px;">' + historical_html + '</td></tr>' if historical_html else ''}
+
+    <!-- CTA BUTTON -->
+    <tr>
+        <td style="background: #1e293b; padding: 0 32px 32px; text-align: center;">
+            <a href="{dashboard_link}" style="display: inline-block; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; padding: 14px 36px; border-radius: 50px; text-decoration: none; font-weight: 700; font-size: 14px; letter-spacing: 0.3px; box-shadow: 0 4px 15px #2563eb40;">
+                🖥️ &nbsp; View Live Dashboard
+            </a>
+        </td>
+    </tr>
+
+    <!-- FOOTER -->
+    <tr>
+        <td style="background: #0f172a; border-radius: 0 0 16px 16px; padding: 20px 32px; text-align: center; border-top: 1px solid #1e293b;">
+            <p style="margin: 0; color: #475569; font-size: 11px; line-height: 1.8;">
+                EcoSync Sentinel System &nbsp;•&nbsp; Automated Environmental Monitoring<br>
+                This is an automated alert. Do not reply to this email.
+            </p>
+        </td>
+    </tr>
+
+</table>
+</td></tr>
+</table>
+
+</body>
+</html>"""
         return html
 
-    def send_alert(self, recipients, device_name, timestamp, alert_data, ai_insight, dashboard_link, title="🚨 Safety Alert Triggered"):
+    def send_alert(self, recipients, device_name, timestamp, alert_data, ai_insight, dashboard_link, title="🚨 Safety Alert Triggered", historical_context=None):
         if not self.sender_email or not self.sender_password:
             return False
 
         try:
-            # Generate Body
-            html_body = self._get_html_template(device_name, timestamp, alert_data, ai_insight, dashboard_link, title)
+            html_body = self._get_html_template(device_name, timestamp, alert_data, ai_insight, dashboard_link, title, historical_context)
             
-            # Setup Message
             msg = MIMEMultipart('alternative')
             msg['From'] = self.sender_email
             msg['Subject'] = f"{title}: {device_name}"
             msg.attach(MIMEText(html_body, 'html'))
 
-            # Send
             print(f"🔄 SMTP: Connecting to {self.smtp_server}:{self.smtp_port}...")
             server = smtplib.SMTP(self.smtp_server, self.smtp_port)
             server.starttls()
@@ -152,9 +260,7 @@ class EmailService:
 email_notifier = EmailService()
 
 def send_email_notification(to_email, subject, body):
-    """
-    Legacy wrapper for simple text emails (used by Auth/OTP)
-    """
+    """Legacy wrapper for simple text emails (used by Auth/OTP)"""
     msg = MIMEText(body)
     msg['Subject'] = subject
     msg['From'] = email_notifier.sender_email

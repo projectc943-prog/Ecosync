@@ -290,6 +290,7 @@ const LightDashboard = ({ onToggle, initialView = 'overview' }) => {
                     currentData={latestData}
                     baselineData={baseline}
                     alertReason={anomaly ? insight : (riskFactors.length > 1 ? riskFactors[1] : null)}
+                    userEmail={currentUser?.email}
                 />
 
                 {/* 2. Monitors Grid (Restricted | Health | Prediction) */}

@@ -20,28 +20,39 @@ const Dashboard = ({ initialView }) => {
         }
     }, [initialView]);
 
-    const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
+    const [locationDone, setLocationDone] = useState(false);
     const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
 
+    // Initialize push notification service worker on mount
+    useEffect(() => {
+        pushNotificationManager.initialize().then(success => {
+            if (success) {
+                console.log('✅ Push Notification Manager initialized');
+            }
+        });
+    }, []);
 
-    // Notification Prompt Trigger with cleanup
+    // Show notification prompt after location step is done (granted OR denied)
     useEffect(() => {
         let timeoutId;
-        if (locationPermissionGranted && 'Notification' in window) {
-            // Let the component decide if it needs to show the prompt based on user consent
-            timeoutId = setTimeout(() => setShowNotificationPrompt(true), 1500);
+        if (locationDone && 'Notification' in window) {
+            // Check if already consented
+            const userId = currentUser?.email;
+            const hasConsented = userId ? localStorage.getItem(`notification_consent_${userId}`) : null;
+            const alreadyDenied = Notification.permission === 'denied';
+
+            if (!hasConsented && !alreadyDenied) {
+                timeoutId = setTimeout(() => setShowNotificationPrompt(true), 1500);
+            }
         }
         return () => {
-            if (timeoutId) {
-                clearTimeout(timeoutId);
-            }
+            if (timeoutId) clearTimeout(timeoutId);
         };
-    }, [locationPermissionGranted]);
-
+    }, [locationDone, currentUser]);
 
     const handleLocationGranted = async (data) => {
         console.log('📍 Location Permission Granted via Prompt:', data);
-        setLocationPermissionGranted(true);
+        setLocationDone(true);
 
         // Update Backend
         if (currentUser?.email) {
@@ -69,27 +80,29 @@ const Dashboard = ({ initialView }) => {
     };
 
     const handleLocationDenied = () => {
-        console.log("Location denied by user");
-        setLocationPermissionGranted(true); // Don't block UI
+        console.log("Location denied by user — still proceeding to notification prompt");
+        setLocationDone(true); // Don't block notification prompt
     };
 
     const handleNotificationGranted = async () => {
         setShowNotificationPrompt(false);
-        await pushNotificationManager.subscribe(API_BASE_URL);
+        try {
+            await pushNotificationManager.subscribe(API_BASE_URL);
+            console.log('✅ Push notifications subscribed');
+        } catch (e) {
+            console.error('Push subscription failed:', e);
+        }
     };
 
     const handleNotificationDenied = () => {
         setShowNotificationPrompt(false);
     };
 
-    // Sync with User Profile with cleanup
+    // Sync with User Profile
     useEffect(() => {
         if (userProfile?.plan === 'pro') {
             setIsProMode(true);
         }
-        return () => {
-            // Cleanup any subscriptions or timers if needed
-        };
     }, [userProfile]);
 
     const handleToggle = () => {
@@ -98,8 +111,8 @@ const Dashboard = ({ initialView }) => {
 
     return (
         <>
-            {/* Permission Prompts */}
-            {!locationPermissionGranted && (
+            {/* Location Permission Prompt — shows until user responds */}
+            {!locationDone && (
                 <LocationPermissionPrompt
                     userId={currentUser?.email}
                     onPermissionGranted={handleLocationGranted}
@@ -107,6 +120,7 @@ const Dashboard = ({ initialView }) => {
                 />
             )}
 
+            {/* Notification Permission Prompt — shows after location step */}
             {showNotificationPrompt && (
                 <NotificationPermissionPrompt
                     userId={currentUser?.email}
@@ -123,7 +137,6 @@ const Dashboard = ({ initialView }) => {
             <LocationTestButton userEmail={currentUser?.email} />
         </>
     );
-
 };
 
 export default Dashboard;

@@ -29,21 +29,16 @@ const NotificationPermissionPrompt = ({ onPermissionGranted, onPermissionDenied,
         // Check internal consent for this user
         const hasConsented = userId ? localStorage.getItem(`notification_consent_${userId}`) : null;
 
-        if (permission === 'granted') {
-            if (hasConsented) {
-                // Already granted AND consented locally
-                setPermissionState('granted');
-                onPermissionGranted?.();
-            } else {
-                // Browser granted, but user logic needs confirmation (show prompt)
-                setShowPrompt(true);
-            }
+        if (permission === 'granted' && hasConsented) {
+            // Already fully set up — notify parent silently
+            setPermissionState('granted');
+            onPermissionGranted?.();
         } else if (permission === 'denied') {
+            // Browser has permanently denied — don't annoy user
             setPermissionState('denied');
-            setShowPrompt(false); // Don't annoy if denied
             onPermissionDenied?.();
         } else {
-            // Permission is 'default' - show our custom prompt
+            // Either 'default' or 'granted' without our consent record — show prompt
             setShowPrompt(true);
         }
     };
@@ -58,8 +53,7 @@ const NotificationPermissionPrompt = ({ onPermissionGranted, onPermissionDenied,
                 setPermissionState('granted');
                 setShowPrompt(false);
 
-
-                // Show a test notification
+                // Show a welcome notification
                 new Notification('🌿 EcoSync Notifications Enabled!', {
                     body: 'You\'ll now receive environmental alerts even when this tab is closed.',
                     icon: '/favicon.ico',

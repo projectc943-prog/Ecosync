@@ -34,16 +34,17 @@ const LocationPermissionPrompt = ({ onPermissionGranted, onPermissionDenied, use
                     const hasConsented = userId ? localStorage.getItem(`location_consent_${userId}`) : null;
 
                     if (hasConsented) {
-                        // Already granted AND consented, get location silently
+                        // Already granted AND consented — get location silently and notify parent
                         setPermissionState('granted');
-                        getCurrentLocation();
+                        getCurrentLocationSilent();
                     } else {
-                        // Browser allowed, but new user needs to confirm UI
+                        // Browser allowed, but user hasn't seen our prompt yet — show it
                         setShowPrompt(true);
                     }
                 } else if (result.state === 'denied') {
                     setPermissionState('denied');
-                    setShowPrompt(true);
+                    // Don't show prompt if browser has permanently denied — just notify parent
+                    onPermissionDenied?.();
                 } else {
                     // Prompt state - show our custom UI
                     setShowPrompt(true);
@@ -69,6 +70,34 @@ const LocationPermissionPrompt = ({ onPermissionGranted, onPermissionDenied, use
         }
     };
 
+    // Silent location fetch (when already consented) — notifies parent without showing UI
+    const getCurrentLocationSilent = () => {
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                let city = 'Location detected';
+
+                try {
+                    const response = await fetch(
+                        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
+                    );
+                    const data = await response.json();
+                    city = data.city || data.locality || data.principalSubdivision || 'Unknown Location';
+                } catch (err) {
+                    console.error('Geocoding error:', err);
+                }
+
+                onPermissionGranted?.({ lat, lon, name: city });
+            },
+            () => {
+                // Silent failure — just notify denied
+                onPermissionDenied?.();
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+        );
+    };
+
     const getCurrentLocation = () => {
         setPermissionState('requesting');
 
@@ -76,6 +105,7 @@ const LocationPermissionPrompt = ({ onPermissionGranted, onPermissionDenied, use
             async (position) => {
                 const lat = position.coords.latitude;
                 const lon = position.coords.longitude;
+                let city = 'Location detected';
 
                 // Get location name via reverse geocoding
                 try {
@@ -83,7 +113,7 @@ const LocationPermissionPrompt = ({ onPermissionGranted, onPermissionDenied, use
                         `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
                     );
                     const data = await response.json();
-                    const city = data.city || data.locality || data.principalSubdivision || 'Unknown Location';
+                    city = data.city || data.locality || data.principalSubdivision || 'Unknown Location';
                     setLocationName(city);
                 } catch (err) {
                     console.error('Geocoding error:', err);
@@ -98,12 +128,8 @@ const LocationPermissionPrompt = ({ onPermissionGranted, onPermissionDenied, use
                     localStorage.setItem(`location_consent_${userId}`, 'true');
                 }
 
-                // Notify parent component
-                onPermissionGranted?.({
-                    lat,
-                    lon,
-                    name: locationName
-                });
+                // Notify parent component with the resolved city name directly
+                onPermissionGranted?.({ lat, lon, name: city });
             },
             (error) => {
                 console.error('Location error:', error);
