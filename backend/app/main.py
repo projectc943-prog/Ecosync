@@ -108,7 +108,15 @@ ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:5174",
-    "http://127.0.0.1:5174"
+    "http://127.0.0.1:5174",
+    "http://localhost:5175",
+    "http://127.0.0.1:5175",
+    "http://localhost:5176",
+    "http://127.0.0.1:5176",
+    "http://localhost:5177",
+    "http://127.0.0.1:5177",
+    "http://localhost:5178",
+    "http://127.0.0.1:5178"
 ]
 
 app.add_middleware(
@@ -172,55 +180,64 @@ def get_connector(device: models.Device):
 async def poll_devices():
     """Background task to poll external APIs"""
     while True:
-        # Use a fresh session for the query, then close it
         try:
-             # Prefetch device IDs to avoid holding DB while making http requests
+            # 1. Prefetch device IDs
             db = database.SessionLocal()
-            devices_idx = db.query(models.Device).filter(models.Device.connector_type == "public_api").all()
-            device_ids = [d.id for d in devices_idx]
-            db.close()
+            try:
+                devices_idx = db.query(models.Device).filter(models.Device.connector_type == "public_api").all()
+                device_ids = [d.id for d in devices_idx]
+            finally:
+                db.close()
             
             for dev_id in device_ids:
-                # Re-open small session per device processing
-                db = database.SessionLocal()
-                dev = db.query(models.Device).get(dev_id)
-                if not dev: 
-                    db.close()
-                    continue
-
-                connector = get_connector(dev)
-                if connector:
+                try:
+                    # 2. Get device config (Short Session)
+                    db = database.SessionLocal()
+                    connector = None
+                    dev_name = "Unknown"
                     try:
-                        # Offload blocking I/O to thread
+                        dev = db.query(models.Device).get(dev_id)
+                        if dev:
+                            dev_name = dev.name
+                            connector = get_connector(dev)
+                    finally:
+                        db.close()
+
+                    if connector:
+                        # 3. Fetch Data (NO DB SESSION HELD)
                         data = await asyncio.to_thread(connector.fetch_data)
                         
-                        dev.last_seen = dt.utcnow()
-                        dev.status = data.get("status", "offline")
-                        
-                        metrics = data.get("metrics", {})
-                        if metrics:
-                            measurement = models.SensorData(
-                                device_id=dev.id,
-                                timestamp=dt.utcnow(),
-                                temperature=metrics.get("temperatureC"),
-                                humidity=metrics.get("humidityPct"),
-                                pressure=metrics.get("pressureHPa"),
-                                wind_speed=metrics.get("windMS"),
-                                pm2_5=metrics.get("pm25")
-                            )
-                            db.add(measurement)
-                            # Alerting could be slow (SMTP), offload it!
-                            # Pass IDs, not objects, if possible, but for now we pass the object 
-                            # and ensure it's bound. db.commit() first to save data.
-                            db.commit() 
-                            db.refresh(measurement)
-                            
-                            await asyncio.to_thread(check_alerts_wrapper, dev.id, measurement.id)
-                            
-                    except Exception as e:
-                        logger.error(f"Error polling device {dev.name}: {e}")
-                else:
-                    db.close()
+                        # 4. Save Data (Short Session)
+                        db = database.SessionLocal()
+                        try:
+                            # Re-fetch dev in this session to update
+                            dev = db.query(models.Device).get(dev_id)
+                            if dev:
+                                dev.last_seen = dt.utcnow()
+                                dev.status = data.get("status", "offline")
+                                
+                                metrics = data.get("metrics", {})
+                                if metrics:
+                                    measurement = models.SensorData(
+                                        device_id=dev.id,
+                                        timestamp=dt.utcnow(),
+                                        temperature=metrics.get("temperatureC"),
+                                        humidity=metrics.get("humidityPct"),
+                                        pressure=metrics.get("pressureHPa"),
+                                        wind_speed=metrics.get("windMS"),
+                                        pm2_5=metrics.get("pm25")
+                                    )
+                                    db.add(measurement)
+                                    db.commit() 
+                                    db.refresh(measurement)
+                                    
+                                    # Offload alerts
+                                    await asyncio.to_thread(check_alerts_wrapper, dev.id, measurement.id)
+                        finally:
+                            db.close()
+
+                except Exception as e:
+                    logger.error(f"Error polling device {dev_id}: {e}")
                     
         except Exception as e:
             logger.error(f"Polling cycle error: {e}")
@@ -229,16 +246,17 @@ async def poll_devices():
 
 def check_alerts_wrapper(dev_id, measurement_id, user_email: Optional[str] = None):
     """Wrapper to run check_alerts in a new thread with its own DB session"""
+    db = database.SessionLocal()
     try:
-        db = database.SessionLocal()
         dev = db.query(models.Device).get(dev_id)
         meas = db.query(models.SensorData).get(measurement_id)
         if dev and meas:
              check_alerts(db, dev, meas, user_email)
              db.commit() # Save alerts if any
-        db.close()
     except Exception as e:
         logger.error(f"Async Alert Error: {e}")
+    finally:
+        db.close()
 
 import smtplib
 from email.mime.text import MIMEText
